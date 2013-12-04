@@ -1,0 +1,20 @@
+Message stats for scenario scenario_SprayAndWaitRouter_area-1500,1500_rng-2
+sim_time: 43200.0000
+created: 969
+started: 5722
+relayed: 5694
+aborted: 28
+dropped: 4045
+removed: 0
+delivered: 572
+delivery_prob: 0.5903
+response_prob: 0.0000
+overhead_ratio: 8.9545
+latency_avg: 8007.1993
+latency_med: 7529.0000
+hopcount_avg: 2.2168
+hopcount_med: 2
+buffertime_avg: 13250.9355
+buffertime_med: 14371.0000
+rtt_avg: NaN
+rtt_med: NaN

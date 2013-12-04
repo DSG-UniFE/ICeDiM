@@ -1,0 +1,20 @@
+Message stats for scenario scenario_EpidemicRouter_area-1000,1000_rng-2
+sim_time: 43200.0000
+created: 969
+started: 17140
+relayed: 17052
+aborted: 88
+dropped: 14381
+removed: 0
+delivered: 761
+delivery_prob: 0.7853
+response_prob: 0.0000
+overhead_ratio: 21.4074
+latency_avg: 6225.5848
+latency_med: 5677.0000
+hopcount_avg: 2.0815
+hopcount_med: 2
+buffertime_avg: 8612.8063
+buffertime_med: 8368.0000
+rtt_avg: NaN
+rtt_med: NaN

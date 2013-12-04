@@ -1,0 +1,4 @@
+Scenario.name = %%Group.movementModel%%_%%Group.router%%_%%Group.bufferSize%%
+Group.movementModel = [RandomWalk; RandomWaypoint;]
+Group.router = [EpidemicRouter; ProphetRouter; SprayAndWaitRouter;]
+Group.bufferSize = [2M; 5M; 10M; 15M; 20M;]

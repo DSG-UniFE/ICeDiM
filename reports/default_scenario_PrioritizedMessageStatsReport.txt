@@ -1,0 +1,117 @@
+Message stats for scenario default_scenario
+sim_time: 43200.1000
+
+HMSent: 75928
+HMDelivered : 75619
+HMAborted: 308
+HMInterfered: 1323
+Priority Level: 1
+created: 907
+started: 53183
+relayed: 52187
+aborted: 996
+Interfered: 8
+dropped: 1511
+removed: 0
+delivered: 4
+delivery_prob: 0.0044
+response_prob: 0.0000
+overhead_ratio: 13045.7500
+latency_avg: 958.6500
+latency_med: 1326.0000
+hopcount_avg: 4.7500
+hopcount_med: 6
+buffertime_avg: 636.9120
+buffertime_med: 0.0000
+rtt_avg: NaN
+rtt_med: NaN
+
+
+Priority Level: 2
+created: 697
+started: 45794
+relayed: 44373
+aborted: 1421
+Interfered: 11
+dropped: 1637
+removed: 0
+delivered: 8
+delivery_prob: 0.0115
+response_prob: 0.0000
+overhead_ratio: 5545.6250
+latency_avg: 3810.1750
+latency_med: 3209.8000
+hopcount_avg: 4.0000
+hopcount_med: 4
+buffertime_avg: 951.6228
+buffertime_med: 6.5000
+rtt_avg: NaN
+rtt_med: NaN
+
+
+Priority Level: 3
+created: 369
+started: 59845
+relayed: 57356
+aborted: 2489
+Interfered: 17
+dropped: 1975
+removed: 0
+delivered: 13
+delivery_prob: 0.0352
+response_prob: 0.0000
+overhead_ratio: 4411.0000
+latency_avg: 3752.7231
+latency_med: 2696.5000
+hopcount_avg: 4.2308
+hopcount_med: 4
+buffertime_avg: 1570.0032
+buffertime_med: 878.0000
+rtt_avg: NaN
+rtt_med: NaN
+
+
+Priority Level: 4
+created: 123
+started: 49971
+relayed: 47234
+aborted: 2737
+Interfered: 52
+dropped: 1966
+removed: 0
+delivered: 14
+delivery_prob: 0.1138
+response_prob: 0.0000
+overhead_ratio: 3372.8571
+latency_avg: 2980.5714
+latency_med: 3416.1000
+hopcount_avg: 4.1429
+hopcount_med: 4
+buffertime_avg: 1570.1446
+buffertime_med: 894.3000
+rtt_avg: NaN
+rtt_med: NaN
+
+
+Priority Level: 5
+created: 37
+started: 196206
+relayed: 176537
+aborted: 19666
+Interfered: 523
+dropped: 7987
+removed: 0
+delivered: 31
+delivery_prob: 0.8378
+response_prob: 0.0000
+overhead_ratio: 5693.7419
+latency_avg: 3605.5419
+latency_med: 3529.1000
+hopcount_avg: 5.5161
+hopcount_med: 5
+buffertime_avg: 3354.8681
+buffertime_med: 2670.3000
+rtt_avg: NaN
+rtt_med: NaN
+
+
