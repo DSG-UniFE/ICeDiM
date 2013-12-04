@@ -172,7 +172,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	}
 	
 	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
@@ -191,7 +191,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 
 	
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
@@ -237,7 +237,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 
 	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean finalTarget) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 
@@ -249,7 +249,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	
 			this.nrofRelayed[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
 			if (finalTarget) {
-				this.latencies[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(getSimTime() - this.creationTimes.get(pm.getId()));
+				this.latencies[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(getSimTime() - this.creationTimes.get(pm.getID()));
 				this.nrofDelivered[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
 				this.hopCounts[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(pm.getHops().size() - 1);
 				
@@ -279,14 +279,14 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 
 	public void newMessage(Message m) {
 		if (isWarmup()) {
-			addWarmupID(m.getId());
+			addWarmupID(m.getID());
 			return;
 		}
 		
 		Assert.assertTrue(m instanceof PrioritizedMessage);
 		PrioritizedMessage pm = (PrioritizedMessage) m;
 		
-		this.creationTimes.put(pm.getId(), getSimTime());
+		this.creationTimes.put(pm.getID(), getSimTime());
 		this.nrofCreated[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
 		if (pm.getResponseSize() > 0) {
 			this.nrofResponseReqCreated[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
@@ -304,7 +304,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	
 	
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 		

@@ -41,7 +41,7 @@ public class MessageDeleteEvent extends MessageEvent {
 		if (id.equals(StandardEventsReader.ALL_MESSAGES_ID)) {
 			List<String> ids = new ArrayList<String>();
 			for (Message m : host.getMessageCollection()) {
-				ids.add(m.getId());
+				ids.add(m.getID());
 			}
 			for (String nextId : ids) {
 				host.deleteMessage(nextId, drop);

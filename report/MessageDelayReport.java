@@ -43,7 +43,7 @@ public class MessageDelayReport extends Report implements MessageListener {
 	
 	public void newMessage(Message m) {
 		if (isWarmup()) {
-			addWarmupID(m.getId());
+			addWarmupID(m.getID());
 		}
 		else {
 			this.nrofCreated++;
@@ -52,7 +52,7 @@ public class MessageDelayReport extends Report implements MessageListener {
 	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, 
 			boolean firstDelivery) {
-		if (firstDelivery && !isWarmupID(m.getId())) {
+		if (firstDelivery && !isWarmupID(m.getID())) {
 			this.delays.add(getSimTime() - m.getCreationTime());
 		}
 		

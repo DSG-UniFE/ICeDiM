@@ -53,9 +53,9 @@ public class DeliveredMessagesReport extends Report implements MessageListener {
 	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, 
 			boolean firstDelivery) {
-		if (!isWarmupID(m.getId()) && firstDelivery) {
+		if (!isWarmupID(m.getID()) && firstDelivery) {
 			int ttl = m.getTtl();
-			write(format(getSimTime()) + " " + m.getId() + " " + 
+			write(format(getSimTime()) + " " + m.getID() + " " + 
 					m.getSize() + " " + m.getHopCount() + " " + 
 					format(getSimTime() - m.getCreationTime()) + " " + 
 					m.getFrom() + " " + m.getTo() + " " +
@@ -66,7 +66,7 @@ public class DeliveredMessagesReport extends Report implements MessageListener {
 
 	public void newMessage(Message m) {
 		if (isWarmup()) {
-			addWarmupID(m.getId());
+			addWarmupID(m.getID());
 		}
 	}
 	

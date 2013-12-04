@@ -77,9 +77,9 @@ public class ConnectionTest extends TestCase {
 
 	public void testStartTransfer() {
 		assertTrue(h[1].recvFrom == h[0]);
-		assertTrue(h[1].recvMessage.getId().equals(m[0].getId()));
+		assertTrue(h[1].recvMessage.getID().equals(m[0].getID()));
 		assertTrue(h[2].recvFrom == h[0]);
-		assertTrue(h[2].recvMessage.getId().equals(m[1].getId()));
+		assertTrue(h[2].recvMessage.getID().equals(m[1].getID()));
 	}
 
 	public void testAbortTransfer() {
@@ -89,7 +89,7 @@ public class ConnectionTest extends TestCase {
 		c[0].abortTransfer();
 		
 		assertTrue(h[1].abortedId != null);
-		assertTrue(h[1].abortedId.equals(m[0].getId()));
+		assertTrue(h[1].abortedId.equals(m[0].getID()));
 		assertTrue(c[0].isMessageTransferred());
 	}
 

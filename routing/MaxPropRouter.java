@@ -205,8 +205,8 @@ public class MaxPropRouter extends ActiveRouter {
 		Message m = con.getMessage();
 		/* was the message delivered to the final recipient? */
 		if (m.getTo() == con.getOtherNode(getHost())) { 
-			this.ackedMessageIds.add(m.getId()); // yes, add to ACKed messages
-			this.deleteMessage(m.getId(), false); // delete from buffer
+			this.ackedMessageIds.add(m.getID()); // yes, add to ACKed messages
+			this.deleteMessage(m.getID(), false); // delete from buffer
 		}
 	}
 	
@@ -255,7 +255,7 @@ public class MaxPropRouter extends ActiveRouter {
 		List<Message> validMessages = new ArrayList<Message>();
 
 		for (Message m : messages) {	
-			if (excludeMsgBeingSent && isSending(m.getId())) {
+			if (excludeMsgBeingSent && isSending(m.getID())) {
 				continue; // skip the message(s) that router is sending
 			}
 			validMessages.add(m);
@@ -343,7 +343,7 @@ public class MaxPropRouter extends ActiveRouter {
 			for (Message m : msgCollection) {
 				/* skip messages that the other host has or that have
 				 * passed the other host */
-				if (othRouter.hasMessage(m.getId()) ||
+				if (othRouter.hasMessage(m.getID()) ||
 						m.getHops().contains(other)) {
 					continue; 
 				}

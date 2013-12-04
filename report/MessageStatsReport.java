@@ -72,7 +72,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 
 	
 	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
@@ -88,7 +88,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 
 	
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
@@ -97,7 +97,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
@@ -107,14 +107,14 @@ public class MessageStatsReport extends Report implements MessageListener {
 	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
 			boolean finalTarget) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 
 		this.nrofRelayed++;
 		if (finalTarget) {
 			this.latencies.add(getSimTime() - 
-				this.creationTimes.get(m.getId()) );
+				this.creationTimes.get(m.getID()) );
 			this.nrofDelivered++;
 			this.hopCounts.add(m.getHops().size() - 1);
 			
@@ -128,11 +128,11 @@ public class MessageStatsReport extends Report implements MessageListener {
 
 	public void newMessage(Message m) {
 		if (isWarmup()) {
-			addWarmupID(m.getId());
+			addWarmupID(m.getID());
 			return;
 		}
 		
-		this.creationTimes.put(m.getId(), getSimTime());
+		this.creationTimes.put(m.getID(), getSimTime());
 		this.nrofCreated++;
 		if (m.getResponseSize() > 0) {
 			this.nrofResponseReqCreated++;
@@ -141,7 +141,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 	
 	
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getId())) {
+		if (isWarmupID(m.getID())) {
 			return;
 		}
 

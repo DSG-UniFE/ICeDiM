@@ -137,42 +137,15 @@ public class BroadcastEnabledRouter extends MessageRouter {
 				(m.getResponseSize() > 0)) {
 				// generate a response message with same priority and suscription as the request
 				PrioritizedMessage res = new PrioritizedMessage(this.getHost(),m.getFrom(), 
-											RESPONSE_PREFIX + m.getId(), m.getResponseSize(),
+											RESPONSE_PREFIX + m.getID(), m.getResponseSize(),
 											pm.getPriority(), pm.getSubscriptionID());
 				if (this.createNewMessage(res)) {
-					this.getMessage(RESPONSE_PREFIX + m.getId()).setRequest(m);
+					this.getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
 				}
 			}
 		}
 		
 		return m;
-	}
-	
-	/**
-	 * Checks if router "wants" to start receiving message (i.e. router 
-	 * isn't transferring, doesn't have the message and has room for it).
-	 * @param m The message to check
-	 * @return A return code similar to 
-	 * {@link MessageRouter#receiveMessage(Message, DTNHost)}, i.e. 
-	 * {@link MessageRouter#RCV_OK} if receiving seems to be OK, 
-	 * TRY_LATER_BUSY if router is transferring, DENIED_OLD if the router
-	 * is already carrying the message or it has been delivered to
-	 * this router (as final recipient), or DENIED_NO_SPACE if the message
-	 * does not fit into buffer
-	 */
-	protected int checkReceiving(Message m, Connection con) {
-		NetworkInterface receivingInterface = con.getReceiverInterface();
-		int receptionValue = receivingInterface.beginNewReception(con);
-		assert (receptionValue != InterferenceModel.RECEPTION_DENIED_DUE_TO_SEND) :
-			"CSMA/CA should avoid these situations";
-		if (receptionValue == InterferenceModel.RECEPTION_INTERFERENCE) {
-			// The new reception failed, triggering an interference
-//			System.out.println("Reception interference for message " + m.getId() +
-//								" on connection " + con);
-			return DENIED_INTERFERENCE;
-		}
-		
-		return RCV_OK;
 	}
 	
 	/** 
@@ -202,7 +175,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			}
 			
 			/* delete message from the buffer as "drop" */
-			deleteMessageWithoutRaisingEvents(pm.getId());
+			deleteMessageWithoutRaisingEvents(pm.getID());
 			deletedMessages.add(pm);
 			freeBuffer += pm.getSize();
 		}
@@ -253,7 +226,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			}
 			
 			PrioritizedMessage pm = (PrioritizedMessage) m;			
-			if (excludeMsgBeingSent && isSending(pm.getId())){
+			if (excludeMsgBeingSent && isSending(pm.getID())){
 				continue; // skip the message(s) that router is sending
 			}
 			
@@ -297,7 +270,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		if (deleteDelivered && retVal == DENIED_OLD && 
 			m.getTo() == con.getOtherNode(this.getHost())) {
 			/* final recipient has already received the msg -> delete it */
-			this.deleteMessage(m.getId(), false);
+			this.deleteMessage(m.getID(), false);
 		}
 		
 		return retVal;
@@ -334,7 +307,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		for (int i=0; i<messages.length; i++) {
 			int ttl = messages[i].getTtl(); 
 			if (ttl <= 0) {
-				deleteMessage(messages[i].getId(), true);
+				deleteMessage(messages[i].getID(), true);
 				//Assert.assertTrue("Impossible to find ", receivedMsgIDs.remove(messages[i].getId()));
 			}
 		}

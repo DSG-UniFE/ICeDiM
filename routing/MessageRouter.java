@@ -81,8 +81,6 @@ public abstract class MessageRouter {
 	public static final int DENIED_UNSPECIFIED = 99;
 	
 	private List<MessageListener> mListeners;
-	/** The messages being transferred with msgID_hostName keys */
-	private HashMap<String, Tuple<Message, Connection>> incomingMessages;
 	/** The messages this router is carrying */
 	private HashMap<String, Message> messages; 
 	/** The messages this router has received as the final recipient */
@@ -137,7 +135,6 @@ public abstract class MessageRouter {
 	 * @param mListeners The message listeners
 	 */
 	public void init(DTNHost host, List<MessageListener> mListeners) {
-		this.incomingMessages = new HashMap<String, Tuple<Message, Connection>>();
 		this.messages = new HashMap<String, Message>();
 		this.deliveredMessages = new HashMap<String, Message>();
 		this.mListeners = mListeners;
@@ -206,8 +203,26 @@ public abstract class MessageRouter {
 	 * @return true if a message with the same ID has been received by 
 	 * this host as the final recipient.
 	 */
+	protected boolean isIncomingMessage(String msgID) {
+		for (NetworkInterface ni : getHost().getInterfaces()) {
+			if (ni.isReceivingMessage(msgID)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Returns true if a full message with same ID as the given message has been
+	 * received by this host as the <strong>final</strong> recipient 
+	 * (at least once).
+	 * @param m message we're interested of
+	 * @return true if a message with the same ID has been received by 
+	 * this host as the final recipient.
+	 */
 	protected boolean isDeliveredMessage(Message m) {
-		return (this.deliveredMessages.containsKey(m.getId()));
+		return (this.deliveredMessages.containsKey(m.getID()));
 	}
 	
 	/**
@@ -280,7 +295,7 @@ public abstract class MessageRouter {
 		Message m2 = m.replicate();	// send a replicate of the message
 		for (Connection con : getHost().getConnections()) {
 			if (con.getOtherNode(getHost()) == to) {
-				to.receiveMessage(m2, this.host, con);
+				to.receiveMessage(m2, con);
 				return;
 			}
 		}
@@ -300,17 +315,40 @@ public abstract class MessageRouter {
 	
 	/**
 	 * Notify the router that this connection has been interfered,
-	 * so that it can react accordingly. Default action are to remove
-	 * the message from the incomingMessages list and notify listeners.
+	 * so that it can react accordingly. The Default action is to
+	 * notify the interference models and all the listeners.
 	 * @param con The connection which is transferring the message
 	 */
 	public void messageInterfered(String msgID, Connection con) {
-		if ((con.getReceiverNode() == getHost()) && (msgID != null)) {
-			Message transferringMessage = removeFromIncomingBuffer(msgID, con).getKey();
+		if ((con.getReceiverNode() == getHost()) && (msgID != null) &&
+			con.isTransferOngoing()) {
+			Message interferedMessage = con.getReceiverInterface().
+											forceInterference(msgID, con);
 			for (MessageListener ml : this.mListeners) {
-				ml.messageTransmissionInterfered(transferringMessage, con.getSenderNode(), getHost());
+				ml.messageTransmissionInterfered(interferedMessage,
+												con.getSenderNode(), getHost());
 			}
 		}
+	}
+	
+	/**
+	 * Checks if router can start receiving the message (i.e. router 
+	 * isn't transferring and there are no interferences).
+	 * @param m The message to check
+	 * @param con The Connection transferring the Message
+	 * @return A return code similar to 
+	 * {@link InterferenceModel#beginNewReception(Message, Connection)}, i.e. 
+	 * {@link InterferenceModel#RECEPTION_OK} if receiving seems to be OK, 
+	 * {@link InterferenceModel#RECEPTION_DENIED_DUE_TO_SEND} if the interface
+	 * is transferring, or {@link InterferenceModel#RECEPTION_INTERFERENCE}
+	 * in case of interference with other messages. 
+	 */
+	protected int checkReceiving(Message m, Connection con) {
+		/* Base router always accepts messages
+		 * Derived classes can override this method to provide
+		 * more complex message acceptance politics
+		 */
+		return RCV_OK;
 	}
 	
 	/**
@@ -321,21 +359,26 @@ public abstract class MessageRouter {
 	 * than zero if node rejected the message (e.g. DENIED_OLD), value bigger
 	 * than zero if the other node should try later (e.g. TRY_LATER_BUSY).
 	 */
-	public int receiveMessage(Message m, DTNHost from, Connection con) {
-		/* Receiving a message on this connection will cause any
-		 * other transfer on the other connections of this interface
-		 * to fail, due to interference.
-		 */
+	public int receiveMessage(Message m, Connection con) {
 		Message newMessage = m.replicate();
+		NetworkInterface receivingInterface = con.getReceiverInterface();
 		
-		this.putToIncomingBuffer(newMessage, con);
-		newMessage.addNodeOnPath(this.host);
-		
-		for (MessageListener ml : this.mListeners) {
-			ml.messageTransferStarted(newMessage, from, getHost());
+		int receptionValue = receivingInterface.beginNewReception(newMessage, con);
+		if (receptionValue == InterferenceModel.RECEPTION_DENIED_DUE_TO_SEND) {
+			throw new SimError("Receive failed due to transmitting interface. " + 
+								"CSMA/CA should avoid these situations");
+		}
+		if (receptionValue == InterferenceModel.RECEPTION_INTERFERENCE) {
+			// The new reception failed, triggering an interference
+			return DENIED_INTERFERENCE;
 		}
 		
-		return RCV_OK; // superclass always accepts messages
+		for (MessageListener ml : this.mListeners) {
+			ml.messageTransferStarted(newMessage, con.getSenderNode(), getHost());
+		}
+		
+		 // superclass accepts messages if the interference model accepts it
+		return RCV_OK;
 	}
 	
 	/**
@@ -373,22 +416,14 @@ public abstract class MessageRouter {
 			return null;
 		}
 
-		Message m = receivingInterface.retrieveTransferredMessage(msgID, con);
-		if (m == null) {
+		// receiveResult == InterferenceModel.RECEPTION_COMPLETED_CORRECTLY
+		Message incoming = receivingInterface.retrieveTransferredMessage(msgID, con);
+		if (incoming == null) {
 			throw new SimError("Impossible to retrieve message with ID " + msgID + 
 								" from the Interference Model");
 		}
-		
-		//TODO: remove incoming buffer, as it is useless if we use the InterferenceModel 
-		Tuple<Message, Connection> incomingTuple = removeFromIncomingBuffer(msgID, con);
-		if (incomingTuple == null) {
-			throw new SimError("Impossible to find the message with ID " + m.getId() +
-								"in the IncomingMessageBuffer");
-		}
-		Message incoming = incomingTuple.getKey();
-
-		// receiveResult == InterferenceModel.RECEPTION_COMPLETED_CORRECTLY
 		incoming.setReceiveTime(SimClock.getTime());
+		incoming.addNodeOnPath(this.host);	// Moved this instruction here from messageReceived()
 		
 		// Pass the message to the application (if any) and get outgoing message
 		Message outgoing = incoming;
@@ -426,30 +461,29 @@ public abstract class MessageRouter {
 	 * transfer was aborted.
 	 * @param id Id of the message that was being transferred
 	 * @param from Host the message was from (previous hop)
-	 * @param bytesRemaining Nrof bytes that were left before the transfer
 	 * would have been ready; or -1 if the number of bytes is not known
 	 */
-	public void messageAborted(String msgID, Connection con, int bytesRemaining) {
+	public void messageAborted(String msgID, Connection con) {
 		// TODO: add support for out-of-synch received messages in the interference model
 		NetworkInterface receivingInterface = con.getReceiverInterface();
 		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
-		if (receiveResult != InterferenceModel.RECEPTION_INCOMPLETE) {
+		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
+			// Abortion is not necessary
+			return;
+		}
+		else if (receiveResult != InterferenceModel.RECEPTION_INCOMPLETE) {
 			throw new SimError("isMessageTransferredCorrectly method invoked with message" +
 								" with ID " + msgID + " returned value" + receiveResult);
 		}
 
-		receivingInterface.abortMessageReception (con);
-		Tuple<Message, Connection> incomingTuple = removeFromIncomingBuffer(msgID, con);
-		if (incomingTuple != null) {
-			Message incoming = incomingTuple.getKey();
-			
-			if (incoming == null) {
-				throw new SimError("No incoming message for id " + msgID + " to abort in " + this.host);
-			}
-			
+		Message abortedMessage = receivingInterface.abortMessageReception (con);
+		if (abortedMessage != null) {
 			for (MessageListener ml : this.mListeners) {
-				ml.messageTransferAborted(incoming, con.getSenderNode(), this.host);
+				ml.messageTransferAborted(abortedMessage, con.getSenderNode(), this.host);
 			}
+		}
+		else {
+			throw new SimError("No incoming message for id " + msgID + " to abort in " + this.host);
 		}
 	}
 	
@@ -459,10 +493,10 @@ public abstract class MessageRouter {
 	 * @param m The message to put
 	 * @param from Who the message was from (previous hop).
 	 */
-	protected void putToIncomingBuffer(Message m, Connection con) {
-		this.incomingMessages.put(m.getId() + "_i" + con.getSenderInterface().getAddress(),
-									new Tuple<Message, Connection>(m, con));
-	}
+//	protected void putToIncomingBuffer(Message m, Connection con) {
+//		this.incomingMessages.put(m.getId() + "_i" + con.getSenderInterface().getAddress(),
+//									new Tuple<Message, Connection>(m, con));
+//	}
 	
 	/**
 	 * Removes and returns a message with a certain ID from the incoming 
@@ -471,9 +505,9 @@ public abstract class MessageRouter {
 	 * @param from The host that sent this message (previous hop)
 	 * @return The found message or null if such message wasn't found
 	 */
-	protected Tuple<Message, Connection> removeFromIncomingBuffer(String id, Connection con) {
-		return this.incomingMessages.remove(id + "_i" + con.getSenderInterface().getAddress());
-	}
+//	protected Tuple<Message, Connection> removeFromIncomingBuffer(String id, Connection con) {
+//		return this.incomingMessages.remove(id + "_i" + con.getSenderInterface().getAddress());
+//	}
 	
 	/**
 	 * Returns true if a message with the given ID is one of the
@@ -481,9 +515,9 @@ public abstract class MessageRouter {
 	 * @param id ID of the message
 	 * @return True if such message is incoming right now
 	 */
-	protected boolean isIncomingMessage(String id) {
-		return this.incomingMessages.containsKey(id);
-	}
+//	protected boolean isIncomingMessage(String id) {
+//		return this.incomingMessages.containsKey(id);
+//	}
 	
 	/**
 	 * Adds a message to the message buffer and informs message listeners
@@ -493,13 +527,13 @@ public abstract class MessageRouter {
 	 * message, if false, nothing is informed.
 	 */
 	protected void addToMessages(Message m, boolean newMessage) {
-		if (messages.containsKey(m.getId())) {
+		if (messages.containsKey(m.getID())) {
 			// Message is already in queue
 			return;
 		}
 
 		setForwardedTimesToMinAmongMessages(m);
-		messages.put(m.getId(), m);
+		messages.put(m.getID(), m);
 		
 		if (newMessage) {
 			for (MessageListener ml : mListeners) {
@@ -758,8 +792,13 @@ public abstract class MessageRouter {
 	 */
 	public RoutingInfo getRoutingInfo() {
 		RoutingInfo ri = new RoutingInfo(this);
-		RoutingInfo incoming = new RoutingInfo(this.incomingMessages.size() + 
-				" incoming message(s)");
+		
+		int incomingMessages = 0;
+		for (NetworkInterface ni : getHost().getInterfaces()) {
+			incomingMessages += ni.getNumberOfIncomingMessages();
+		}		
+		RoutingInfo incoming = new RoutingInfo(incomingMessages + " incoming message(s)");
+		
 		RoutingInfo delivered = new RoutingInfo(this.deliveredMessages.size() +
 				" delivered message(s)");
 		
@@ -769,9 +808,10 @@ public abstract class MessageRouter {
 		ri.addMoreInfo(incoming);
 		ri.addMoreInfo(delivered);
 		ri.addMoreInfo(cons);
-		
-		for (Tuple<Message, Connection> t : this.incomingMessages.values()) {
-			incoming.addMoreInfo(new RoutingInfo(t.getKey()));
+		for (NetworkInterface ni : getHost().getInterfaces()) {
+			for (Message m : ni.getIncomingMessages()) {
+				incoming.addMoreInfo(new RoutingInfo(m));
+			}
 		}
 		
 		for (Message m : this.deliveredMessages.values()) {

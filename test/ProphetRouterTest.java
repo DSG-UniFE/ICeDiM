@@ -65,7 +65,7 @@ public class ProphetRouterTest extends AbstractRouterTest {
 		updateAllNodes();
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_START, mc.getLastType());
-		assertEquals(msgId3, mc.getLastMsg().getId());
+		assertEquals(msgId3, mc.getLastMsg().getID());
 		assertEquals(h1, mc.getLastFrom());
 		assertFalse(mc.next());
 		
@@ -73,13 +73,13 @@ public class ProphetRouterTest extends AbstractRouterTest {
 		updateAllNodes();
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_RELAY, mc.getLastType()); // finished transfer
-		assertEquals(msgId3, mc.getLastMsg().getId());
+		assertEquals(msgId3, mc.getLastMsg().getID());
 		assertTrue(mc.getLastFirstDelivery());
 		
 		// h1 should next transfer msgId5 to h3 because h3 is connected to h5
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_START, mc.getLastType());
-		assertEquals(msgId5, mc.getLastMsg().getId());
+		assertEquals(msgId5, mc.getLastMsg().getID());
 		assertEquals(h1, mc.getLastFrom());
 		assertFalse(mc.next());
 		
@@ -87,12 +87,12 @@ public class ProphetRouterTest extends AbstractRouterTest {
 		updateAllNodes();
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_RELAY, mc.getLastType()); // finished transfer
-		assertEquals(msgId5, mc.getLastMsg().getId());
+		assertEquals(msgId5, mc.getLastMsg().getID());
 		assertTrue(mc.next());
 		
 		// next h1 should transfer msgId4 since h3 knows h4 trough h5
 		assertEquals(mc.TYPE_START, mc.getLastType());
-		assertEquals(msgId4, mc.getLastMsg().getId());
+		assertEquals(msgId4, mc.getLastMsg().getID());
 		assertEquals(h1, mc.getLastFrom());
 		assertFalse(mc.next());
 		
@@ -101,7 +101,7 @@ public class ProphetRouterTest extends AbstractRouterTest {
 		
 		// now h3 should transfer msgId5 to h5
 		assertEquals(mc.TYPE_START, mc.getLastType());
-		assertEquals(msgId5, mc.getLastMsg().getId());
+		assertEquals(msgId5, mc.getLastMsg().getID());
 		assertEquals(h3, mc.getLastFrom());
 
 		doRelay(); // id5 delivered to h5
@@ -110,7 +110,7 @@ public class ProphetRouterTest extends AbstractRouterTest {
 		
 		// next h3 should transfer id4 to h5
 		assertEquals(mc.TYPE_START, mc.getLastType());
-		assertEquals(msgId4, mc.getLastMsg().getId());
+		assertEquals(msgId4, mc.getLastMsg().getID());
 		assertEquals(h3, mc.getLastFrom());
 		
 		doRelay();

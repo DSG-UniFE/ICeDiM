@@ -52,7 +52,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 			List<Message> newMessages = new ArrayList<Message>();
 			
 			for (Message m : peer.getMessageCollection()) {
-				if (!this.hasMessage(m.getId())) {
+				if (!this.hasMessage(m.getID())) {
 					newMessages.add(m);
 				}
 			}
@@ -97,7 +97,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 		if (this.hasMessage(id)) {
 			for (Connection c : this.sendingConnections) {
 				/* if sending the message-to-be-removed, cancel transfer */
-				if (c.getMessage().getId().equals(id)) {
+				if (c.getMessage().getID().equals(id)) {
 					c.abortTransfer();
 				}
 			}
@@ -123,7 +123,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 	}
 	
 	protected int checkReceiving(Message m) {
-		if ( isIncomingMessage(m.getId()) || hasMessage(m.getId()) || 
+		if (isIncomingMessage(m.getID()) || hasMessage(m.getID()) || 
 				isDeliveredMessage(m) ){
 			return DENIED_OLD; // already seen this message -> reject it
 		}
@@ -152,7 +152,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 		
 		/* was the message delivered to the final recipient? */
 		if (m.getTo() == con.getOtherNode(getHost())) { 
-			this.deleteMessage(m.getId(), false);
+			this.deleteMessage(m.getID(), false);
 		}
 	}
 	

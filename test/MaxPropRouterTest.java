@@ -158,7 +158,7 @@ public class MaxPropRouterTest extends AbstractRouterTest {
 		h1.connect(h2); // h1 should notify h2 of the delivered msg
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_DELETE, mc.getLastType());
-		assertEquals(msgId1, mc.getLastMsg().getId());
+		assertEquals(msgId1, mc.getLastMsg().getID());
 		assertEquals(h2, mc.getLastFrom());
 		// the deleted msg truly came from h1?
 		assertEquals(h1, mc.getLastMsg().getHops().get(0));
@@ -172,7 +172,7 @@ public class MaxPropRouterTest extends AbstractRouterTest {
 		h3.connect(h2); // h2 should notify h3 which should delete msgId1
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_DELETE, mc.getLastType());
-		assertEquals(msgId1, mc.getLastMsg().getId());
+		assertEquals(msgId1, mc.getLastMsg().getID());
 		assertEquals(h3, mc.getLastFrom());
 		assertFalse(mc.next());
 		/* msgId2 should NOT be deleted but it should be transferred to h2

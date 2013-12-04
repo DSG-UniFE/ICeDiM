@@ -434,8 +434,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @return The value returned by 
 	 * {@link MessageRouter#receiveMessage(Message, DTNHost)}
 	 */
-	public int receiveMessage(Message m, DTNHost from, Connection con) {
-		int retVal = this.router.receiveMessage(m, from, con);
+	public int receiveMessage(Message m, Connection con) {
+		int retVal = this.router.receiveMessage(m, con);
 
 		if (retVal == MessageRouter.RCV_OK) {
 			m.addNodeOnPath(this);	// add this node on the messages path
@@ -470,8 +470,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param bytesRemaining Nrof bytes that were left before the transfer
 	 * would have been ready; or -1 if the number of bytes is not known
 	 */
-	public void messageAborted(String id, Connection con, int bytesRemaining) {
-		this.router.messageAborted(id, con, bytesRemaining);
+	public void messageAborted(String id, Connection con) {
+		this.router.messageAborted(id, con);
 	}
 
 	/**

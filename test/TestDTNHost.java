@@ -52,17 +52,17 @@ public class TestDTNHost extends DTNHost {
 	}
 	
 	@Override
-	public int receiveMessage(Message m, DTNHost from, Connection con) {
+	public int receiveMessage(Message m, Connection con) {
 		this.recvMessage = m;
-		this.recvFrom = from;
+		this.recvFrom = con.getSenderNode();
 		return routing.MessageRouter.RCV_OK;
 	}
 	
 	@Override
-	public void messageAborted(String id, Connection con, int bytesRemaining) {
+	public void messageAborted(String id, Connection con) {
 		this.abortedId = id;
 		this.abortedFrom = con.getSenderNode();
-		this.abortedBytesRemaining = bytesRemaining;
+		this.abortedBytesRemaining = con.getRemainingByteCount();
 	}
 	
 	@Override

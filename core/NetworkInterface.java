@@ -228,7 +228,23 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 	
 	/**
-	 * Returns the list of Messages currently reachable through this interface
+	 * Returns the number of Messages being received by this interface
+	 * @return the number of Messages being received by this interface
+	 */
+	public int getNumberOfIncomingMessages() {
+		return interferenceModel.getIncomingMessageNumber();
+	}
+	
+	/**
+	 * Returns all the Messages being received by this interface
+	 * @return all the Messages being received by this interface
+	 */
+	public List<Message> getIncomingMessages() {
+		return interferenceModel.getListOfMessagesInTransfer();
+	}
+	
+	/**
+	 * Returns the list of Messages being exchanged through this interface
 	 * @return the list of nodes currently reachable through this interface
 	 */
 	public Set<Message> getMessagesInTransfer() {
@@ -417,14 +433,30 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 	
 	/**
-	 * Informs the client wheter this interface is sending data onto
-	 * any connections. If so, the interface is busy and no other activity
-	 * should be performed on any connection of this interface.
-	 * @return true if the interface is busy, false otherwise
+	 * Informs the client wheter this interface is
+	 * receiving data from any connections.
+	 * @return true if the interface is receiving data,
+	 * false otherwise
 	 */
 	public boolean isReceivingData() {
 		for (Connection con : this.connections) {
 			if (con.isReceiverInterface(this)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Informs the client wheter this interface is
+	 * receiving the specified message.
+	 * @return true if the interface is receiving the
+	 * message, false otherwise
+	 */
+	public boolean isReceivingMessage(String msgID) {
+		for (Message mex : interferenceModel.getListOfMessagesInTransfer()) {
+			if (mex.getID().equals(msgID)) {
 				return true;
 			}
 		}
@@ -478,11 +510,13 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param msgID the String that identifies the transferring message
 	 * @param con the Connection that is transferring the message
 	 */
-	public void abortMessageReception(Connection con) {
-		assert (handlesConnection(con) && (con.getMessage() != null)) :
-			"specified connection is not transferring any message, " +
-			"or it does not belong to this network interface"; 
-		interferenceModel.abortMessageReception(con.getMessage().getId(), con);
+	public Message abortMessageReception(Connection con) {
+		if (!handlesConnection(con) || (con.getMessage() == null)) {
+			throw new SimError("specified connection is not transferring any message, " +
+								"or it does not belong to this network interface");
+		}
+		
+		return interferenceModel.abortMessageReception(con.getMessage().getID(), con);
 	}
 	
 	/**
@@ -520,20 +554,28 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * busy, and {@code RECEPTION_INTERFERENCE} if the new
 	 * reception triggers an interference
 	 */
-	public int beginNewReception(Connection con) {
+	public int beginNewReception(Message m, Connection con) {
 		Assert.assertTrue("There is no traffic ongoing on this connection", con.isTransferOngoing());
+		Assert.assertTrue("Message and connection passed as parameters do not match!",
+							con.getMessage().getID().equals(m.getID()));
 		
-		if (isSendingData()) {
-			return InterferenceModel.RECEPTION_DENIED_DUE_TO_SEND;
-		}
-				
-		return interferenceModel.beginNewReception(con.getMessage(), con);
+		return interferenceModel.beginNewReception(m, con);
+	}
+
+	/**
+	 * Force an interference to the specified message in the model.
+	 * @param msgID String the ID of the message
+	 * @param con the Connection which has been interfered
+	 * @return the interfered message
+	 */
+	public Message forceInterference(String msgID, Connection con) {
+		return interferenceModel.forceInterference(msgID, con);
 	}
 
 	/**
 	 * Notifies all the connection listeners about a change in connections.
 	 * @param type Type of the change (e.g. {@link #CON_DOWN} )
-	 * @param otherHost The other host on the other end of the connection.
+	 * @param otherHost The other host on the other end of the connection
 	 */
 	private void notifyConnectionListeners(int type, DTNHost otherHost) {
 		if (this.cListeners == null) {

@@ -87,7 +87,7 @@ public class DTN2Reporter extends Report implements MessageListener {
 			// We received a BundleMessage that should be passed to dtnd
 			CLAParser p = DTN2Manager.getParser(to);
 			if (p != null) { // Check that there's a CLA connected to this node
-				p.sendBundle((DTN2Manager.getBundle(m.getId())).file);
+				p.sendBundle((DTN2Manager.getBundle(m.getID())).file);
 			}
 		}
 	}

@@ -49,7 +49,7 @@ public class CBRConnection extends Connection {
 
 		underwayTransfer = new Transfer(this, from, m);
 		Message newMessage = m.replicate();
-		int retVal = underwayTransfer.getReceiver().receiveMessage(newMessage, from, this);
+		int retVal = underwayTransfer.getReceiver().receiveMessage(newMessage, this);
 
 		if ((retVal == MessageRouter.RCV_OK) ||
 			(retVal == MessageRouter.DENIED_INTERFERENCE)) {

@@ -38,10 +38,10 @@ public class MessageReport extends Report implements MessageListener {
 	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
 		if (firstDelivery) {
-			write(m.getId() + " " + format(m.getCreationTime()) + " " + format(getSimTime()));
+			write(m.getID() + " " + format(m.getCreationTime()) + " " + format(getSimTime()));
 		} else {
 			if (to.getAddress() == m.getTo().getAddress()) {
-				write(m.getId() + " " + format(m.getCreationTime()) + " " +
+				write(m.getID() + " " + format(m.getCreationTime()) + " " +
 				format(getSimTime()) + " duplicate");
 			}
 		}

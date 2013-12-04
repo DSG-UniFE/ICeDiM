@@ -48,7 +48,7 @@ public class VBRConnection extends Connection {
 		
 		underwayTransfer = new Transfer(this, from, m);
 		Message newMessage = m.replicate();
-		int retVal = getOtherNode(from).receiveMessage(newMessage, from, this);
+		int retVal = getOtherNode(from).receiveMessage(newMessage, this);
 		
 		if ((retVal == MessageRouter.RCV_OK) ||
 			(retVal == MessageRouter.DENIED_INTERFERENCE)) {

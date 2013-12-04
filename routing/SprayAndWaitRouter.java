@@ -51,8 +51,8 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	}
 	
 	@Override
-	public int receiveMessage(Message m, DTNHost from, Connection con) {
-		return super.receiveMessage(m, from, con);
+	public int receiveMessage(Message m, Connection con) {
+		return super.receiveMessage(m, con);
 	}
 	
 	@Override
@@ -137,7 +137,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	@Override
 	protected void transferDone(Connection con) {
 		Integer nrofCopies;
-		String msgId = con.getMessage().getId();
+		String msgId = con.getMessage().getID();
 		/* get this router's copy of the message */
 		Message msg = getMessage(msgId);
 

@@ -130,7 +130,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 				for (NeighborInfo neighborInfo : nearbyNodes) { 
 					if (neighborInfo.getSubscriptionList().
 							containsSubscriptionID(pm.getSubscriptionID()) &&
-						!neighborInfo.getReceivedMessagesList().contains(pm.getId())) {
+						!neighborInfo.getReceivedMessagesList().contains(pm.getID())) {
 						if (BROADCAST_OK != tryBroadcastOneMessage (pm, ni)) {
 							throw new SimError("Impossible transmit message " + pm +
 												" via Network Interface" + ni);
@@ -203,18 +203,18 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 
 	@Override
 	public boolean createNewMessage(Message m) {
-		receivedMsgIDs.add(m.getId());
+		receivedMsgIDs.add(m.getID());
 		return super.createNewMessage(m);
 	}
 	
 	@Override
-	public int receiveMessage(Message m, DTNHost from, Connection con) {
+	public int receiveMessage(Message m, Connection con) {
 		int recvCheck = checkReceiving(m, con);
 		if (recvCheck != RCV_OK) {
 			return recvCheck;
 		}
 		
-		return super.receiveMessage(m, from, con);
+		return super.receiveMessage(m, con);
 	}
 	
 	/**
@@ -236,7 +236,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 			removeFromMessages(id);
 		}
 		else if (m != null) {
-			receivedMsgIDs.add(m.getId());
+			receivedMsgIDs.add(m.getID());
 		}
 		
 		return m;
@@ -272,46 +272,8 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 		if (retVal != RCV_OK) {
 			return retVal;
 		}
-		
-		if (m instanceof PrioritizedMessage) {
-			return innerMessageCheck((PrioritizedMessage) m);
-		}
-		else if (m instanceof DisServiceHelloMessage) {
-			return innerMessageCheck((DisServiceHelloMessage) m);
-		}
 
-		return innerMessageCheck(m);
-	}
-	
-	protected int innerMessageCheck(PrioritizedMessage pm) {
-		/*
-		 * I don't think these checks should go here: this method is
-		 * invoked at receiver's side. Messages which match the following
-		 * conditions should not ever be sent.
-		 * 
-		if (hasMessage(pm.getId()) || isDeliveredMessage(pm)){
-			return DENIED_OLD; // already seen this message -> reject it
-		}
-		
-		if ((pm.getTtl()) <= 0 && (pm.getTo() != getHost())) {
-			// TTL has expired and this host is not the final recipient
-			return DENIED_TTL; 
-		}
-		// remove oldest messages but not the ones being sent
-		if (!makeRoomForMessage(pm.getSize(), pm.getPriority())) {
-			return DENIED_NO_SPACE; // couldn't fit into buffer -> reject
-		}
-		*/
 		return RCV_OK;
-	}
-	
-	protected int innerMessageCheck(DisServiceHelloMessage hm) {
-		// Nothing else to check for HELLO messages
-		return RCV_OK;
-	}
-	
-	protected int innerMessageCheck(Message m) {
-		throw new SimError("Unexpected method invocation");
 	}
 	
 	/**
@@ -321,9 +283,9 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 	protected void dropExpiredMessages() {
 		for (Message m : getMessageCollection()) {
 			if (m.getTtl() <= 0) {
-				if (!receivedMsgIDs.remove(m.getId())) {
+				if (!receivedMsgIDs.remove(m.getID())) {
 					throw new SimError("Impossible to find message " +
-							m.getId() + " among receivedMsgIDs");
+							m.getID() + " among receivedMsgIDs");
 				}
 			}
 		}

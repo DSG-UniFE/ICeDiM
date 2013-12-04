@@ -63,7 +63,7 @@ public class DisServiceHelloMessage extends Message {
 	
 	@Override
 	public DisServiceHelloMessage replicate() {
-		DisServiceHelloMessage disServiceHelloMessage = new DisServiceHelloMessage(getFrom(), getId(), getSize(),
+		DisServiceHelloMessage disServiceHelloMessage = new DisServiceHelloMessage(getFrom(), getID(), getSize(),
 																					msgIDs, nodeSubscriptionsList);
 		disServiceHelloMessage.copyFrom(this);
 		return disServiceHelloMessage;

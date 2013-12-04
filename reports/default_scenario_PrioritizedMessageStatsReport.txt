@@ -1,116 +1,116 @@
 Message stats for scenario default_scenario
 sim_time: 43200.1000
 
-HMSent: 75928
-HMDelivered : 75619
-HMAborted: 308
-HMInterfered: 1323
+HMSent: 72528
+HMDelivered : 72389
+HMAborted: 144
+HMInterfered: 1600
 Priority Level: 1
-created: 907
-started: 53183
-relayed: 52187
-aborted: 996
-Interfered: 8
-dropped: 1511
+created: 881
+started: 19155
+relayed: 18335
+aborted: 835
+Interfered: 6
+dropped: 1370
 removed: 0
-delivered: 4
-delivery_prob: 0.0044
+delivered: 3
+delivery_prob: 0.0034
 response_prob: 0.0000
-overhead_ratio: 13045.7500
-latency_avg: 958.6500
-latency_med: 1326.0000
-hopcount_avg: 4.7500
-hopcount_med: 6
-buffertime_avg: 636.9120
+overhead_ratio: 6110.6667
+latency_avg: 1828.7000
+latency_med: 2005.8000
+hopcount_avg: 3.0000
+hopcount_med: 3
+buffertime_avg: 528.4092
 buffertime_med: 0.0000
 rtt_avg: NaN
 rtt_med: NaN
 
 
 Priority Level: 2
-created: 697
-started: 45794
-relayed: 44373
-aborted: 1421
-Interfered: 11
-dropped: 1637
+created: 687
+started: 50804
+relayed: 49161
+aborted: 1674
+Interfered: 14
+dropped: 1726
 removed: 0
-delivered: 8
-delivery_prob: 0.0115
+delivered: 6
+delivery_prob: 0.0087
 response_prob: 0.0000
-overhead_ratio: 5545.6250
-latency_avg: 3810.1750
-latency_med: 3209.8000
-hopcount_avg: 4.0000
+overhead_ratio: 8192.5000
+latency_avg: 4073.0500
+latency_med: 4163.6000
+hopcount_avg: 5.0000
 hopcount_med: 4
-buffertime_avg: 951.6228
-buffertime_med: 6.5000
+buffertime_avg: 1031.7977
+buffertime_med: 7.0000
 rtt_avg: NaN
 rtt_med: NaN
 
 
 Priority Level: 3
-created: 369
-started: 59845
-relayed: 57356
-aborted: 2489
-Interfered: 17
-dropped: 1975
+created: 357
+started: 11304
+relayed: 10238
+aborted: 1093
+Interfered: 22
+dropped: 974
 removed: 0
-delivered: 13
-delivery_prob: 0.0352
+delivered: 5
+delivery_prob: 0.0140
 response_prob: 0.0000
-overhead_ratio: 4411.0000
-latency_avg: 3752.7231
-latency_med: 2696.5000
-hopcount_avg: 4.2308
-hopcount_med: 4
-buffertime_avg: 1570.0032
-buffertime_med: 878.0000
+overhead_ratio: 2046.6000
+latency_avg: 6856.4200
+latency_med: 3190.2000
+hopcount_avg: 5.2000
+hopcount_med: 6
+buffertime_avg: 1185.7098
+buffertime_med: 227.7000
 rtt_avg: NaN
 rtt_med: NaN
 
 
 Priority Level: 4
-created: 123
-started: 49971
-relayed: 47234
-aborted: 2737
-Interfered: 52
-dropped: 1966
+created: 140
+started: 64946
+relayed: 60737
+aborted: 4319
+Interfered: 89
+dropped: 2969
 removed: 0
-delivered: 14
-delivery_prob: 0.1138
+delivered: 17
+delivery_prob: 0.1214
 response_prob: 0.0000
-overhead_ratio: 3372.8571
-latency_avg: 2980.5714
-latency_med: 3416.1000
-hopcount_avg: 4.1429
-hopcount_med: 4
-buffertime_avg: 1570.1446
-buffertime_med: 894.3000
+overhead_ratio: 3571.7647
+latency_avg: 4623.3529
+latency_med: 3780.3000
+hopcount_avg: 6.0000
+hopcount_med: 5
+buffertime_avg: 1908.3504
+buffertime_med: 1308.0000
 rtt_avg: NaN
 rtt_med: NaN
 
 
 Priority Level: 5
 created: 37
-started: 196206
-relayed: 176537
-aborted: 19666
-Interfered: 523
-dropped: 7987
+started: 136604
+relayed: 115836
+aborted: 21640
+Interfered: 550
+dropped: 9454
 removed: 0
-delivered: 31
-delivery_prob: 0.8378
+delivered: 35
+delivery_prob: 0.9459
 response_prob: 0.0000
-overhead_ratio: 5693.7419
-latency_avg: 3605.5419
-latency_med: 3529.1000
-hopcount_avg: 5.5161
-hopcount_med: 5
-buffertime_avg: 3354.8681
-buffertime_med: 2670.3000
+overhead_ratio: 3308.6000
+latency_avg: 4474.4971
+latency_med: 3724.0000
+hopcount_avg: 5.7714
+hopcount_med: 6
+buffertime_avg: 2702.6696
+buffertime_med: 2206.7000
 rtt_avg: NaN
 rtt_med: NaN
 

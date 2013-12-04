@@ -121,14 +121,14 @@ public abstract class ActiveRouter extends MessageRouter {
 	}
 	
 	@Override
-	public int receiveMessage(Message m, DTNHost from, Connection con) {
+	public int receiveMessage(Message m, Connection con) {
 		int recvCheck = checkReceiving(m, con); 
 		if (recvCheck != RCV_OK) {
 			return recvCheck;
 		}
 
 		// seems OK, start receiving the message
-		return super.receiveMessage(m, from, con);
+		return super.receiveMessage(m, con);
 	}
 	
 	@Override
@@ -145,9 +145,9 @@ public abstract class ActiveRouter extends MessageRouter {
 			(m.getResponseSize() > 0)) {
 			// generate a response message
 			Message res = new Message(this.getHost(),m.getFrom(), 
-					RESPONSE_PREFIX+m.getId(), m.getResponseSize());
+					RESPONSE_PREFIX+m.getID(), m.getResponseSize());
 			this.createNewMessage(res);
-			this.getMessage(RESPONSE_PREFIX+m.getId()).setRequest(m);
+			this.getMessage(RESPONSE_PREFIX+m.getID()).setRequest(m);
 		}
 		
 		return m;
@@ -184,7 +184,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		else if (deleteDelivered && (retVal == DENIED_OLD) && 
 				(m.getTo() == con.getOtherNode(this.getHost()))) {
 			/* final recipient has already received the msg -> delete it */
-			this.deleteMessage(m.getId(), false);
+			this.deleteMessage(m.getID(), false);
 		}
 		
 		return retVal;
@@ -218,21 +218,8 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * this router (as final recipient), or DENIED_NO_SPACE if the message
 	 * does not fit into buffer
 	 */
-	protected int checkReceiving(Message m, Connection con) {
-		NetworkInterface receivingInterface = con.getReceiverInterface();
-		int receptionValue = receivingInterface.beginNewReception(con);
-		
-		Assert.assertTrue("ERROR: CSMA/CA should avoid these situations",
-							receptionValue != InterferenceModel.RECEPTION_DENIED_DUE_TO_SEND);
-		
-		if (receptionValue == InterferenceModel.RECEPTION_INTERFERENCE) {
-			// The new reception failed, triggering an interference
-//			System.out.println("Reception interference for message " + m.getId() +
-//								" on connection " + con);
-			return DENIED_INTERFERENCE;
-		}
-	
-		if (hasMessage(m.getId()) || isDeliveredMessage(m)){
+	protected int checkReceiving(Message m, Connection con) {	
+		if (hasMessage(m.getID()) || isDeliveredMessage(m)){
 			return DENIED_OLD; // already seen this message -> reject it
 		}
 		
@@ -271,7 +258,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			}			
 			
 			/* delete message from the buffer as "drop" */
-			deleteMessage(m.getId(), true);
+			deleteMessage(m.getID(), true);
 			freeBuffer += m.getSize();
 		}
 		
@@ -286,7 +273,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		for (int i=0; i<messages.length; i++) {
 			int ttl = messages[i].getTtl(); 
 			if (ttl <= 0) {
-				deleteMessage(messages[i].getId(), true);
+				deleteMessage(messages[i].getID(), true);
 			}
 		}
 	}
@@ -318,7 +305,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		Message oldest = null;
 		for (Message m : messages) {
 			
-			if (excludeMsgBeingSent && isSending(m.getId())) {
+			if (excludeMsgBeingSent && isSending(m.getID())) {
 				continue; // skip the message(s) that router is sending
 			}
 			
@@ -545,7 +532,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			if (con.getMessage() == null) {
 				continue; // transmission is finalized
 			}
-			if (con.getMessage().getId().equals(msgId)) {
+			if (con.getMessage().getID().equals(msgId)) {
 				return true;
 			}
 		}

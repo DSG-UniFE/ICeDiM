@@ -44,6 +44,12 @@ public interface InterferenceModel {
 	void setNetworkInterface (NetworkInterface networkInterface);
 	
 	/**
+	 * Returns the number of incoming messages
+	 * @return an int that represents the number of incoming messages.
+	 */
+	int getIncomingMessageNumber();
+	
+	/**
 	 * This method has to be called whenever the reception
 	 * of a new message begins. It informs the caller whether
 	 * the reception can continue successfully.
@@ -69,6 +75,17 @@ public interface InterferenceModel {
 	int isMessageTransferredCorrectly (String msgID, Connection con);
 	
 	/**
+	 * This method force an interference event to occur. The status
+	 * of interfered is set for the specified message.
+	 * @param msgID String representing the messageID
+	 * @return an int among {@code RECEPTION_OK}, if successful,
+	 * {@code RECEPTION_INCOMPLETE}, if the transfer has not been
+	 * completed yet, and {@code RECEPTION_INTERFERENCE} if the
+	 * transfer completed with an interference.
+	 */
+	Message forceInterference (String msgID, Connection con);
+	
+	/**
 	 * This method allows the caller to retrieve the message with
 	 * the messageID specified as a parameter. If the transfer is
 	 * not yet completed, or if it completed with an interference,
@@ -79,6 +96,14 @@ public interface InterferenceModel {
 	 * not completed or an interference has occurred.
 	 */
 	Message retrieveTransferredMessage (String msgID, Connection con);
+	
+	/**
+	 * This method allows the caller to retrieve all the
+	 * messages which have are being transferred.
+	 * It can be useful for statistics purposes.
+	 * @return a List containing all Messages being transferred.
+	 */
+	List<Message> getListOfMessagesInTransfer();
 	
 	/**
 	 * This method allows the caller to retrieve all the messages
@@ -94,6 +119,6 @@ public interface InterferenceModel {
 	 * without interferences, or {@code null} if the transfer is
 	 * not completed or an interference has occurred.
 	 */
-	void abortMessageReception (String msgID, Connection con);
+	Message abortMessageReception (String msgID, Connection con);
 
 }

@@ -44,16 +44,16 @@ public class DistanceDelayReport extends Report implements MessageListener {
 	 * This is called when a message is transferred between nodes
 	 */
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
-		if (isWarmupID(m.getId()) || !firstDelivery) {
+		if (isWarmupID(m.getID()) || !firstDelivery) {
 			return; // report is only interested of first deliveries  
 		}
 		
-		InfoTuple info = this.creationInfos.remove(m.getId());
+		InfoTuple info = this.creationInfos.remove(m.getID());
 		if (info == null) {
 			return; /* message was created before the warm up period */
 		}
 		
-		report(m.getId(), info.getLoc1().distance(info.getLoc2()),
+		report(m.getID(), info.getLoc1().distance(info.getLoc2()),
 				getSimTime() - info.getTime(), m.getHops().size()-1);
 	}
 
@@ -62,11 +62,11 @@ public class DistanceDelayReport extends Report implements MessageListener {
 	 */
 	public void newMessage(Message m) {
 		if (isWarmup()) {
-			addWarmupID(m.getId());
+			addWarmupID(m.getID());
 			return;
 		}
 		
-		this.creationInfos.put(m.getId(), new InfoTuple(getSimTime(), 
+		this.creationInfos.put(m.getID(), new InfoTuple(getSimTime(), 
 								m.getFrom().getLocation().clone(),
 								m.getTo().getLocation().clone()));
 	}

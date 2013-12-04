@@ -37,13 +37,13 @@ public class MessageGraphvizReport extends Report implements MessageListener {
 
 	public void newMessage(Message m) {
 		if (isWarmup()) {
-			addWarmupID(m.getId());
+			addWarmupID(m.getID());
 		}
 	}
 	
 	public void messageTransferred(Message m, DTNHost from,
 			DTNHost to,	boolean firstDelivery) {
-		if (firstDelivery && !isWarmupID(m.getId())) {
+		if (firstDelivery && !isWarmupID(m.getID())) {
 			newEvent();
 			this.deliveredMessages.add(m);
 		}

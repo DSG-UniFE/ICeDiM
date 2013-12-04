@@ -223,7 +223,7 @@ public class ProphetRouter extends ActiveRouter {
 			}
 			
 			for (Message m : msgCollection) {
-				if (othRouter.hasMessage(m.getId())) {
+				if (othRouter.hasMessage(m.getID())) {
 					continue; // skip messages that the other one has
 				}
 				if (othRouter.getPredFor(m.getTo()) > getPredFor(m.getTo())) {

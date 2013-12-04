@@ -73,7 +73,7 @@ public class PrioritizedMessage extends Message {
 	 */
 	@Override
 	public PrioritizedMessage replicate() {
-		PrioritizedMessage  m = new PrioritizedMessage (this.getFrom(), this.getTo(), this.getId(),
+		PrioritizedMessage  m = new PrioritizedMessage (this.getFrom(), this.getTo(), this.getID(),
 														this.getSize(), this.getPriority(),
 														this.getSubscriptionID());
 		m.copyFrom(this);

@@ -77,12 +77,12 @@ public class MessageLocationReport extends Report implements UpdateListener {
 			isFirstMessage = true;
 			reportLine = "";
 			for (Message m : host.getMessageCollection()) {
-				if (this.reportedMessages.contains(m.getId())) {
+				if (this.reportedMessages.contains(m.getID())) {
 					if (isFirstMessage) {
 						reportLine = host.getLocation().toString();
 						isFirstMessage = false;
 					}		
-					reportLine += " " + m.getId();
+					reportLine += " " + m.getID();
 				}
 			}
 			if (reportLine.length() > 0) {

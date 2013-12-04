@@ -147,9 +147,7 @@ public abstract class Connection {
 		bytesTransferred += underwayTransfer.getMsgOnFly().getSize() - remainingBytes;
 		bytesTransferredForThroughput += underwayTransfer.getMsgOnFly().getSize() - remainingBytes;
 
-		underwayTransfer.getReceiver().messageAborted(underwayTransfer.getMsgOnFly().getId(),
-														this, remainingBytes);
-		//underwayTransfer.getReceiverInterface().abortMessageReception(this);
+		underwayTransfer.getReceiver().messageAborted(underwayTransfer.getMsgOnFly().getID(), this);
 		clearMsgOnFly();
 	}
 
@@ -184,7 +182,7 @@ public abstract class Connection {
 		bytesTransferredForThroughput += underwayTransfer.getMsgOnFly().getSize();
 		bytesTransferredForGoodput += underwayTransfer.getMsgOnFly().getSize();
 
-		underwayTransfer.getReceiver().messageTransferred(underwayTransfer.getMsgOnFly().getId(), this);
+		underwayTransfer.getReceiver().messageTransferred(underwayTransfer.getMsgOnFly().getID(), this);
 		clearMsgOnFly();
 	}
 
@@ -319,7 +317,7 @@ public abstract class Connection {
 	public boolean isSendingMessage(DTNHost senderNode, String msgID) {
 		if (underwayTransfer != null) {
 			return (underwayTransfer.getSender() == senderNode) &&
-					(underwayTransfer.getMsgOnFly().getId() == msgID);
+					(underwayTransfer.getMsgOnFly().getID() == msgID);
 		}
 		
 		return false;
@@ -336,7 +334,7 @@ public abstract class Connection {
 	public boolean isReceivingMessage(DTNHost receiverNode, String msgID) {
 		if (underwayTransfer != null) {
 			return (underwayTransfer.getReceiver() == receiverNode) &&
-					(underwayTransfer.getMsgOnFly().getId() == msgID);
+					(underwayTransfer.getMsgOnFly().getID() == msgID);
 		}
 		
 		return false;

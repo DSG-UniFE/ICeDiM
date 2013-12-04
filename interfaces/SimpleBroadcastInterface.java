@@ -98,6 +98,15 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	}
 
 	@Override
+	public int beginNewReception(Message m, Connection con) {		
+		if (isSendingData()) {
+			return InterferenceModel.RECEPTION_DENIED_DUE_TO_SEND;
+		}
+		
+		return super.beginNewReception(m, con);
+	}
+
+	@Override
 	public int sendUnicastMessageToHost(Message m, DTNHost host) {
 		if (getHost() == host) {
 			return UNICAST_DENIED;
