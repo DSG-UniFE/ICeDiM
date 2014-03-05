@@ -12,6 +12,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import strategies.MessageForwardingOrderStrategy;
+
 import com.sun.org.apache.bcel.internal.generic.FDIV;
 
 import core.Application;
@@ -46,20 +48,15 @@ public abstract class MessageRouter {
 	 * one message can be sent directly to the final recipient). 
 	 * Valid values are<BR>
 	 * <UL>
-	 * <LI/> 1 : random (message order is randomized every time; default option)
-	 * <LI/> 2 : FIFO (most recently received messages are sent last)
+	 * <LI/> 0 : random (message order is randomized every time; default option)
+	 * <LI/> 1 : FIFO (most recently received messages are sent last)
+	 * <LI/> 2 : Prioritized_FIFO (FIFO with highest priority messages are sent first)
+	 * <LI/> 3 : Prioritized_LFF_FIFO (Prioritized_FIFO with least forwarded messages sent first - attempt to be fairer)
 	 * </UL>
 	 */ 
-	public static final String SEND_QUEUE_MODE_S = "sendQueue";
+	public static enum QueueForwardingOrderMode {Random, FIFO, Prioritized_FIFO, Prioritized_LFF_FIFO}
 	
-	/** Setting value for random queue mode */
-	public static final int Q_MODE_RANDOM = 1;
-	/** Setting value for FIFO queue mode */
-	public static final int Q_MODE_FIFO = 2;
-	/** Setting value for Prioritized FIFO queue mode */
-	public static final int Q_MODE_FIFO_WITH_PRIORITY = 3;
-	/** Setting value for Prioritized FIFO with Less Forwaded First queue mode */
-	public static final int Q_MODE_FIFO_LFF_WITH_PRIORITY = 4;
+	public static final String SEND_QUEUE_MODE_S = "sendQueueMode";	
 
 	/** Receive return value for a successful broadcast */
 	public static final int BROADCAST_OK = 0;
@@ -79,6 +76,8 @@ public abstract class MessageRouter {
 	public static final int DENIED_INTERFERENCE = 5;
 	/** Receive return value for unspecified reason */
 	public static final int DENIED_UNSPECIFIED = 99;
+	/** Strategy which implements the specified queue mode */
+	public MessageForwardingOrderStrategy messageForwardingStrategy;
 	
 	private List<MessageListener> mListeners;
 	/** The messages this router is carrying */
@@ -91,8 +90,6 @@ public abstract class MessageRouter {
 	private int bufferSize;
 	/** TTL for all messages */
 	protected int msgTtl;
-	/** Queue mode for sending messages */
-	private int sendQueueMode;
 
 	/** applications attached to the host */
 	private HashMap<String, Collection<Application>> applications = null;
@@ -114,17 +111,16 @@ public abstract class MessageRouter {
 		if (s.contains(MSG_TTL_S)) {
 			this.msgTtl = s.getInt(MSG_TTL_S);
 		}
+		
+		int sendQueueMode = 0;
 		if (s.contains(SEND_QUEUE_MODE_S)) {
-			this.sendQueueMode = s.getInt(SEND_QUEUE_MODE_S);
-			if (sendQueueMode < 1 || sendQueueMode > 4) {
-				throw new SettingsError("Invalid value for " + 
-						s.getFullPropertyName(SEND_QUEUE_MODE_S));
+			sendQueueMode = s.getInt(SEND_QUEUE_MODE_S);
+			if (sendQueueMode < 0 || sendQueueMode >= QueueForwardingOrderMode.values().length) {
+				throw new SettingsError("Invalid value for " + s.getFullPropertyName(SEND_QUEUE_MODE_S));
 			}
 		}
-		else {
-			sendQueueMode = Q_MODE_RANDOM;
-		}
-		
+		messageForwardingStrategy = MessageForwardingOrderStrategy.MessageForwardingStrategyFactory
+													(QueueForwardingOrderMode.values()[sendQueueMode]);
 	}
 	
 	/**
@@ -148,7 +144,7 @@ public abstract class MessageRouter {
 	protected MessageRouter(MessageRouter r) {
 		this.bufferSize = r.bufferSize;
 		this.msgTtl = r.msgTtl;
-		this.sendQueueMode = r.sendQueueMode;
+		this.messageForwardingStrategy = r.messageForwardingStrategy;
 
 		this.applications = new HashMap<String, Collection<Application>>();
 		for (Collection<Application> apps : r.applications.values()) {
@@ -631,134 +627,7 @@ public abstract class MessageRouter {
 	 */
 	@SuppressWarnings(value = "unchecked") /* ugly way to make this generic */
 	protected <T> List<T> sortByQueueMode(List<T> list) {
-		switch (sendQueueMode) {
-		case Q_MODE_RANDOM:
-			Collections.shuffle(list, new Random(SimClock.getIntTime()));
-			break;
-		case Q_MODE_FIFO:
-			Collections.sort(list, new Comparator<Object>() {
-
-				/** Compares two tuples by their messages' receiving time */
-				@Override
-				public int compare(Object o1, Object o2) {
-					double diff;
-					Message m1, m2;
-					
-					if (o1 instanceof Tuple) {
-						m1 = ((Tuple<Message, Connection>)o1).getKey();
-						m2 = ((Tuple<Message, Connection>)o2).getKey();
-					}
-					else if (o1 instanceof Message) {
-						m1 = (Message) o1;
-						m2 = (Message) o2;
-					}
-					else {
-						throw new SimError("Invalid type of objects in the list");
-					}
-
-					diff = m1.getReceiveTime() - m2.getReceiveTime();
-					if (diff == 0) {
-						return 0;
-					}
-					return (diff < 0 ? -1 : 1);
-				}
-			});
-		case Q_MODE_FIFO_WITH_PRIORITY:
-			Collections.sort(list, 
-					new Comparator<Object>() {
-				
-				/** Compares two tuples by their messages' receiving time and priority */
-				@Override
-				public int compare(Object o1, Object o2) {
-					double diff;
-					Message m1, m2;
-					
-					if (o1 instanceof Tuple) {
-						m1 = ((Tuple<Message, Connection>)o1).getKey();
-						m2 = ((Tuple<Message, Connection>)o2).getKey();
-					}
-					else if (o1 instanceof Message) {
-						m1 = (Message) o1;
-						m2 = (Message) o2;
-					}
-					else {
-						throw new SimError("Invalid type of objects in the list");
-					}
-
-					diff = m1.getReceiveTime() - m2.getReceiveTime();
-					if ((m1 instanceof PrioritizedMessage) && (m2 instanceof PrioritizedMessage)) {
-						int pDiff;
-						PrioritizedMessage pm1, pm2;
-						pm1 = (PrioritizedMessage) m1;
-						pm2 = (PrioritizedMessage) m2;
-						
-						pDiff = pm1.getPriority() - pm2.getPriority();
-						if ((pDiff == 0) && (diff == 0)) {
-							return 0;
-						}
-						return (pDiff < 0 ? 1 : (pDiff > 0 ? -1 : (diff < 0 ? -1 : 1)));						
-					}
-					else {
-						throw new SimError("Message objects in the list are not instances of PrioritizedMessage");
-					}
-				}
-			});
-			break;
-		case Q_MODE_FIFO_LFF_WITH_PRIORITY:
-			Collections.sort(list, 
-					new Comparator<Object>() {
-				
-				/** Compares two tuples by their messages' receiving time and priority */
-				@Override
-				public int compare(Object o1, Object o2) {
-					double diff;
-					Message m1, m2;
-					
-					if (o1 instanceof Tuple) {
-						m1 = ((Tuple<Message, Connection>)o1).getKey();
-						m2 = ((Tuple<Message, Connection>)o2).getKey();
-					}
-					else if (o1 instanceof Message) {
-						m1 = (Message) o1;
-						m2 = (Message) o2;
-					}
-					else {
-						throw new SimError("Invalid type of objects in the list");
-					}
-
-					diff = m1.getReceiveTime() - m2.getReceiveTime();
-					if ((m1 instanceof PrioritizedMessage) && (m2 instanceof PrioritizedMessage)) {
-						int pDiff, fTimesDiff;
-						PrioritizedMessage pm1, pm2;
-						pm1 = (PrioritizedMessage) m1;
-						pm2 = (PrioritizedMessage) m2;
-						
-						fTimesDiff = pm1.getForwardTimes() - pm2.getForwardTimes();
-						pDiff = pm1.getPriority() - pm2.getPriority();
-						if ((fTimesDiff == 0) && (pDiff == 0) && (diff == 0)) {
-							return 0;
-						}
-						if (fTimesDiff == 0) {
-							// Same as Q_MODE_FIFO_WITH_PRIORITY
-							return (pDiff < 0 ? 1 : (pDiff > 0 ? -1 : (diff < 0 ? -1 : 1)));
-						}
-						else {
-							// Less forwarded messages go first 
-							return fTimesDiff < 0 ? -1 : 1;
-						}
-					}
-					else {
-						throw new SimError("Message objects in the list are not instances of PrioritizedMessage");
-					}
-				}
-			});
-			break;
-		/* add more queue modes here */
-		default:
-			throw new SimError("Unknown queue mode " + sendQueueMode);
-		}
-		
-		return list;
+		return messageForwardingStrategy.MessageProcessingOrder(list);
 	}
 
 	/**
@@ -770,20 +639,7 @@ public abstract class MessageRouter {
 	 *          message should come first, or 0 if the ordering isn't defined
 	 */
 	protected int compareByQueueMode(Message m1, Message m2) {
-		switch (sendQueueMode) {
-		case Q_MODE_RANDOM:
-			/* return randomly (enough) but consistently -1, 0 or 1 */
-			return (m1.hashCode()/2 + m2.hashCode()/2) % 3 - 1; 
-		case Q_MODE_FIFO:
-			double diff = m1.getReceiveTime() - m2.getReceiveTime();
-			if (diff == 0) {
-				return 0;
-			}
-			return (diff < 0 ? -1 : 1);
-		/* add more queue modes here */
-		default:
-			throw new SimError("Unknown queue mode " + sendQueueMode);
-		}
+		return messageForwardingStrategy.ComparatorMethod(m1, m2);
 	}
 	
 	/**

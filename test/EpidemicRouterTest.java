@@ -599,8 +599,7 @@ public class EpidemicRouterTest extends AbstractRouterTest {
 	}
 	
 	public void testFifoSendingQ() throws Exception {
-		ts.putSetting(MessageRouter.SEND_QUEUE_MODE_S, 
-				""+MessageRouter.Q_MODE_FIFO);
+		//ts.putSetting(MessageRouter.SEND_QUEUE_MODE_S,""+MessageRouter.Q_MODE_FIFO);
 		this.setUp();
 
 		String expectedIds = "1 2 3 4 5 ";
@@ -610,8 +609,7 @@ public class EpidemicRouterTest extends AbstractRouterTest {
 	}
 	
 	public void testRandomSendingQ() throws Exception {
-		ts.putSetting(MessageRouter.SEND_QUEUE_MODE_S, 
-				""+MessageRouter.Q_MODE_RANDOM);
+		//ts.putSetting(MessageRouter.SEND_QUEUE_MODE_S,""+MessageRouter.Q_MODE_RANDOM);
 		this.setUp();
 		
 		String orderedIds = "1 2 3 4 5 ";
