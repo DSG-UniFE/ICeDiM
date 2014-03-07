@@ -16,11 +16,22 @@ import java.util.Set;
 public class Message implements Comparable<Message> {
 	/** Value for infinite TTL of message */
 	public static final int INFINITE_TTL = -1;
+	/** Value for messages not belonging to any Subscription*/
+	public static final int NO_SUB_ID = -1;
 	
+	/** Allowed priority levels */
+	public enum PRIORITY_LEVEL {NO_P, LOWEST_P, BELOW_AVERAGE_P, AVERAGE_P, ABOVE_AVERAGE_P, HIGHEST_P};
+
+	/** Source of the message */
 	private DTNHost from;
+	/** Destination of the message */
 	private DTNHost to;
 	/** Identifier of the message */
 	private String id;
+	/** Subscription ID the message belongs to */
+	private final int subscriptionID;
+	/** message priority level */
+	private PRIORITY_LEVEL priority;
 	/** Size of the message (bytes) */
 	private int size;
 	/** List of nodes this message has passed */
@@ -58,7 +69,7 @@ public class Message implements Comparable<Message> {
 	}
 	
 	/**
-	 * Creates a new Message.
+	 * Creates a new Message with subscriptionID = 0.
 	 * @param from Who the message is (originally) from
 	 * @param to Who the message is (originally) to
 	 * @param id Message identifier (must be unique for message but
@@ -72,6 +83,144 @@ public class Message implements Comparable<Message> {
 		this.size = size;
 		this.path = new ArrayList<DTNHost>();
 		this.uniqueId = nextUniqueId;
+		this.subscriptionID = NO_SUB_ID;
+		this.setPriority(PRIORITY_LEVEL.NO_P);
+		
+		this.timeCreated = SimClock.getTime();
+		this.timeReceived = this.timeCreated;
+		this.initTtl = INFINITE_TTL;
+		this.forwardTimes = 0;
+		this.responseSize = 0;
+		this.requestMsg = null;
+		this.properties = null;
+		this.appID = null;
+		
+		Message.nextUniqueId++;
+		addNodeOnPath(from);
+	}
+	
+	/**
+	 * Creates a new Message with no subscriptionID
+	 * and the specified priority level.
+	 * @param from Who the message is (originally) from
+	 * @param to Who the message is (originally) to
+	 * @param id Message identifier (must be unique for message but
+	 * 	will be the same for all replicates of the message)
+	 * @param size Size of the message (in bytes)
+	 * @param priority The priority level of the message (type = {@code Message.PRIORITY_LEVEL})
+	 */
+	public Message(DTNHost from, DTNHost to, String id, int size, PRIORITY_LEVEL priority) {
+		this.from = from;
+		this.to = to;
+		this.id = id;
+		this.size = size;
+		this.path = new ArrayList<DTNHost>();
+		this.uniqueId = nextUniqueId;
+		this.subscriptionID = NO_SUB_ID;
+		this.setPriority(priority);
+		
+		this.timeCreated = SimClock.getTime();
+		this.timeReceived = this.timeCreated;
+		this.initTtl = INFINITE_TTL;
+		this.forwardTimes = 0;
+		this.responseSize = 0;
+		this.requestMsg = null;
+		this.properties = null;
+		this.appID = null;
+		
+		Message.nextUniqueId++;
+		addNodeOnPath(from);
+	}
+	
+	/**
+	 * Creates a new Message with the specified
+	 * subscriptionID and no priority.
+	 * @param from Who the message is (originally) from
+	 * @param to Who the message is (originally) to
+	 * @param id Message identifier (must be unique for message but
+	 * 	will be the same for all replicates of the message)
+	 * @param size Size of the message (in bytes)
+	 * @param SubscriptionID The ID of the subscription the message belongs to
+	 */
+	public Message(DTNHost from, DTNHost to, String id, int size, int subscriptionID) {
+		this.from = from;
+		this.to = to;
+		this.id = id;
+		this.size = size;
+		this.path = new ArrayList<DTNHost>();
+		this.uniqueId = nextUniqueId;
+		this.subscriptionID = subscriptionID;
+		this.setPriority(PRIORITY_LEVEL.NO_P);
+		
+		this.timeCreated = SimClock.getTime();
+		this.timeReceived = this.timeCreated;
+		this.initTtl = INFINITE_TTL;
+		this.forwardTimes = 0;
+		this.responseSize = 0;
+		this.requestMsg = null;
+		this.properties = null;
+		this.appID = null;
+		
+		Message.nextUniqueId++;
+		addNodeOnPath(from);
+	}
+	
+	/**
+	 * Creates a new Message with the specified
+	 * subscription ID and priority level.
+	 * @param from Who the message is (originally) from
+	 * @param to Who the message is (originally) to
+	 * @param id Message identifier (must be unique for message but
+	 * 	will be the same for all replicates of the message)
+	 * @param size Size of the message (in bytes)
+	 * @param priority The priority level of the message (type = {@code Message.PRIORITY_LEVEL})
+	 * @param SubscriptionID The ID of the subscription the message belongs to
+	 */
+	public Message(DTNHost from, DTNHost to, String id, int size,
+					PRIORITY_LEVEL priority, int subscriptionID) {
+		this.from = from;
+		this.to = to;
+		this.id = id;
+		this.size = size;
+		this.path = new ArrayList<DTNHost>();
+		this.uniqueId = nextUniqueId;
+		this.subscriptionID = subscriptionID;
+		this.setPriority(priority);
+		
+		this.timeCreated = SimClock.getTime();
+		this.timeReceived = this.timeCreated;
+		this.initTtl = INFINITE_TTL;
+		this.forwardTimes = 0;
+		this.responseSize = 0;
+		this.requestMsg = null;
+		this.properties = null;
+		this.appID = null;
+		
+		Message.nextUniqueId++;
+		addNodeOnPath(from);
+	}
+	
+	/**
+	 * Creates a new Message with the specified
+	 * subscription ID and priority level.
+	 * @param from Who the message is (originally) from
+	 * @param to Who the message is (originally) to
+	 * @param id Message identifier (must be unique for message but
+	 * 	will be the same for all replicates of the message)
+	 * @param size Size of the message (in bytes)
+	 * @param priority The priority level of the message (type = {@code int})
+	 * @param SubscriptionID The ID of the subscription the message belongs to
+	 */
+	public Message(DTNHost from, DTNHost to, String id, int size,
+					int priority, int subscriptionID) {
+		this.from = from;
+		this.to = to;
+		this.id = id;
+		this.size = size;
+		this.path = new ArrayList<DTNHost>();
+		this.uniqueId = nextUniqueId;
+		this.subscriptionID = subscriptionID;
+		this.setPriority(priority);
 		
 		this.timeCreated = SimClock.getTime();
 		this.timeReceived = this.timeCreated;
@@ -110,6 +259,46 @@ public class Message implements Comparable<Message> {
 		return this.id;
 	}
 	
+	/**
+	 * Returns the ID of the subscription
+	 * to which the message belong
+	 * @return the subscriptionID
+	 */
+	public int getSubscriptionID() {
+		return subscriptionID;
+	}
+
+	/**
+	 * Returns the priority level
+	 * @return the priority
+	 */
+	public PRIORITY_LEVEL getPriority() {
+		return priority;
+	}
+
+	/**
+	 * Sets the priority level
+	 * @param priority the priority to set
+	 */
+	public void setPriority(PRIORITY_LEVEL priority) {
+		this.priority = priority;
+	}
+	
+	/**
+	 * Sets the priority level
+	 * @param priority the index of the relative
+	 * priority in the PRIORITY_LEVEL enum
+	 */
+	public void setPriority(int priorityLevel) {
+		if (priorityLevel < PRIORITY_LEVEL.NO_P.ordinal() ||
+			priorityLevel > PRIORITY_LEVEL.HIGHEST_P.ordinal()) {
+			throw new SimError("Specified message priority level (" +
+								priorityLevel + ") is out of range");			
+		}
+		
+		this.priority = PRIORITY_LEVEL.values()[priorityLevel];
+	}
+
 	/**
 	 * Returns an ID that is unique per message instance 
 	 * (different for replicates too)
@@ -368,7 +557,7 @@ public class Message implements Comparable<Message> {
 	 * @return A replicate of the message
 	 */
 	public Message replicate() {
-		Message m = new Message(from, to, id, size);
+		Message m = new Message(from, to, id, size, priority, subscriptionID);
 		m.copyFrom(this);
 		return m;
 	}

@@ -11,7 +11,6 @@ import core.Connection;
 import core.Message;
 import core.SimError;
 import core.Tuple;
-import core.disService.PrioritizedMessage;
 
 /**
  * @author Alex
@@ -42,20 +41,12 @@ public class PrioritizedFIFOForwardingOrder extends MessageForwardingOrderStrate
 			}
 
 			diff = m1.getReceiveTime() - m2.getReceiveTime();
-			if ((m1 instanceof PrioritizedMessage) && (m2 instanceof PrioritizedMessage)) {
-				PrioritizedMessage pm1 = (PrioritizedMessage) m1;
-				PrioritizedMessage pm2 = (PrioritizedMessage) m2; 
-				
-				int pDiff = pm1.getPriority() - pm2.getPriority();
-				if ((pDiff == 0) && (diff == 0)) {
-					return 0;
-				}
-				
-				return (pDiff < 0 ? 1 : (pDiff > 0 ? -1 : (diff < 0 ? -1 : 1)));
+			int pDiff = m1.getPriority().ordinal() - m2.getPriority().ordinal();
+			if ((pDiff == 0) && (diff == 0)) {
+				return 0;
 			}
-			else {
-				throw new SimError("Message objects in the list are not instances of PrioritizedMessage");
-			}
+			
+			return (pDiff < 0 ? 1 : (pDiff > 0 ? -1 : (diff < 0 ? -1 : 1)));
 		}
 	};
 	

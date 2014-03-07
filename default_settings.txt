@@ -56,6 +56,7 @@ Scenario.nrofHostGroups = 6
 #               3 - Prioritized LFF FIFO queue (Least Forwarded, higher prioriy, older messages First)
 #
 # maxSize: maximum number of subscriptions for which a node randomly sign up
+# maxSubID: the highest ID allowed for a subscription
 # subIDs: it specifies a comma-separated list of the subscription IDs the nodes of a group will subscribe to;
 #         if subIDs is specified, any entry for maxSize is ignored (in every group if subIDs is specified
 #         at the global level); a value of "-1" resets the global defaults specified for subIDs and reads
@@ -86,6 +87,7 @@ Group.sendQueueMode = 1
 # Common subscriptions for all groups
 # If subIDs is specified, maxSize is ignored (maxSize used only for the random generation of subscriptions)
 #Group.maxSize = 5
+#Group.maxSubID = 10
 Group.subIDs = 0,1
 
 Group.nrofHosts = 40
@@ -153,7 +155,7 @@ Events.nrof = 1
 Events1.class = MessageEventGenerator
 # (following settings are specific for the MessageEventGenerator class)
 # Creation interval in seconds (one new message every 45 to 60 seconds)
-Events1.interval = 10, 25
+Events1.interval = 0, 5
 # Message sizes (500kB - 1MB)
 Events1.size = 500k,1M
 # range of message source/destination addresses
@@ -188,7 +190,7 @@ Report.warmup = 0
 Report.reportDir = reports/
 # Report classes to load
 # PrioritizedMessageStatsReport reports stats for priority-based routers
-Report.report1 = MessageStatsReport
+Report.report1 = PrioritizedMessageStatsReport
 
 ## Default settings for some routers settings
 ProphetRouter.secondsInTimeUnit = 30

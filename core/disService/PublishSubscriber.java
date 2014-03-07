@@ -10,7 +10,7 @@ package core.disService;
  */
 public interface PublishSubscriber {
 	
-	public SubscriptionList getSubscriptionList();
+	public SubscriptionListManager getSubscriptionList();
 	
 	public int generateRandomSubID();
 }

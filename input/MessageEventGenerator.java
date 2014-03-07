@@ -177,9 +177,9 @@ public class MessageEventGenerator implements EventQueue {
 	protected int drawToAddress(int hostRange[], int from) {
 		int to;
 		do {
-			to = this.toHostRange != null ? drawHostAddress(this.toHostRange):
-				drawHostAddress(this.hostRange); 
-		} while (from==to);
+			to = this.toHostRange != null ? drawHostAddress(this.toHostRange) :
+											drawHostAddress(this.hostRange);
+		} while (from == to);
 		
 		return to;
 	}

@@ -6,21 +6,15 @@ package report;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-
-import com.sun.org.apache.xml.internal.security.utils.HelperNodeList;
-
-import junit.framework.Assert;
 
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
+import core.SimError;
 import core.disService.DisServiceHelloMessage;
-import core.disService.PrioritizedMessage;
 import core.disService.PublishSubscriber;
-import core.disService.SubscriptionList;
+import core.disService.SubscriptionListManager;
 
 /**
  * Report for generating different kind of total statistics about message
@@ -32,10 +26,10 @@ import core.disService.SubscriptionList;
  */
 public class PrioritizedMessageStatsReport extends Report implements MessageListener {
 	private Map<String, Double> creationTimes;
-	private List<Double> latencies[];
-	private List<Integer> hopCounts[];
-	private List<Double> msgBufferTime[];
-	private List<Double> rtt[]; // round trip times
+	private ArrayList<Double> latencies[];
+	private ArrayList<Integer> hopCounts[];
+	private ArrayList<Double> msgBufferTime[];
+	private ArrayList<Double> rtt[]; // round trip times
 	
 	private int nrofDropped[];
 	private int nrofRemoved[];
@@ -55,8 +49,14 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	
 	private HashMap<Integer, Integer> nodesPerSubscription;
 	private HashMap<Integer, Integer> messageCreatedPerSubscription;
+	private HashMap<Integer, Integer> messageResponseCreatedPerSubscription;
+	private HashMap<Integer, Integer> messageStartedPerSubscription;
+	private HashMap<Integer, Integer> messageRelayedPerSubscription;
 	private HashMap<Integer, Integer> messageDeliveredPerSubscription;
+	private HashMap<Integer, Integer> messageResponseDeliveredPerSubscription;
 	private HashMap<Integer, Integer> messageAbortedPerSubscription;
+	private HashMap<Integer, Integer> messageDroppedPerSubscription;
+	private HashMap<Integer, Integer> messageRemovedPerSubscription;
 	private HashMap<Integer, Integer> messageInterferredPerSubscription;
 	
 	
@@ -68,9 +68,10 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	protected void init() {
 		super.init();
-		int arraySize = PrioritizedMessage.MAX_PRIORITY - PrioritizedMessage.MIN_PRIORITY + 1;
+		int arraySize = Message.PRIORITY_LEVEL.values().length;
 		
 		this.nrofHelloMessagesStarted = 0;
 		this.nrofHelloMessagesDelivered = 0;
@@ -94,18 +95,17 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		for (int i = 0; i < arraySize; i++) {
 			this.rtt[i] = new ArrayList<Double>();
 		}
-		
-		
+
 		this.nrofDropped = new int[arraySize];
 		for (int i = 0; i < arraySize; i++) {
 			this.nrofDropped[i] = 0;
 		}
-		
+
 		this.nrofRemoved = new int[arraySize];
 		for (int i = 0; i < arraySize; i++) {
 			this.nrofRemoved[i] = 0;
 		}
-		
+
 		this.nrofStarted = new int[arraySize];
 		for (int i = 0; i < arraySize; i++) {
 			this.nrofStarted[i] = 0;
@@ -145,22 +145,39 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		for (int i = 0; i < arraySize; i++) {
 			this.nrofDelivered[i] = 0;
 		}
-		
 
 		this.nodesPerSubscription = new HashMap<Integer, Integer>();
 		this.messageCreatedPerSubscription = new HashMap<Integer, Integer>();
+		this.messageResponseCreatedPerSubscription = new HashMap<Integer, Integer>();
+		this.messageStartedPerSubscription = new HashMap<Integer, Integer>();
+		this.messageRelayedPerSubscription = new HashMap<Integer, Integer>();
 		this.messageDeliveredPerSubscription = new HashMap<Integer, Integer>();
+		this.messageResponseDeliveredPerSubscription = new HashMap<Integer, Integer>();
 		this.messageAbortedPerSubscription = new HashMap<Integer, Integer>();
+		this.messageDroppedPerSubscription = new HashMap<Integer, Integer>();
+		this.messageRemovedPerSubscription = new HashMap<Integer, Integer>();
 		this.messageInterferredPerSubscription = new HashMap<Integer, Integer>();
 	}
 
+	
 	@Override
 	public void registerNode(DTNHost node) {
-		Assert.assertTrue(node instanceof PublishSubscriber);
-		PublishSubscriber destNode = (PublishSubscriber) node;
-		
-		SubscriptionList sl = destNode.getSubscriptionList();
-		for (int subID : sl.getSubscriptionList()) {
+		if (node instanceof PublishSubscriber) {
+			PublishSubscriber destNode = (PublishSubscriber) node;
+			
+			SubscriptionListManager sl = destNode.getSubscriptionList();
+			for (int subID : sl.getSubscriptionList()) {
+				if (nodesPerSubscription.containsKey(subID)) {
+					nodesPerSubscription.put(subID,
+						Integer.valueOf(nodesPerSubscription.get(subID).intValue() + 1));
+				}
+				else {
+					nodesPerSubscription.put(subID, 1);
+				}
+			}
+		}
+		else {
+			int subID = SubscriptionListManager.DEFAULT_SUB_ID;
 			if (nodesPerSubscription.containsKey(subID)) {
 				nodesPerSubscription.put(subID,
 					Integer.valueOf(nodesPerSubscription.get(subID).intValue() + 1));
@@ -168,7 +185,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			else {
 				nodesPerSubscription.put(subID, 1);
 			}
-		}		
+		}
 	}
 	
 	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
@@ -176,31 +193,46 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			return;
 		}
 		
-		Assert.assertTrue(m instanceof PrioritizedMessage);
-		PrioritizedMessage pm = (PrioritizedMessage) m;
-		
 		if (dropped) {
-			this.nrofDropped[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
+			nrofDropped[m.getPriority().ordinal()]++;
+			
+			Integer subID = Integer.valueOf(m.getSubscriptionID());
+			if (messageDroppedPerSubscription.containsKey(subID)) {
+				messageDroppedPerSubscription.put(subID,
+					Integer.valueOf(messageDroppedPerSubscription.get(subID).intValue() + 1));
+			}
+			else {
+				messageDroppedPerSubscription.put(subID, 1);
+			}
 		}
 		else {
-			this.nrofRemoved[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
+			nrofRemoved[m.getPriority().ordinal()]++;
+			
+			Integer subID = Integer.valueOf(m.getSubscriptionID());
+			if (messageRemovedPerSubscription.containsKey(subID)) {
+				messageRemovedPerSubscription.put(subID,
+					Integer.valueOf(messageRemovedPerSubscription.get(subID).intValue() + 1));
+			}
+			else {
+				messageRemovedPerSubscription.put(subID, 1);
+			}
 		}
-		
-		this.msgBufferTime[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(getSimTime() - pm.getReceiveTime());
+
+		msgBufferTime[m.getPriority().ordinal()].add(getSimTime() - m.getReceiveTime());
 	}
 
-	
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
-		if (m instanceof PrioritizedMessage) {
-			PrioritizedMessage pm = (PrioritizedMessage) m;
+		if (m instanceof DisServiceHelloMessage) {
+			nrofHelloMessagesAborted++;
+		}
+		else {		
+			nrofAborted[m.getPriority().ordinal()]++;
 			
-			nrofAborted[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
-			
-			Integer subID = Integer.valueOf(pm.getSubscriptionID());
+			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageAbortedPerSubscription.containsKey(subID)) {
 				messageAbortedPerSubscription.put(subID,
 					Integer.valueOf(messageAbortedPerSubscription.get(subID).intValue() + 1));
@@ -209,19 +241,17 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 				messageAbortedPerSubscription.put(subID, 1);
 			}
 		}
-		else if (m instanceof DisServiceHelloMessage) {
-			nrofHelloMessagesAborted++;
-		}
 	}
 
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {
-		if (m instanceof PrioritizedMessage) {
-			PrioritizedMessage pm = (PrioritizedMessage) m;
-		
-			this.nrofInterfered[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
+		if (m instanceof DisServiceHelloMessage) {
+			nrofHelloMessagesInterfered++;
+		}
+		else {
+			nrofInterfered[m.getPriority().ordinal()]++;
 			
-			Integer subID = Integer.valueOf(pm.getSubscriptionID());
+			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageInterferredPerSubscription.containsKey(subID)) {
 				messageInterferredPerSubscription.put(subID,
 					Integer.valueOf(messageInterferredPerSubscription.get(subID).intValue() + 1));
@@ -230,38 +260,64 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 				messageInterferredPerSubscription.put(subID, 1);
 			}
 		}
-		else if (m instanceof DisServiceHelloMessage) {
-			nrofHelloMessagesInterfered++;
-		}
 	}
 
-	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean finalTarget) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 
-		Assert.assertTrue(to.getRouter() instanceof PublishSubscriber);
-		PublishSubscriber destNode = (PublishSubscriber) to.getRouter();
-		
-		if (m instanceof PrioritizedMessage) {
-			PrioritizedMessage pm = (PrioritizedMessage) m;
-	
-			this.nrofRelayed[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
+		if (m instanceof DisServiceHelloMessage) {
+			nrofHelloMessagesDelivered++;
+		}
+		else {
+			nrofRelayed[m.getPriority().ordinal()]++;
+
+			Integer subID = Integer.valueOf(m.getSubscriptionID());
+			if (messageRelayedPerSubscription.containsKey(subID)) {
+				messageRelayedPerSubscription.put(subID,
+					Integer.valueOf(messageRelayedPerSubscription.get(subID).intValue() + 1));
+			}
+			else {
+				messageRelayedPerSubscription.put(subID, 1);
+			}
+			
 			if (finalTarget) {
-				this.latencies[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(getSimTime() - this.creationTimes.get(pm.getID()));
-				this.nrofDelivered[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
-				this.hopCounts[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(pm.getHops().size() - 1);
+				latencies[m.getPriority().ordinal()].add(getSimTime() - this.creationTimes.get(m.getID()));
+				nrofDelivered[m.getPriority().ordinal()]++;
+				hopCounts[m.getPriority().ordinal()].add(m.getHops().size() - 1);
 				
-				if (pm.isResponse()) {
-					this.rtt[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY].add(getSimTime() -	pm.getRequest().getCreationTime());
-					this.nrofResponseDelivered[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
+				if (m.isResponse()) {
+					rtt[m.getPriority().ordinal()].add(getSimTime() -	m.getRequest().getCreationTime());
+					nrofResponseDelivered[m.getPriority().ordinal()]++;
+					
+					if (messageResponseDeliveredPerSubscription.containsKey(subID)) {
+						messageResponseDeliveredPerSubscription.put(subID,
+							Integer.valueOf(messageResponseDeliveredPerSubscription.get(subID).intValue() + 1));
+					}
+					else {
+						messageResponseDeliveredPerSubscription.put(subID, 1);
+					}
 				}
 			}
-	
-			Integer subID = Integer.valueOf(pm.getSubscriptionID());
-			SubscriptionList sl = destNode.getSubscriptionList();
-			if (sl.containsSubscriptionID(subID)) {
+
+			if (to.getRouter() instanceof PublishSubscriber) {
+				PublishSubscriber destNode = (PublishSubscriber) to.getRouter();
+				if (subID <= SubscriptionListManager.INVALID_SUB_ID) {
+					throw new SimError("Message subscription ID (" + subID + ") is invalid");
+				}
+				SubscriptionListManager sl = destNode.getSubscriptionList();
+				if (sl.containsSubscriptionID(subID)) {
+					if (messageDeliveredPerSubscription.containsKey(subID)) {
+						messageDeliveredPerSubscription.put(subID,
+							Integer.valueOf(messageDeliveredPerSubscription.get(subID).intValue() + 1));
+					}
+					else {
+						messageDeliveredPerSubscription.put(subID, 1);
+					}
+				}
+			}
+			else if (finalTarget) {
 				if (messageDeliveredPerSubscription.containsKey(subID)) {
 					messageDeliveredPerSubscription.put(subID,
 						Integer.valueOf(messageDeliveredPerSubscription.get(subID).intValue() + 1));
@@ -271,11 +327,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 				}
 			}
 		}
-		else if (m instanceof DisServiceHelloMessage) {
-			nrofHelloMessagesDelivered++;
-		}
 	}
-
 
 	public void newMessage(Message m) {
 		if (isWarmup()) {
@@ -283,104 +335,168 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			return;
 		}
 		
-		Assert.assertTrue(m instanceof PrioritizedMessage);
-		PrioritizedMessage pm = (PrioritizedMessage) m;
-		
-		this.creationTimes.put(pm.getID(), getSimTime());
-		this.nrofCreated[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
-		if (pm.getResponseSize() > 0) {
-			this.nrofResponseReqCreated[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;
-		}
+		creationTimes.put(m.getID(), getSimTime());
+		nrofCreated[m.getPriority().ordinal()]++;
 
-		Integer subID = Integer.valueOf(pm.getSubscriptionID());
+		Integer subID = Integer.valueOf(m.getSubscriptionID());
 		if (messageCreatedPerSubscription.containsKey(subID)) {
-			messageDeliveredPerSubscription.put(subID,
-				Integer.valueOf(messageDeliveredPerSubscription.get(subID).intValue() + 1));
+			messageCreatedPerSubscription.put(subID,
+				Integer.valueOf(messageCreatedPerSubscription.get(subID).intValue() + 1));
 		}
 		else {
-			messageDeliveredPerSubscription.put(subID, 1);
+			messageCreatedPerSubscription.put(subID, 1);
+		}
+		
+		if (m.getResponseSize() > 0) {
+			nrofResponseReqCreated[m.getPriority().ordinal()]++;
+			
+			if (messageResponseCreatedPerSubscription.containsKey(subID)) {
+				messageResponseCreatedPerSubscription.put(subID,
+					Integer.valueOf(messageResponseCreatedPerSubscription.get(subID).intValue() + 1));
+			}
+			else {
+				messageResponseCreatedPerSubscription.put(subID, 1);
+			}
 		}
 	}
-	
-	
+
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
-		if (m instanceof PrioritizedMessage) {
-			PrioritizedMessage pm = (PrioritizedMessage) m;
-			this.nrofStarted[pm.getPriority() - PrioritizedMessage.MIN_PRIORITY]++;	
-		}
-		else if (m instanceof DisServiceHelloMessage) {
+		if (m instanceof DisServiceHelloMessage) {
 			nrofHelloMessagesStarted++;
 		}
+		else {
+			nrofStarted[m.getPriority().ordinal()]++;
+
+			Integer subID = Integer.valueOf(m.getSubscriptionID());
+			if (messageStartedPerSubscription.containsKey(subID)) {
+				messageStartedPerSubscription.put(subID,
+					Integer.valueOf(messageStartedPerSubscription.get(subID).intValue() + 1));
+			}
+			else {
+				messageStartedPerSubscription.put(subID, 1);
+			}
+		}
 	}
-	
 
 	@Override
 	public void done() {
-		int arraySize = PrioritizedMessage.MAX_PRIORITY - PrioritizedMessage.MIN_PRIORITY + 1;
+		int arraySize = Message.PRIORITY_LEVEL.values().length;
 		
 		double deliveryProb[] = new double[arraySize];	// delivery probability
 		double responseProb[] = new double[arraySize];	// request-response success probability
 		double overHead[] = new double[arraySize];		// overhead ratio
 		
 		for (int i = 0; i < arraySize; i++) {
-			if (this.nrofCreated[i] > 0) {
-				deliveryProb[i] = (1.0 * this.nrofDelivered[i]) / this.nrofCreated[i];
+			if (nrofCreated[i] > 0) {
+				deliveryProb[i] = (1.0 * nrofDelivered[i]) / nrofCreated[i];
 			}
 			else {
 				deliveryProb[i] = 0;
 			}
 		}
-
 		for (int i = 0; i < arraySize; i++) {
-			if (this.nrofDelivered[i] > 0) {
-				overHead[i] = (1.0 * (this.nrofRelayed[i] - this.nrofDelivered[i])) / this.nrofDelivered[i];
+			if (nrofDelivered[i] > 0) {
+				overHead[i] = (1.0 * (nrofRelayed[i] - nrofDelivered[i])) / nrofDelivered[i];
 			}
 			else {
 				overHead[i] = Double.NaN;
 			}
 		}
-
 		for (int i = 0; i < arraySize; i++) {
-			if (this.nrofResponseReqCreated[i] > 0) {
-				responseProb[i] = (1.0 * this.nrofResponseDelivered[i]) / this.nrofResponseReqCreated[i];
+			if (nrofResponseReqCreated[i] > 0) {
+				responseProb[i] = (1.0 * nrofResponseDelivered[i]) / nrofResponseReqCreated[i];
 			}
 		}
 		
 		/* printing stats */
 		write("Message stats for scenario " + getScenarioName() + "\nsim_time: " + format(getSimTime()));
-		String statsText = "\nHMSent: " + this.nrofHelloMessagesStarted + 
-				"\nHMDelivered : " + this.nrofHelloMessagesDelivered + 
-				"\nHMAborted: " + this.nrofHelloMessagesAborted + 
-				"\nHMInterfered: " + this.nrofHelloMessagesInterfered;
-		write(statsText);
-		
-		for (int i = 0; i < arraySize; i++) {
-			statsText = "Priority Level: " + (i + PrioritizedMessage.MIN_PRIORITY) +
-				"\ncreated: " + this.nrofCreated[i] + 
-				"\nstarted: " + this.nrofStarted[i] + 
-				"\nrelayed: " + this.nrofRelayed[i] +
-				"\naborted: " + this.nrofAborted[i] +
-				"\nInterfered: " + this.nrofInterfered[i] +
-				"\ndropped: " + this.nrofDropped[i] +
-				"\nremoved: " + this.nrofRemoved[i] +
-				"\ndelivered: " + this.nrofDelivered[i] +
-				"\ndelivery_prob: " + format(deliveryProb[i]) +
-				"\nresponse_prob: " + format(responseProb[i]) + 
-				"\noverhead_ratio: " + format(overHead[i]) + 
-				"\nlatency_avg: " + getAverage(this.latencies[i]) +
-				"\nlatency_med: " + getMedian(this.latencies[i]) + 
-				"\nhopcount_avg: " + getIntAverage(this.hopCounts[i]) +
-				"\nhopcount_med: " + getIntMedian(this.hopCounts[i]) + 
-				"\nbuffertime_avg: " + getAverage(this.msgBufferTime[i]) +
-				"\nbuffertime_med: " + getMedian(this.msgBufferTime[i]) +
-				"\nrtt_avg: " + getAverage(this.rtt[i]) +
-				"\nrtt_med: " + getMedian(this.rtt[i]) + "\n\n";			
+		String statsText = "";
+		if (nrofHelloMessagesStarted > 0) {
+			statsText = "\nHMSent: " + nrofHelloMessagesStarted + 
+						"\nHMDelivered : " + nrofHelloMessagesDelivered + 
+						"\nHMAborted: " + nrofHelloMessagesAborted + 
+						"\nHMInterfered: " + nrofHelloMessagesInterfered;
 			write(statsText);
 		}
+		
+		for (int i = 0; i < arraySize; i++) {
+			statsText = "Priority Level: " + (i) +
+						"\ncreated: " + nrofCreated[i] +
+						"\nstarted: " + nrofStarted[i] +
+						"\nrelayed: " + nrofRelayed[i] +
+						"\naborted: " + nrofAborted[i] +
+						"\nInterfered: " + nrofInterfered[i] +
+						"\ndropped: " + nrofDropped[i] +
+						"\nremoved: " + nrofRemoved[i] +
+						"\ndelivered: " + nrofDelivered[i] +
+						"\ndelivery_prob: " + format(deliveryProb[i]) +
+						"\nresponse_prob: " + format(responseProb[i]) +
+						"\noverhead_ratio: " + format(overHead[i]) +
+						"\nlatency_avg: " + getAverage(latencies[i]) +
+						"\nlatency_med: " + getMedian(latencies[i]) +
+						"\nhopcount_avg: " + getIntAverage(hopCounts[i]) +
+						"\nhopcount_med: " + getIntMedian(hopCounts[i]) +
+						"\nbuffertime_avg: " + getAverage(msgBufferTime[i]) +
+						"\nbuffertime_med: " + getMedian(msgBufferTime[i]) +
+						"\nrtt_avg: " + getAverage(rtt[i]) +
+						"\nrtt_med: " + getMedian(rtt[i]) + "\n\n";
+			write(statsText);
+		}
+
+		if (!nodesPerSubscription.isEmpty()) {
+			int statsSize = SubscriptionListManager.MAX_SUB_ID_FOR_SIMULATION;
+			deliveryProb = new double[statsSize];		// delivery probability
+			responseProb = new double[statsSize];		// request-response success probability
+			overHead = new double[statsSize];			// overhead ratio
+			
+			for (int i = 0; i < statsSize; i++) {
+				if (messageCreatedPerSubscription.get(i).intValue() > 0) {
+					deliveryProb[i] = (1.0 * messageDeliveredPerSubscription.get(i).intValue()) /
+										messageCreatedPerSubscription.get(i).intValue();
+				}
+				else {
+					deliveryProb[i] = 0;
+				}
+			}
+			for (int i = 0; i < statsSize; i++) {
+				if (messageDeliveredPerSubscription.get(i).intValue() > 0) {
+					overHead[i] = (1.0 * (messageRelayedPerSubscription.get(i).intValue() -
+											messageDeliveredPerSubscription.get(i).intValue())) /
+											messageDeliveredPerSubscription.get(i).intValue();
+				}
+				else {
+					overHead[i] = Double.NaN;
+				}
+			}
+			for (int i = 0; i < statsSize; i++) {
+				if (messageResponseCreatedPerSubscription.get(i).intValue() > 0) {
+					responseProb[i] = (1.0 * messageResponseDeliveredPerSubscription.get(i).intValue()) /
+										messageResponseCreatedPerSubscription.get(i).intValue();
+				}
+			}
+			write("Statistics per subscription ID:\n");
+			for (int i = 0; i < statsSize; i++) {
+				statsText = "Subscription ID: " + i +
+							"\nregistered: " + nodesPerSubscription.get(i).intValue() +
+							"\ncreated: " + messageCreatedPerSubscription.get(i).intValue() +
+							"\nstarted: " + messageStartedPerSubscription.get(i).intValue() +
+							"\nrelayed: " + messageRelayedPerSubscription.get(i).intValue() +
+							"\naborted: " + messageAbortedPerSubscription.get(i).intValue() +
+							"\nInterfered: " + messageInterferredPerSubscription.get(i).intValue() +
+							"\ndropped: " + messageDroppedPerSubscription.get(i).intValue() +
+							"\nremoved: " + messageRemovedPerSubscription.get(i).intValue() +
+							"\ndelivered: " + messageDeliveredPerSubscription.get(i).intValue() +
+							"\ndelivery_prob: " + format(deliveryProb[i]) +
+							"\nresponse_prob: " + format(responseProb[i]) +
+							"\noverhead_ratio: " + format(overHead[i]) +
+							"\n\n";
+			}
+		}
+		
 		super.done();
 	}
 	

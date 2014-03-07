@@ -6,8 +6,6 @@ package interfaces;
 
 import java.util.Collection;
 
-import junit.framework.Assert;
-
 import routing.MessageRouter;
 
 import core.CBRConnection;
@@ -15,7 +13,6 @@ import core.Connection;
 import core.DTNHost;
 import core.InterferenceModel;
 import core.Message;
-import core.MessageListener;
 import core.NetworkInterface;
 import core.Settings;
 import core.SimError;

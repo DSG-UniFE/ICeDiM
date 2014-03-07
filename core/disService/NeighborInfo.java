@@ -3,7 +3,6 @@ package core.disService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.SortedSet;
 
 import core.DTNHost;
 import core.SimClock;
@@ -17,7 +16,7 @@ public class NeighborInfo {
     private int contactsCount;					// Incremented any time the other node gets back into this node's range
     private boolean isNearby;					// true if a HELLO message was recently received
 
-    SubscriptionList subscriptionList;			// The list of the node's subscriptions
+    SubscriptionListManager subscriptionList;			// The list of the node's subscriptions
     HashSet<String> receivedMessages;			// The list of message IDs received by this neighbor
     ArrayList<Contact> contactsList;			// The list of past contacts with this neighbor
     ArrayList<Double> contactDurationList;    	// maintains the lengths of the contacts with the neighbor
@@ -38,7 +37,7 @@ public class NeighborInfo {
 		this.contactsCount = 0;
 		this.isNearby = false;
 		
-		this.subscriptionList = new SubscriptionList();
+		this.subscriptionList = new SubscriptionListManager();
 		this.receivedMessages = new HashSet<String>();
 		this.contactsList = new ArrayList<Contact>();
 		this.contactDurationList = new ArrayList<Double>();
@@ -104,7 +103,7 @@ public class NeighborInfo {
 		return isNearby;
 	}
 
-	public SubscriptionList getSubscriptionList() {
+	public SubscriptionListManager getSubscriptionList() {
 		return subscriptionList;
 	}
 

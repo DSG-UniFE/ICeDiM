@@ -11,7 +11,6 @@ import core.Connection;
 import core.Message;
 import core.SimError;
 import core.Tuple;
-import core.disService.PrioritizedMessage;
 
 /**
  * @author Alex
@@ -42,27 +41,20 @@ public class LeastForwardedFirstForwardingOrder extends MessageForwardingOrderSt
 			}
 
 			diff = m1.getReceiveTime() - m2.getReceiveTime();
-			if ((m1 instanceof PrioritizedMessage) && (m2 instanceof PrioritizedMessage)) {
-				int pDiff, timesForwardedDiff;
-				PrioritizedMessage pm1 = (PrioritizedMessage) m1;
-				PrioritizedMessage pm2 = (PrioritizedMessage) m2; 
-				
-				timesForwardedDiff = pm1.getForwardTimes() - pm2.getForwardTimes();
-				pDiff = pm1.getPriority() - pm2.getPriority();
-				if ((timesForwardedDiff == 0) && (pDiff == 0) && (diff == 0)) {
-					return 0;
-				}
-				if (timesForwardedDiff == 0) {
-					// Same as Q_MODE_FIFO_WITH_PRIORITY
-					return (pDiff < 0 ? 1 : (pDiff > 0 ? -1 : (diff < 0 ? -1 : 1)));
-				}
-				else {
-					// Less forwarded messages go first 
-					return timesForwardedDiff < 0 ? -1 : 1;
-				}
+			int pDiff, timesForwardedDiff;
+			
+			timesForwardedDiff = m1.getForwardTimes() - m2.getForwardTimes();
+			pDiff = m1.getPriority().ordinal() - m2.getPriority().ordinal();
+			if ((timesForwardedDiff == 0) && (pDiff == 0) && (diff == 0)) {
+				return 0;
+			}
+			if (timesForwardedDiff == 0) {
+				// Same as Q_MODE_FIFO_WITH_PRIORITY
+				return (pDiff < 0 ? 1 : (pDiff > 0 ? -1 : (diff < 0 ? -1 : 1)));
 			}
 			else {
-				throw new SimError("Message objects in the list are not instances of PrioritizedMessage");
+				// Less forwarded messages go first 
+				return timesForwardedDiff < 0 ? -1 : 1;
 			}
 		}
 	};

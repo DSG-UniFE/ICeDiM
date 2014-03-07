@@ -134,7 +134,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 		}
 
 		/* remove oldest messages but not the ones being sent */
-		if (!makeRoomForMessage(m.getSize())) {
+		if (!makeRoomForMessage(m.getSize(), m.getPriority().ordinal())) {
 			return DENIED_NO_SPACE; // couldn't fit into buffer -> reject
 		}
 		

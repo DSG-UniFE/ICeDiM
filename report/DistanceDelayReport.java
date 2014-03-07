@@ -12,7 +12,6 @@ import core.Coord;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
-import core.disService.PrioritizedMessage;
 
 /**
  * Report for how far apart the nodes were when the message

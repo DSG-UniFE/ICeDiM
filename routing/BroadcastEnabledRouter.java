@@ -9,15 +9,12 @@ import java.util.Random;
 
 import core.Connection;
 import core.DTNHost;
-import core.InterferenceModel;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
 import core.Settings;
 import core.SimClock;
-import core.SimError;
 import core.Tuple;
-import core.disService.PrioritizedMessage;
 
 public class BroadcastEnabledRouter extends MessageRouter {
 	
@@ -85,16 +82,13 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		 * (startTransfer may remove messages) */
 		//ArrayList<Message> temp = new ArrayList<Message>(this.getMessageCollection());
 		Collection<Message> temp = this.getMessageCollection();
-		List<PrioritizedMessage> prioritizedMessages = new ArrayList<PrioritizedMessage>(temp.size());
-		for (Message m : temp) {
-			prioritizedMessages.add((PrioritizedMessage) m);
-		}
-		this.sortByQueueMode(prioritizedMessages);
+		List<Message> messagesList = new ArrayList<Message>(temp);
+		this.sortByQueueMode(messagesList);
 		
 		//for (Message m : temp) {
-		for (Message m : prioritizedMessages) {
+		for (Message m : messagesList) {
 			if (other == m.getTo()) {
-				if (startTransfer((PrioritizedMessage) m, con) == RCV_OK) {
+				if (startTransfer(m, con) == RCV_OK) {
 					// A deliverable message is found and will be delivered via con
 					return true;
 				}
@@ -103,8 +97,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		return false;
 	}
 	
-	public boolean createNewMessage(PrioritizedMessage m) {
-		if (makeRoomForNewMessage(m.getSize(), m.getPriority())) {
+	public boolean createNewMessage(Message m) {
+		if (makeRoomForNewMessage(m.getSize(), m.getPriority().ordinal())) {
 			return super.createNewMessage(m);
 		}
 		else {
@@ -123,25 +117,20 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	@Override
 	public Message messageTransferred(String id, Connection con) {
 		Message m = super.messageTransferred(id, con);
-		
-		if (m instanceof PrioritizedMessage) {
-			PrioritizedMessage pm = (PrioritizedMessage) m;
 			
-			/**
-			 *  N.B. With application support the following if-block
-			 *  becomes obsolete, and the response size should be configured 
-			 *  to zero.
-			 */
-			// check if msg was for this host and a response was requested
-			if ((m != null) && (m.getTo() == getHost()) &&
-				(m.getResponseSize() > 0)) {
-				// generate a response message with same priority and suscription as the request
-				PrioritizedMessage res = new PrioritizedMessage(this.getHost(),m.getFrom(), 
-											RESPONSE_PREFIX + m.getID(), m.getResponseSize(),
-											pm.getPriority(), pm.getSubscriptionID());
-				if (this.createNewMessage(res)) {
-					this.getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
-				}
+		/**
+		 *  N.B. With application support the following if-block
+		 *  becomes obsolete, and the response size should be configured 
+		 *  to zero.
+		 */
+		// check if msg was for this host and a response was requested
+		if ((m != null) && (m.getTo() == getHost()) &&
+			(m.getResponseSize() > 0)) {
+			// generate a response message with same priority and suscription as the request
+			Message res = new Message(this.getHost(),m.getFrom(), RESPONSE_PREFIX + m.getID(),
+										m.getResponseSize(), m.getPriority(), m.getSubscriptionID());
+			if (this.createNewMessage(res)) {
+				this.getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
 			}
 		}
 		
@@ -153,8 +142,9 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * until there's enough space for the new message.
 	 * If admissible message removals are not enough to free required space,
 	 * all performed deletes are rolled back.
-	 * @param size Size of the new message transferred, the transfer
-	 * is aborted before message is removed
+	 * @param size Size of the new message transferred, the
+	 * transfer is aborted before message is removed
+	 * @param priority Priority level of the new message
 	 * @return True if enough space could be freed, false if not
 	 */
 	protected boolean makeRoomForMessage(int size, int priority) {
@@ -163,35 +153,34 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		}
 			
 		int freeBuffer = this.getFreeBufferSize();
-		ArrayList<PrioritizedMessage> deletedMessages = new ArrayList<PrioritizedMessage>();
-		
+		ArrayList<Message> deletedMessages = new ArrayList<Message>();
 		/* delete messages from the buffer until there's enough space */
 		while (freeBuffer < size) {
-			PrioritizedMessage pm = getOldestMessageWithLowestPriority(true); // don't remove msgs being sent
+			Message m = getOldestMessageWithLowestPriority(true); // don't remove msgs being sent
 
-			if ((pm == null) || (pm.getPriority() > priority)) {
+			if ((m == null) || (m.getPriority().ordinal() > priority)) {
 				//return false
 				break; // couldn't remove any more messages
 			}
 			
 			/* delete message from the buffer as "drop" */
-			deleteMessageWithoutRaisingEvents(pm.getID());
-			deletedMessages.add(pm);
-			freeBuffer += pm.getSize();
+			deleteMessageWithoutRaisingEvents(m.getID());
+			deletedMessages.add(m);
+			freeBuffer += m.getSize();
 		}
 		
 		/* notify message drops only if necessary amount of space was freed */
 		if (freeBuffer < size) {
 			// rollback deletes and return false
-			for (PrioritizedMessage pm : deletedMessages) {
-				addToMessages(pm, false);
+			for (Message m : deletedMessages) {
+				addToMessages(m, false);
 			}
 			return false;
 		}
 
 		// commit deletes by notifying event listeners about the deletes
-		for (PrioritizedMessage pm : deletedMessages) {
-			notifyListenersAboutMessageDelete(pm, true);	// true identifies dropped messages
+		for (Message m : deletedMessages) {
+			notifyListenersAboutMessageDelete(m, true);	// true identifies dropped messages
 		}
 		return true;
 	}
@@ -202,6 +191,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * Therefore, if the message can't fit into buffer, the buffer is only 
 	 * cleared from messages that are not being sent.
 	 * @param size Size of the new message
+	 * @param priority Priority level of the new message
 	 */
 	protected boolean makeRoomForNewMessage(int size, int priority) {
 		return makeRoomForMessage(size, priority);
@@ -217,26 +207,21 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * (no messages in buffer or all messages in buffer are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
-	protected PrioritizedMessage getOldestMessageWithLowestPriority(boolean excludeMsgBeingSent) {
+	protected Message getOldestMessageWithLowestPriority(boolean excludeMsgBeingSent) {
 		Collection<Message> messages = this.getMessageCollection();
-		PrioritizedMessage oldestWithLowestPriority = null;
+		Message oldestWithLowestPriority = null;
 		for (Message m : messages) {
-			if (!(m instanceof PrioritizedMessage)) {
-				throw new SimError("Message in queue is not an instance of PrioritizedMessage");
-			}
-			
-			PrioritizedMessage pm = (PrioritizedMessage) m;			
-			if (excludeMsgBeingSent && isSending(pm.getID())){
+			if (excludeMsgBeingSent && isSending(m.getID())){
 				continue; // skip the message(s) that router is sending
 			}
 			
 			if (oldestWithLowestPriority == null) {
-				oldestWithLowestPriority = pm;
+				oldestWithLowestPriority = m;
 			}
-			else if (oldestWithLowestPriority.getPriority() >= pm.getPriority()) {
-				if ((oldestWithLowestPriority.getPriority() > pm.getPriority()) ||
-					(oldestWithLowestPriority.getReceiveTime() > pm.getReceiveTime())) {
-					oldestWithLowestPriority = pm;
+			else if (oldestWithLowestPriority.getPriority().ordinal() >= m.getPriority().ordinal()) {
+				if ((oldestWithLowestPriority.getPriority().ordinal() > m.getPriority().ordinal()) ||
+					(oldestWithLowestPriority.getReceiveTime() > m.getReceiveTime())) {
+					oldestWithLowestPriority = m;
 				}
 			}
 		}
@@ -260,7 +245,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * @return the value returned by 
 	 * {@link Connection#startTransfer(DTNHost, Message)}
 	 */
-	protected int startTransfer(PrioritizedMessage m, Connection con) {
+	protected int startTransfer(Message m, Connection con) {
 		if (!con.isReadyForTransfer() ||
 			!con.getInterfaceForNode(getHost()).isReadyToBeginTransfer()) {
 			return TRY_LATER_BUSY;
@@ -319,18 +304,18 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * recipient is some host that we're connected to at the moment.
 	 * @return a list of message-connections tuples
 	 */
-	protected List<Tuple<PrioritizedMessage, Connection>> getMessagesForConnected() {
+	protected List<Tuple<Message, Connection>> getMessagesForConnected() {
 		if (getNrofMessages() == 0 || getConnections().size() == 0) {
 			/* no messages -> empty list */
-			return new ArrayList<Tuple<PrioritizedMessage, Connection>>(0); 
+			return new ArrayList<Tuple<Message, Connection>>(0); 
 		}
 
-		List<Tuple<PrioritizedMessage, Connection>> forTuples = new ArrayList<Tuple<PrioritizedMessage, Connection>>();
+		List<Tuple<Message, Connection>> forTuples = new ArrayList<Tuple<Message, Connection>>();
 		for (Message m : getMessageCollection()) {
 			for (Connection con : getConnections()) {
 				DTNHost to = con.getOtherNode(getHost());
 				if (m.getTo() == to) {
-					forTuples.add(new Tuple<PrioritizedMessage, Connection>((PrioritizedMessage) m,con));
+					forTuples.add(new Tuple<Message, Connection>(m, con));
 				}
 			}
 		}
@@ -359,7 +344,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * Shuffles a messages list so the messages are in random order.
 	 * @param messages The list to sort and shuffle
 	 */
-	protected void shuffleMessages(List<PrioritizedMessage> messages) {
+	protected void shuffleMessages(List<Message> messages) {
 		if (messages.size() <= 1) {
 			return; // nothing to shuffle
 		}
@@ -455,7 +440,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		if (freeBuffer) {
 			// if the message being sent was holding excessive buffer, free it
 			if (this.getFreeBufferSize() < 0) {
-				this.makeRoomForMessage(0, PrioritizedMessage.MAX_PRIORITY);
+				this.makeRoomForMessage(0, Message.PRIORITY_LEVEL.HIGHEST_P.ordinal());
 			}
 		}
 
@@ -487,13 +472,9 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 */
 	protected void transferDone(Connection con) { }
 
-	List<PrioritizedMessage> getOrderedMessageList() {
-		Collection<Message> messages = this.getMessageCollection();
-		List<PrioritizedMessage> prioritizedMessages = new ArrayList<PrioritizedMessage>(messages.size());
-		for (Message m : messages) {
-			prioritizedMessages.add((PrioritizedMessage) m);
-		}
+	List<Message> getOrderedMessageList() {
+		List<Message> messagesList = new ArrayList<Message>(this.getMessageCollection());
 		
-		return sortByQueueMode(prioritizedMessages);
+		return sortByQueueMode(messagesList);
 	}
 }

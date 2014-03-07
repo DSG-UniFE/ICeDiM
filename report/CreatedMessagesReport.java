@@ -4,11 +4,9 @@
  */
 package report;
 
-import junit.framework.Assert;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
-import core.disService.PrioritizedMessage;
 
 /**
  * Reports information about all created messages. Messages created during

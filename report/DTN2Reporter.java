@@ -5,12 +5,10 @@
  
 package report;
 
-import junit.framework.Assert;
 import core.DTN2Manager;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
-import core.disService.PrioritizedMessage;
 import fi.tkk.netlab.dtn.ecla.CLAParser;
 
 /**

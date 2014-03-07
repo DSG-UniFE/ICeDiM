@@ -6,12 +6,9 @@ package report;
 
 import java.util.List;
 
-import junit.framework.Assert;
-
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
-import core.disService.PrioritizedMessage;
 
 /**
  * Report information about all delivered messages. Messages created during

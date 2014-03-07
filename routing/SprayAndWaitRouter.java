@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import core.Connection;
-import core.DTNHost;
 import core.Message;
 import core.Settings;
 
@@ -77,7 +76,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	
 	@Override 
 	public boolean createNewMessage(Message msg) {
-		makeRoomForNewMessage(msg.getSize());
+		makeRoomForNewMessage(msg.getSize(), msg.getPriority().ordinal());
 
 		msg.setTtl(this.msgTtl);
 		msg.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
@@ -98,7 +97,6 @@ public class SprayAndWaitRouter extends ActiveRouter {
 		}
 		
 		/* create a list of SAWMessages that have copies left to distribute */
-		@SuppressWarnings(value = "unchecked")
 		List<Message> copiesLeft = sortByQueueMode(getMessagesWithCopiesLeft());
 		
 		if (copiesLeft.size() > 0) {

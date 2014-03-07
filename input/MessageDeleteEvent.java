@@ -25,8 +25,7 @@ public class MessageDeleteEvent extends MessageEvent {
 	 * @param id ID of the message
 	 * @param time Time when the message is deleted
 	 */
-	public MessageDeleteEvent(int host, String id, double time, 
-			boolean drop) {
+	public MessageDeleteEvent(int host, String id, double time, boolean drop) {
 		super(host, host, id, time);
 		this.drop = drop;
 	}

@@ -3,9 +3,6 @@ package routing;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.uncommons.maths.random.MersenneTwisterRNG;
-
 import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
 
 import core.Connection;
@@ -18,9 +15,8 @@ import core.SimClock;
 import core.SimError;
 import core.disService.DisServiceHelloMessage;
 import core.disService.NeighborInfo;
-import core.disService.PrioritizedMessage;
 import core.disService.PublishSubscriber;
-import core.disService.SubscriptionList;
+import core.disService.SubscriptionListManager;
 import core.disService.WorldState;
 
 public class DisServiceRouter extends BroadcastEnabledRouter implements PublishSubscriber {
@@ -35,7 +31,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 	protected double lastPingSentTime[];
 	
 	protected ArrayList<String> receivedMsgIDs;
-	protected SubscriptionList nodeSubscriptions;
+	protected SubscriptionListManager nodeSubscriptions;
 	protected WorldState worldState;
 	
 	protected HelloMessageGen hmGenerator;
@@ -54,7 +50,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 		
 		this.receivedMsgIDs = new ArrayList<String>();
 		try {
-			this.nodeSubscriptions = new SubscriptionList(s);
+			this.nodeSubscriptions = new SubscriptionListManager(s);
 		} catch (ParseException e) {
 			throw new SimError("Error parsing configuration file");
 		}
@@ -114,7 +110,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 			 * Check if we have some messages which should be transferred
 			 * Transfer most requested message or the one less forwarded
 			 */
-			List<PrioritizedMessage> messageList = getOrderedMessageList();
+			List<Message> messageList = getOrderedMessageList();
 			List<NeighborInfo> nearbyNodes = worldState.getActiveNeighborInfosByNetworkInterface(ni);
 			
 			if ((nearbyNodes.size() == 0) || (messageList.size() == 0)) {
@@ -126,7 +122,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 			 * If yes, we try to broadcast the message through the selected interface
 			 */
 		nextSearch:
-			for (PrioritizedMessage pm : messageList) {
+			for (Message pm : messageList) {
 				for (NeighborInfo neighborInfo : nearbyNodes) { 
 					if (neighborInfo.getSubscriptionList().
 							containsSubscriptionID(pm.getSubscriptionID()) &&
@@ -146,7 +142,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 			}
 			else {
 				// then try broadcasting messages in queue order
-				PrioritizedMessage pm = messageList.get(0);
+				Message pm = messageList.get(0);
 				if (BROADCAST_OK != tryBroadcastOneMessage (pm, ni)) {
 					throw new SimError("Impossible transmit message " + pm +
 										" via Network Interface" + ni);
@@ -302,7 +298,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 	}
 
 	@Override
-	public SubscriptionList getSubscriptionList() {
+	public SubscriptionListManager getSubscriptionList() {
 		return nodeSubscriptions;
 	}
 
@@ -318,13 +314,13 @@ class HelloMessageGen {
 
 	private DTNHost node;
 	private ArrayList<String> receivedMsgIDs;
-	private SubscriptionList nodeSubscriptions;
+	private SubscriptionListManager nodeSubscriptions;
 	
 	private int helloMsgIDCounter;
 	
 	static final int SourceAndIDSize = 8; // 8 bytes --> 2 * 32bit integers	
 	
-	public HelloMessageGen(ArrayList<String> receivedMsgIDs, SubscriptionList nodeSubscriptions) {
+	public HelloMessageGen(ArrayList<String> receivedMsgIDs, SubscriptionListManager nodeSubscriptions) {
 		this.node = null;
 		this.receivedMsgIDs = receivedMsgIDs;
 		this.nodeSubscriptions = nodeSubscriptions;

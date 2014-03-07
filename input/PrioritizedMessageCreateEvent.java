@@ -1,10 +1,10 @@
 package input;
 
 import core.DTNHost;
+import core.Message;
 import core.World;
-import core.disService.PrioritizedMessage;
 import core.disService.PublishSubscriber;
-import core.disService.SubscriptionList;
+import core.disService.SubscriptionListManager;
 
 public class PrioritizedMessageCreateEvent extends MessageCreateEvent {
 	
@@ -30,12 +30,13 @@ public class PrioritizedMessageCreateEvent extends MessageCreateEvent {
 		
 		PublishSubscriber router = (PublishSubscriber) from.getRouter();
 		int subID = router.generateRandomSubID();
-		if (subID == SubscriptionList.INVALID_SUB_ID) {
+		if (subID == SubscriptionListManager.INVALID_SUB_ID) {
 			// Node does not generate messages
 			return;
 		}
 		
-		PrioritizedMessage m = new PrioritizedMessage(from, to, this.id, this.size, msgPriority, subID);
+		Message m = new Message(from, to, this.id, this.size,
+								Message.PRIORITY_LEVEL.values()[msgPriority], subID);
 		m.setResponseSize(this.responseSize);
 		from.createNewMessage(m);
 	}

@@ -250,7 +250,7 @@ public class MaxPropRouter extends ActiveRouter {
 	 * exludeMsgBeingSent is true)
 	 */
     @Override
-	protected Message getOldestMessage(boolean excludeMsgBeingSent) {
+    protected Message getOldestMessageWithLowestPriority(boolean excludeMsgBeingSent) {
 		Collection<Message> messages = this.getMessageCollection();
 		List<Message> validMessages = new ArrayList<Message>();
 
@@ -261,8 +261,7 @@ public class MaxPropRouter extends ActiveRouter {
 			validMessages.add(m);
 		}
 		
-		Collections.sort(validMessages, 
-				new MaxPropComparator(this.calcThreshold())); 
+		Collections.sort(validMessages, new MaxPropComparator(this.calcThreshold())); 
 		
 		return validMessages.get(validMessages.size()-1); // return last message
 	}

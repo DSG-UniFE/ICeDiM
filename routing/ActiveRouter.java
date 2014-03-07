@@ -7,15 +7,9 @@ package routing;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import junit.framework.Assert;
-
-import org.hamcrest.core.IsInstanceOf;
-
-import core.InterferenceModel;
 import core.NetworkInterface;
 import core.Connection;
 import core.DTNHost;
@@ -24,7 +18,6 @@ import core.MessageListener;
 import core.Settings;
 import core.SimClock;
 import core.Tuple;
-import core.disService.PrioritizedMessage;
 
 /**
  * Superclass of active routers. Contains convenience methods (e.g. 
@@ -112,12 +105,11 @@ public abstract class ActiveRouter extends MessageRouter {
 	
 	@Override 
 	public boolean createNewMessage(Message m) {
-		makeRoomForNewMessage(m.getSize());
-		return super.createNewMessage(m);
-	}
-	
-	public boolean createNewMessage(PrioritizedMessage m) {
-		return super.createNewMessage(m);
+		if (makeRoomForNewMessage(m.getSize(), m.getPriority().ordinal())) {
+			return super.createNewMessage(m);
+		}
+		
+		return false;
 	}
 	
 	@Override
@@ -144,10 +136,10 @@ public abstract class ActiveRouter extends MessageRouter {
 		if ((m != null) && (m.getTo() == getHost()) &&
 			(m.getResponseSize() > 0)) {
 			// generate a response message
-			Message res = new Message(this.getHost(),m.getFrom(), 
-					RESPONSE_PREFIX+m.getID(), m.getResponseSize());
+			Message res = new Message(this.getHost(),m.getFrom(), RESPONSE_PREFIX+m.getID(),
+										m.getResponseSize(), m.getPriority(), m.getSubscriptionID());
 			this.createNewMessage(res);
-			this.getMessage(RESPONSE_PREFIX+m.getID()).setRequest(m);
+			this.getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
 		}
 		
 		return m;
@@ -229,7 +221,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		/* remove oldest messages but not the ones being sent */
-		if (!makeRoomForMessage(m.getSize())) {
+		if (!makeRoomForMessage(m.getSize(), m.getPriority().ordinal())) {
 			return DENIED_NO_SPACE; // couldn't fit into buffer -> reject
 		}
 		
@@ -239,29 +231,46 @@ public abstract class ActiveRouter extends MessageRouter {
 	/** 
 	 * Removes messages from the buffer (oldest first) until
 	 * there's enough space for the new message.
-	 * @param size Size of the new message 
-	 * transferred, the transfer is aborted before message is removed
+	 * @param size Size of the new message transferred,
+	 * the transfer is aborted before message is removed
+	 * @param priority Priority level of the new message
 	 * @return True if enough space could be freed, false if not
 	 */
-	protected boolean makeRoomForMessage(int size) {
+	protected boolean makeRoomForMessage(int size, int priority) {
 		if (size > this.getBufferSize()) {
 			return false; // message too big for the buffer
 		}
 			
 		int freeBuffer = this.getFreeBufferSize();
+		ArrayList<Message> deletedMessages = new ArrayList<Message>();
 		/* delete messages from the buffer until there's enough space */
 		while (freeBuffer < size) {
-			Message m = getOldestMessage(true); // don't remove msgs being sent
+			Message m = getOldestMessageWithLowestPriority(true); // don't remove msgs being sent
 
-			if (m == null) {
-				return false; // couldn't remove any more messages
-			}			
+			if ((m == null) || (m.getPriority().ordinal() > priority)) {
+				//return false
+				break; // couldn't remove any more messages
+			}
 			
 			/* delete message from the buffer as "drop" */
-			deleteMessage(m.getID(), true);
+			deleteMessageWithoutRaisingEvents(m.getID());
+			deletedMessages.add(m);
 			freeBuffer += m.getSize();
 		}
 		
+		/* notify message drops only if necessary amount of space was freed */
+		if (freeBuffer < size) {
+			// rollback deletes and return false
+			for (Message m : deletedMessages) {
+				addToMessages(m, false);
+			}
+			return false;
+		}
+
+		// commit deletes by notifying event listeners about the deletes
+		for (Message m : deletedMessages) {
+			notifyListenersAboutMessageDelete(m, true);	// true identifies dropped messages
+		}
 		return true;
 	}
 	
@@ -284,9 +293,10 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * Therefore, if the message can't fit into buffer, the buffer is only 
 	 * cleared from messages that are not being sent.
 	 * @param size Size of the new message
+	 * @param priority Priority level of the new message
 	 */
-	protected void makeRoomForNewMessage(int size) {
-		makeRoomForMessage(size);
+	protected boolean makeRoomForNewMessage(int size, int priority) {
+		return makeRoomForMessage(size, priority);
 	}
 
 	
@@ -300,24 +310,26 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * (no messages in buffer or all messages in buffer are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
-	protected Message getOldestMessage(boolean excludeMsgBeingSent) {
+	protected Message getOldestMessageWithLowestPriority(boolean excludeMsgBeingSent) {
 		Collection<Message> messages = this.getMessageCollection();
-		Message oldest = null;
+		Message oldestWithLowestPriority = null;
 		for (Message m : messages) {
-			
-			if (excludeMsgBeingSent && isSending(m.getID())) {
+			if (excludeMsgBeingSent && isSending(m.getID())){
 				continue; // skip the message(s) that router is sending
 			}
 			
-			if (oldest == null) {
-				oldest = m;
+			if (oldestWithLowestPriority == null) {
+				oldestWithLowestPriority = m;
 			}
-			else if (oldest.getReceiveTime() > m.getReceiveTime()) {
-				oldest = m;
+			else if (oldestWithLowestPriority.getPriority().ordinal() >= m.getPriority().ordinal()) {
+				if ((oldestWithLowestPriority.getPriority().ordinal() > m.getPriority().ordinal()) ||
+					(oldestWithLowestPriority.getReceiveTime() > m.getReceiveTime())) {
+					oldestWithLowestPriority = m;
+				}
 			}
 		}
 		
-		return oldest;
+		return oldestWithLowestPriority;
 	}
 	
 	/**
@@ -453,7 +465,6 @@ public abstract class ActiveRouter extends MessageRouter {
 			return null;
 		}
 		
-		@SuppressWarnings(value = "unchecked")
 		Tuple<Message, Connection> t =
 			tryMessagesForConnected(sortByQueueMode(getMessagesForConnected()));
 
@@ -576,7 +587,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			if (removeCurrent) {
 				// if the message being sent was holding excess buffer, free it
 				if (this.getFreeBufferSize() < 0) {
-					this.makeRoomForMessage(0);
+					this.makeRoomForMessage(0, Message.PRIORITY_LEVEL.HIGHEST_P.ordinal());
 				}
 				sendingConnections.remove(i);
 			}

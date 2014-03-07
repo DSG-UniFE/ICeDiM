@@ -5,16 +5,11 @@
 package routing;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 import strategies.MessageForwardingOrderStrategy;
-
-import com.sun.org.apache.bcel.internal.generic.FDIV;
 
 import core.Application;
 import core.Connection;
@@ -27,8 +22,6 @@ import core.Settings;
 import core.SettingsError;
 import core.SimClock;
 import core.SimError;
-import core.Tuple;
-import core.disService.PrioritizedMessage;
 
 /**
  * Superclass for message routers.
@@ -360,6 +353,10 @@ public abstract class MessageRouter {
 		NetworkInterface receivingInterface = con.getReceiverInterface();
 		
 		int receptionValue = receivingInterface.beginNewReception(newMessage, con);
+		for (MessageListener ml : this.mListeners) {
+			ml.messageTransferStarted(newMessage, con.getSenderNode(), getHost());
+		}
+		
 		if (receptionValue == InterferenceModel.RECEPTION_DENIED_DUE_TO_SEND) {
 			throw new SimError("Receive failed due to transmitting interface. " + 
 								"CSMA/CA should avoid these situations");
@@ -367,10 +364,6 @@ public abstract class MessageRouter {
 		if (receptionValue == InterferenceModel.RECEPTION_INTERFERENCE) {
 			// The new reception failed, triggering an interference
 			return DENIED_INTERFERENCE;
-		}
-		
-		for (MessageListener ml : this.mListeners) {
-			ml.messageTransferStarted(newMessage, con.getSenderNode(), getHost());
 		}
 		
 		 // superclass accepts messages if the interference model accepts it
@@ -468,11 +461,11 @@ public abstract class MessageRouter {
 			return;
 		}
 		else if (receiveResult != InterferenceModel.RECEPTION_INCOMPLETE) {
-			throw new SimError("isMessageTransferredCorrectly method invoked with message" +
-								" with ID " + msgID + " returned value" + receiveResult);
+			throw new SimError("isMessageTransferredCorrectly() method invoked with message" +
+								" with ID " + msgID + " returned reception incomplete;");
 		}
 
-		Message abortedMessage = receivingInterface.abortMessageReception (con);
+		Message abortedMessage = receivingInterface.abortMessageReception(con);
 		if (abortedMessage != null) {
 			for (MessageListener ml : this.mListeners) {
 				ml.messageTransferAborted(abortedMessage, con.getSenderNode(), this.host);
@@ -625,7 +618,6 @@ public abstract class MessageRouter {
 	 * @param list The list to sort or shuffle
 	 * @return The sorted/shuffled list
 	 */
-	@SuppressWarnings(value = "unchecked") /* ugly way to make this generic */
 	protected <T> List<T> sortByQueueMode(List<T> list) {
 		return messageForwardingStrategy.MessageProcessingOrder(list);
 	}

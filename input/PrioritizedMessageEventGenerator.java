@@ -3,8 +3,8 @@ package input;
 import org.uncommons.maths.random.GaussianGenerator;
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
+import core.Message;
 import core.Settings;
-import core.disService.PrioritizedMessage;
 
 public class PrioritizedMessageEventGenerator extends MessageEventGenerator {
 	
@@ -46,8 +46,8 @@ public class PrioritizedMessageEventGenerator extends MessageEventGenerator {
 		
 		/* Create event and advance to next event */
 		PrioritizedMessageCreateEvent mce = new PrioritizedMessageCreateEvent(from, to, this.getID(), 
-				msgSize, responseSize, this.nextEventsTime, PrioritizedMessage.MIN_PRIORITY +
-				Math.min(pVal, PrioritizedMessage.MAX_PRIORITY));
+											msgSize, responseSize, this.nextEventsTime,
+											Math.min(pVal, Message.PRIORITY_LEVEL.HIGHEST_P.ordinal()));
 		this.nextEventsTime += interval;
 		
 		if (this.msgTime != null && this.nextEventsTime > this.msgTime[1]) {
