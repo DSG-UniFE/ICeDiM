@@ -344,6 +344,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 					anotherInterface);	
 		}
 
+		// Notify the hosts that the connection is down
 		this.host.connectionDown(con);
 		anotherInterface.getHost().connectionDown(con);
 	}
@@ -669,14 +670,15 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param con Connection which will be disconnected.
 	 */
 	protected void finalizeBeforeDisconnection(Connection con) {
+		// Note: changedConnection will be called later by the invoking method
 		if (con.isTransferOngoing()) {
 			// Message transfer has not been completed
-			getHost().getRouter().changedConnection(con);
+			//getHost().getRouter().changedConnection(con);
 			con.abortTransfer();
 		}
 		else if (!con.isIdle()) {
 			// Transfer was completed --> finalize transfer before connection goes down
-			getHost().getRouter().changedConnection(con);
+			//getHost().getRouter().changedConnection(con);
 			con.finalizeTransfer();
 		}
 	}
