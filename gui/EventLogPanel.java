@@ -302,7 +302,7 @@ public class EventLogPanel extends JPanel
 
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from,DTNHost to) {
-		processEvent(msgInterferedCheck,"Interference detected in message relay", from, to, m);
+		processEvent(msgInterferedCheck,"Interference detected during message relay", from, to, m);
 		
 	}
 	

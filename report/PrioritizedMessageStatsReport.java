@@ -57,7 +57,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	private HashMap<Integer, Integer> messageAbortedPerSubscription;
 	private HashMap<Integer, Integer> messageDroppedPerSubscription;
 	private HashMap<Integer, Integer> messageRemovedPerSubscription;
-	private HashMap<Integer, Integer> messageInterferredPerSubscription;
+	private HashMap<Integer, Integer> messageInterferedPerSubscription;
 	
 	
 	/**
@@ -156,7 +156,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		this.messageAbortedPerSubscription = new HashMap<Integer, Integer>();
 		this.messageDroppedPerSubscription = new HashMap<Integer, Integer>();
 		this.messageRemovedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageInterferredPerSubscription = new HashMap<Integer, Integer>();
+		this.messageInterferedPerSubscription = new HashMap<Integer, Integer>();
 	}
 
 	
@@ -252,12 +252,12 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			nrofInterfered[m.getPriority().ordinal()]++;
 			
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
-			if (messageInterferredPerSubscription.containsKey(subID)) {
-				messageInterferredPerSubscription.put(subID,
-					Integer.valueOf(messageInterferredPerSubscription.get(subID).intValue() + 1));
+			if (messageInterferedPerSubscription.containsKey(subID)) {
+				messageInterferedPerSubscription.put(subID,
+					Integer.valueOf(messageInterferedPerSubscription.get(subID).intValue() + 1));
 			}
 			else {
-				messageInterferredPerSubscription.put(subID, 1);
+				messageInterferedPerSubscription.put(subID, 1);
 			}
 		}
 	}
@@ -486,7 +486,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 							"\nstarted: " + messageStartedPerSubscription.get(i).intValue() +
 							"\nrelayed: " + messageRelayedPerSubscription.get(i).intValue() +
 							"\naborted: " + messageAbortedPerSubscription.get(i).intValue() +
-							"\nInterfered: " + messageInterferredPerSubscription.get(i).intValue() +
+							"\nInterfered: " + messageInterferedPerSubscription.get(i).intValue() +
 							"\ndropped: " + messageDroppedPerSubscription.get(i).intValue() +
 							"\nremoved: " + messageRemovedPerSubscription.get(i).intValue() +
 							"\ndelivered: " + messageDeliveredPerSubscription.get(i).intValue() +
