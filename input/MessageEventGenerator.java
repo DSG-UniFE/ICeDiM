@@ -64,6 +64,8 @@ public class MessageEventGenerator implements EventQueue {
 
 	/** Random number generator for this Class */
 	protected Random rng;
+	/** Random message priority generator for this Class */
+	protected MessagePriorityGenerator messagePriorityGenerator;
 	
 	/**
 	 * Constructor, initializes the interval between events, 
@@ -124,10 +126,11 @@ public class MessageEventGenerator implements EventQueue {
 			}
 		}
 		
+		messagePriorityGenerator = new MessagePriorityGenerator(s);
+		
 		/* calculate the first event's time */
 		this.nextEventsTime = (this.msgTime != null ? this.msgTime[0] : 0) 
-			+ msgInterval[0] + 
-			(msgInterval[0] == msgInterval[1] ? 0 : 
+			+ msgInterval[0] + (msgInterval[0] == msgInterval[1] ? 0 : 
 			rng.nextInt(msgInterval[1] - msgInterval[0]));
 	}
 	
@@ -203,9 +206,10 @@ public class MessageEventGenerator implements EventQueue {
 		interval = drawNextEventTimeDiff();
 		
 		/* Create event and advance to next event */
-		MessageCreateEvent mce = new MessageCreateEvent(from, to, this.getID(), 
-				msgSize, responseSize, this.nextEventsTime);
-		this.nextEventsTime += interval;	
+		MessageCreateEvent mce = new MessageCreateEvent(from, to, this.getID(),
+				messagePriorityGenerator.randomlyGenerateNextPriority(), msgSize,
+				responseSize, this.nextEventsTime);
+		this.nextEventsTime += interval;
 		
 		if (this.msgTime != null && this.nextEventsTime > this.msgTime[1]) {
 			/* next event would be later than the end time */
@@ -230,5 +234,5 @@ public class MessageEventGenerator implements EventQueue {
 	protected String getID(){
 		this.id++;
 		return idPrefix + this.id;
-	}	
+	}
 }

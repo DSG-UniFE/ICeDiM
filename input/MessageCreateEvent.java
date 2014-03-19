@@ -16,6 +16,7 @@ import core.disService.SubscriptionListManager;
 public class MessageCreateEvent extends MessageEvent {
 	protected int size;
 	protected int responseSize;
+	protected int priority;
 	
 	/**
 	 * Creates a message creation event with a optional response request
@@ -27,11 +28,12 @@ public class MessageCreateEvent extends MessageEvent {
 	 * no response is requested
 	 * @param time Time, when the message is created
 	 */
-	public MessageCreateEvent(int from, int to, String id, int size,
-			int responseSize, double time) {
+	public MessageCreateEvent(int from, int to, String id, int priority, int size,
+								int responseSize, double time) {
 		super(from, to, id, time);
 		this.size = size;
 		this.responseSize = responseSize;
+		this.priority = priority;
 	}
 
 	
@@ -54,7 +56,7 @@ public class MessageCreateEvent extends MessageEvent {
 		}
 	
 		// No priority - Use the PrioritizedMessageEventGenerator to generate messages with priorities
-		Message m = new Message(from, to, this.id, this.size, Message.PRIORITY_LEVEL.NO_P, subID);
+		Message m = new Message(from, to, this.id, this.size, priority, subID);
 		m.setResponseSize(this.responseSize);
 		from.createNewMessage(m);
 	}

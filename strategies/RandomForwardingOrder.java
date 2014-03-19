@@ -19,7 +19,9 @@ public class RandomForwardingOrder extends MessageForwardingOrderStrategy {
 	static RandomForwardingOrder singletonInstance = null;
 	static Random randomGenerator = null;
 	
-	private RandomForwardingOrder() {}
+	private RandomForwardingOrder() {
+		super(MessageForwardingOrderStrategy.QueueForwardingOrderMode.Random);
+	}
 	
 	/* (non-Javadoc)
 	 * @see strategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)

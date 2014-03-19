@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import strategies.MessageForwardingOrderStrategy;
+
 import core.NetworkInterface;
 import core.Connection;
 import core.DTNHost;
@@ -41,7 +43,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	protected ArrayList<Connection> sendingConnections;
 	/** sim time when the last TTL check was done */
 	private double lastTtlCheck;
-	
+
 
 	/**
 	 * Constructor. Creates a new message router based on the settings in
@@ -245,7 +247,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		ArrayList<Message> deletedMessages = new ArrayList<Message>();
 		/* delete messages from the buffer until there's enough space */
 		while (freeBuffer < size) {
-			Message m = getOldestMessageWithLowestPriority(true); // don't remove msgs being sent
+			Message m = getLeastImportantMessageInQueue(true); // don't remove msgs being sent
 
 			if ((m == null) || (m.getPriority().ordinal() > priority)) {
 				//return false
@@ -310,26 +312,54 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * (no messages in buffer or all messages in buffer are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
-	protected Message getOldestMessageWithLowestPriority(boolean excludeMsgBeingSent) {
-		Collection<Message> messages = this.getMessageCollection();
-		Message oldestWithLowestPriority = null;
-		for (Message m : messages) {
-			if (excludeMsgBeingSent && isSending(m.getID())){
-				continue; // skip the message(s) that router is sending
+	protected Message getOldestMessageInQueue(boolean excludeMsgBeingSent) {
+		Message messageList[] = this.getMessageCollection().toArray(new Message[0]);
+		if (messageList.length == 0) {
+			return null;
+		}
+		
+		Message oldestMessage = messageList[0];
+		for (Message m : messageList) {
+			if (excludeMsgBeingSent && isSending(m.getID())) {
+				// skip the message(s) that router is sending
+				continue;
 			}
-			
-			if (oldestWithLowestPriority == null) {
-				oldestWithLowestPriority = m;
-			}
-			else if (oldestWithLowestPriority.getPriority().ordinal() >= m.getPriority().ordinal()) {
-				if ((oldestWithLowestPriority.getPriority().ordinal() > m.getPriority().ordinal()) ||
-					(oldestWithLowestPriority.getReceiveTime() > m.getReceiveTime())) {
-					oldestWithLowestPriority = m;
-				}
+			if (m.getCreationTime() < oldestMessage.getCreationTime()) {
+				oldestMessage = m;
 			}
 		}
 		
-		return oldestWithLowestPriority;
+		return oldestMessage;
+	}
+
+	
+	/**
+	 * Returns the oldest (by receive time) message in the message buffer 
+	 * (that is not being sent if excludeMsgBeingSent is true).
+	 * @param excludeMsgBeingSent If true, excludes message(s) that are
+	 * being sent from the oldest message check (i.e. if oldest message is
+	 * being sent, the second oldest message is returned)
+	 * @return The oldest message or null if no message could be returned
+	 * (no messages in buffer or all messages in buffer are being sent and
+	 * exludeMsgBeingSent is true)
+	 */
+	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {
+		if (messageForwardingStrategy.getQueueForwardingMode() ==
+				MessageForwardingOrderStrategy.QueueForwardingOrderMode.FIFO) {
+			return getOldestMessageInQueue(excludeMsgBeingSent);
+		}
+		
+		List<Message> sortedList = sortByQueueMode(new ArrayList<Message>(
+													this.getMessageCollection()));
+		for (int i = sortedList.size() - 1; i >= 0; i--) {
+			if (excludeMsgBeingSent && isSending(sortedList.get(i).getID())) {
+				// skip the message(s) that router is sending
+				continue;
+			}
+			return sortedList.get(i);
+		}
+		
+		return null;
 	}
 	
 	/**

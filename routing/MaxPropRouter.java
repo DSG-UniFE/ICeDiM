@@ -250,7 +250,7 @@ public class MaxPropRouter extends ActiveRouter {
 	 * exludeMsgBeingSent is true)
 	 */
     @Override
-    protected Message getOldestMessageWithLowestPriority(boolean excludeMsgBeingSent) {
+    protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {
 		Collection<Message> messages = this.getMessageCollection();
 		List<Message> validMessages = new ArrayList<Message>();
 

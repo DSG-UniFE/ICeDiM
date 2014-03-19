@@ -34,20 +34,6 @@ public abstract class MessageRouter {
 	 * an integer. 
 	 */ 
 	public static final String MSG_TTL_S = "msgTtl";
-	/**
-	 * Message/fragment sending queue type -setting id ({@value}). 
-	 * This setting affects the order the messages and fragments are sent if the
-	 * routing protocol doesn't define any particular order (e.g, if more than 
-	 * one message can be sent directly to the final recipient). 
-	 * Valid values are<BR>
-	 * <UL>
-	 * <LI/> 0 : random (message order is randomized every time; default option)
-	 * <LI/> 1 : FIFO (most recently received messages are sent last)
-	 * <LI/> 2 : Prioritized_FIFO (FIFO with highest priority messages are sent first)
-	 * <LI/> 3 : Prioritized_LFF_FIFO (Prioritized_FIFO with least forwarded messages sent first - attempt to be fairer)
-	 * </UL>
-	 */ 
-	public static enum QueueForwardingOrderMode {Random, FIFO, Prioritized_FIFO, Prioritized_LFF_FIFO}
 	
 	public static final String SEND_QUEUE_MODE_S = "sendQueueMode";	
 
@@ -108,12 +94,13 @@ public abstract class MessageRouter {
 		int sendQueueMode = 0;
 		if (s.contains(SEND_QUEUE_MODE_S)) {
 			sendQueueMode = s.getInt(SEND_QUEUE_MODE_S);
-			if (sendQueueMode < 0 || sendQueueMode >= QueueForwardingOrderMode.values().length) {
+			if (sendQueueMode < 0 || sendQueueMode >=
+					MessageForwardingOrderStrategy.QueueForwardingOrderMode.values().length) {
 				throw new SettingsError("Invalid value for " + s.getFullPropertyName(SEND_QUEUE_MODE_S));
 			}
 		}
-		messageForwardingStrategy = MessageForwardingOrderStrategy.MessageForwardingStrategyFactory
-													(QueueForwardingOrderMode.values()[sendQueueMode]);
+		messageForwardingStrategy = MessageForwardingOrderStrategy.MessageForwardingStrategyFactory(
+				MessageForwardingOrderStrategy.QueueForwardingOrderMode.values()[sendQueueMode]);
 	}
 	
 	/**

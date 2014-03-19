@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
+import core.Message;
 import core.SimError;
 
 /**
@@ -156,8 +157,10 @@ public class StandardEventsReader implements ExternalEventsReader {
 						if (lineScan.hasNextInt()) {
 							respSize = lineScan.nextInt();
 						}
-						events.add(new MessageCreateEvent(hostAddr, host2Addr,
-								msgId, size, respSize, time));
+						
+						// TODO: handle message priority here
+						events.add(new MessageCreateEvent(hostAddr, host2Addr, msgId,
+									Message.PRIORITY_LEVEL.NO_P.ordinal(), size, respSize, time));
 					}
 					else {
 						int stage = -1;

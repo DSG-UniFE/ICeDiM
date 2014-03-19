@@ -22,6 +22,7 @@ import java.util.Queue;
 
 import core.DTN2Manager;
 import core.Debug;
+import core.Message;
 import core.Settings;
 import core.SimClock;
 
@@ -229,8 +230,10 @@ public class DTN2Events implements EventQueue {
 		String id;
 		id = "bundle."+from+"-"+to+"-"+bundle.creation_timestamp_time+
 			"-"+bundle.creation_timestamp_seq_no;
-		MessageCreateEvent e = new MessageCreateEvent(from, to, id, 
-				(int)(bundle.file.length()), 0, SimClock.getTime());
+		// TODO: handle message priority here
+		MessageCreateEvent e = new MessageCreateEvent(from, to, id,
+								Message.PRIORITY_LEVEL.NO_P.ordinal(),
+								(int)(bundle.file.length()), 0, SimClock.getTime());
 		synchronized (this.events) {
 			this.events.add(e);
 		}

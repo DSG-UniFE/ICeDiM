@@ -1,23 +1,23 @@
 Message stats for scenario default_scenario
 sim_time: 43200.1000
 Priority Level: 0
-created: 21428
-started: 54196
-relayed: 28405
-aborted: 25232
-Interfered: 556
-dropped: 47254
+created: 1601
+started: 40189
+relayed: 17983
+aborted: 21721
+Interfered: 483
+dropped: 18015
 removed: 0
-delivered: 1450
-delivery_prob: 0.0677
+delivered: 631
+delivery_prob: 0.3941
 response_prob: 0.0000
-overhead_ratio: 18.5897
-latency_avg: 2394.3458
-latency_med: 1270.2000
-hopcount_avg: 2.3179
+overhead_ratio: 27.4992
+latency_avg: 4214.5547
+latency_med: 3887.0000
+hopcount_avg: 1.6989
 hopcount_med: 2
-buffertime_avg: 955.2929
-buffertime_med: 704.9000
+buffertime_avg: 1953.0053
+buffertime_med: 1025.7000
 rtt_avg: NaN
 rtt_med: NaN
 

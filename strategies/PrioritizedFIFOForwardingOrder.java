@@ -50,7 +50,9 @@ public class PrioritizedFIFOForwardingOrder extends MessageForwardingOrderStrate
 		}
 	};
 	
-	private PrioritizedFIFOForwardingOrder() {}
+	private PrioritizedFIFOForwardingOrder() {
+		super(MessageForwardingOrderStrategy.QueueForwardingOrderMode.Prioritized_FIFO);
+	}
 	
 	/* (non-Javadoc)
 	 * @see strategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)

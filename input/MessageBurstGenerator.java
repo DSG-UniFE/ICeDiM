@@ -50,8 +50,9 @@ public class MessageBurstGenerator extends MessageEventGenerator {
 		}
 		
 		msgSize = drawMessageSize();		
-		MessageCreateEvent mce = new MessageCreateEvent(from, to, getID(), 
-				msgSize, responseSize, this.nextEventsTime);
+		MessageCreateEvent mce = new MessageCreateEvent(from, to, getID(),
+								messagePriorityGenerator.randomlyGenerateNextPriority(),
+								msgSize, responseSize, this.nextEventsTime);
 
 		if (to < this.toHostRange[1] - 1) {
 			this.nextToOffset++;

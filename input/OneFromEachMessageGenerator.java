@@ -66,7 +66,8 @@ public class OneFromEachMessageGenerator extends MessageEventGenerator {
 			this.nextEventsTime += drawNextEventTimeDiff();
 		}
 				
-		MessageCreateEvent mce = new MessageCreateEvent(from, to, getID(), 
+		MessageCreateEvent mce = new MessageCreateEvent(from, to, getID(),
+				messagePriorityGenerator.randomlyGenerateNextPriority(),
 				drawMessageSize(), responseSize, this.nextEventsTime);
 		
 		return mce;

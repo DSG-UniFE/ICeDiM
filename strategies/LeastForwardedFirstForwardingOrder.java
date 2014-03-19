@@ -16,6 +16,7 @@ import core.Tuple;
  * @author Alex
  *
  */
+
 public class LeastForwardedFirstForwardingOrder extends MessageForwardingOrderStrategy {
 	
 	static LeastForwardedFirstForwardingOrder singletonInstance = null;
@@ -59,7 +60,10 @@ public class LeastForwardedFirstForwardingOrder extends MessageForwardingOrderSt
 		}
 	};
 	
-	private LeastForwardedFirstForwardingOrder() {}
+	private LeastForwardedFirstForwardingOrder() {
+		super(MessageForwardingOrderStrategy.QueueForwardingOrderMode.Prioritized_LFF_FIFO);
+	}
+	
 	/* (non-Javadoc)
 	 * @see strategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
 	 */

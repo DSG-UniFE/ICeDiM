@@ -14,12 +14,29 @@ import core.SimError;
  *
  */
 public abstract class MessageForwardingOrderStrategy {
+
+	/**
+	 * Message/fragment sending queue type -setting id ({@value}). 
+	 * This setting affects the order the messages and fragments are sent if the
+	 * routing protocol doesn't define any particular order (e.g, if more than 
+	 * one message can be sent directly to the final recipient). 
+	 * Valid values are<BR>
+	 * <UL>
+	 * <LI/> 0 : random (message order is randomized every time; default option)
+	 * <LI/> 1 : FIFO (most recently received messages are sent last)
+	 * <LI/> 2 : Prioritized_FIFO (FIFO with highest priority messages are sent first)
+	 * <LI/> 3 : Prioritized_LFF_FIFO (Prioritized_FIFO with least forwarded messages sent first - attempt to be fairer)
+	 * </UL>
+	 */ 
+	public static enum QueueForwardingOrderMode {Random, FIFO, Prioritized_FIFO, Prioritized_LFF_FIFO}
+	
+	private final QueueForwardingOrderMode queueForwardingMode;
 	
 	abstract public <T> List<T> MessageProcessingOrder(List<T> inputList);
 	abstract public int ComparatorMethod(Message m1, Message m2);
 	
 	static public MessageForwardingOrderStrategy MessageForwardingStrategyFactory
-									(MessageRouter.QueueForwardingOrderMode qfom) {
+									(QueueForwardingOrderMode qfom) {
 		switch (qfom) {
 		case Random:
 			return RandomForwardingOrder.getForwardingOrderInstance();
@@ -33,6 +50,14 @@ public abstract class MessageForwardingOrderStrategy {
 		default:
 			throw new SimError("Undefined message forwarding order mode");
 		}
+	}
+	
+	protected MessageForwardingOrderStrategy (QueueForwardingOrderMode qfom) {
+		this.queueForwardingMode = qfom;
+	}
+	
+	public QueueForwardingOrderMode getQueueForwardingMode() {
+		return queueForwardingMode;
 	}
 
 }

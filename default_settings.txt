@@ -155,13 +155,17 @@ Events.nrof = 1
 Events1.class = MessageEventGenerator
 # (following settings are specific for the MessageEventGenerator class)
 # Creation interval in seconds (one new message every 45 to 60 seconds)
-Events1.interval = 0, 5
+Events1.interval = 25,30
 # Message sizes (500kB - 1MB)
 Events1.size = 500k,1M
 # range of message source/destination addresses
 Events1.hosts = 0,125
 # Message ID prefix
 Events1.prefix = M
+# Message priorities range; allowed values are in the range (0.0, 1). Do not
+# use 0.0 and 1.0, as those values are automatically added to the list
+# (first and last element). N specified values produce N+1 priority slots
+#Events1.prioritySlots = 0.6, 0.8, 0.9, 0.97
 
 
 ## Movement model settings
