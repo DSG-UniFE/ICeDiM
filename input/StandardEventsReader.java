@@ -160,7 +160,7 @@ public class StandardEventsReader implements ExternalEventsReader {
 						
 						// TODO: handle message priority here
 						events.add(new MessageCreateEvent(hostAddr, host2Addr, msgId,
-									Message.PRIORITY_LEVEL.NO_P.ordinal(), size, respSize, time));
+									Message.NO_PRIORITY_LEVEL, size, respSize, time));
 					}
 					else {
 						int stage = -1;

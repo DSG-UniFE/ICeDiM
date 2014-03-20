@@ -10,7 +10,6 @@ import movement.map.DijkstraPathFinder;
 import movement.map.MapNode;
 import movement.map.PointsOfInterest;
 import core.Settings;
-import core.SimError;
 
 /**
  * Map based movement model that uses Dijkstra's algorithm to find shortest

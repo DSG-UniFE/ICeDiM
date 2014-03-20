@@ -72,6 +72,7 @@ public class MessageGraphvizReportTest extends TestCase {
 		assertEquals("\th1->h2->h3;",reader.readLine());
 		assertEquals("\th3->h2;",reader.readLine());
 		assertEquals("}",reader.readLine());
+		reader.close();
 	}
 
 }

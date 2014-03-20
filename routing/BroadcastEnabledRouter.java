@@ -98,7 +98,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	}
 	
 	public boolean createNewMessage(Message m) {
-		if (makeRoomForNewMessage(m.getSize(), m.getPriority().ordinal())) {
+		if (makeRoomForNewMessage(m.getSize(), m.getPriority())) {
 			return super.createNewMessage(m);
 		}
 		else {
@@ -158,7 +158,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		while (freeBuffer < size) {
 			Message m = getOldestMessageWithLowestPriority(true); // don't remove msgs being sent
 
-			if ((m == null) || (m.getPriority().ordinal() > priority)) {
+			if ((m == null) || (m.getPriority() > priority)) {
 				//return false
 				break; // couldn't remove any more messages
 			}
@@ -218,8 +218,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			if (oldestWithLowestPriority == null) {
 				oldestWithLowestPriority = m;
 			}
-			else if (oldestWithLowestPriority.getPriority().ordinal() >= m.getPriority().ordinal()) {
-				if ((oldestWithLowestPriority.getPriority().ordinal() > m.getPriority().ordinal()) ||
+			else if (oldestWithLowestPriority.getPriority() >= m.getPriority()) {
+				if ((oldestWithLowestPriority.getPriority() > m.getPriority()) ||
 					(oldestWithLowestPriority.getReceiveTime() > m.getReceiveTime())) {
 					oldestWithLowestPriority = m;
 				}
@@ -440,7 +440,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		if (freeBuffer) {
 			// if the message being sent was holding excessive buffer, free it
 			if (this.getFreeBufferSize() < 0) {
-				this.makeRoomForMessage(0, Message.PRIORITY_LEVEL.HIGHEST_P.ordinal());
+				this.makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
 			}
 		}
 

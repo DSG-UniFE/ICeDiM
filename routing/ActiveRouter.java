@@ -5,7 +5,6 @@
 package routing;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -107,7 +106,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	
 	@Override 
 	public boolean createNewMessage(Message m) {
-		if (makeRoomForNewMessage(m.getSize(), m.getPriority().ordinal())) {
+		if (makeRoomForNewMessage(m.getSize(), m.getPriority())) {
 			return super.createNewMessage(m);
 		}
 		
@@ -223,7 +222,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		/* remove oldest messages but not the ones being sent */
-		if (!makeRoomForMessage(m.getSize(), m.getPriority().ordinal())) {
+		if (!makeRoomForMessage(m.getSize(), m.getPriority())) {
 			return DENIED_NO_SPACE; // couldn't fit into buffer -> reject
 		}
 		
@@ -249,7 +248,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		while (freeBuffer < size) {
 			Message m = getLeastImportantMessageInQueue(true); // don't remove msgs being sent
 
-			if ((m == null) || (m.getPriority().ordinal() > priority)) {
+			if ((m == null) || (m.getPriority() > priority)) {
 				//return false
 				break; // couldn't remove any more messages
 			}
@@ -617,7 +616,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			if (removeCurrent) {
 				// if the message being sent was holding excess buffer, free it
 				if (this.getFreeBufferSize() < 0) {
-					this.makeRoomForMessage(0, Message.PRIORITY_LEVEL.HIGHEST_P.ordinal());
+					this.makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
 				}
 				sendingConnections.remove(i);
 			}

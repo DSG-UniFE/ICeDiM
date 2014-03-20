@@ -71,7 +71,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	@SuppressWarnings("unchecked")
 	protected void init() {
 		super.init();
-		int arraySize = Message.PRIORITY_LEVEL.values().length;
+		int arraySize = Message.MAX_PRIORITY_LEVEL + 1;
 		
 		this.nrofHelloMessagesStarted = 0;
 		this.nrofHelloMessagesDelivered = 0;
@@ -194,7 +194,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 		
 		if (dropped) {
-			nrofDropped[m.getPriority().ordinal()]++;
+			nrofDropped[m.getPriority()]++;
 			
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageDroppedPerSubscription.containsKey(subID)) {
@@ -206,7 +206,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			}
 		}
 		else {
-			nrofRemoved[m.getPriority().ordinal()]++;
+			nrofRemoved[m.getPriority()]++;
 			
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageRemovedPerSubscription.containsKey(subID)) {
@@ -218,7 +218,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			}
 		}
 
-		msgBufferTime[m.getPriority().ordinal()].add(getSimTime() - m.getReceiveTime());
+		msgBufferTime[m.getPriority()].add(getSimTime() - m.getReceiveTime());
 	}
 
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
@@ -230,7 +230,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			nrofHelloMessagesAborted++;
 		}
 		else {		
-			nrofAborted[m.getPriority().ordinal()]++;
+			nrofAborted[m.getPriority()]++;
 			
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageAbortedPerSubscription.containsKey(subID)) {
@@ -249,7 +249,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			nrofHelloMessagesInterfered++;
 		}
 		else {
-			nrofInterfered[m.getPriority().ordinal()]++;
+			nrofInterfered[m.getPriority()]++;
 			
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageInterferedPerSubscription.containsKey(subID)) {
@@ -271,7 +271,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			nrofHelloMessagesDelivered++;
 		}
 		else {
-			nrofRelayed[m.getPriority().ordinal()]++;
+			nrofRelayed[m.getPriority()]++;
 
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageRelayedPerSubscription.containsKey(subID)) {
@@ -283,13 +283,13 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			}
 			
 			if (finalTarget) {
-				latencies[m.getPriority().ordinal()].add(getSimTime() - this.creationTimes.get(m.getID()));
-				nrofDelivered[m.getPriority().ordinal()]++;
-				hopCounts[m.getPriority().ordinal()].add(m.getHops().size() - 1);
+				latencies[m.getPriority()].add(getSimTime() - this.creationTimes.get(m.getID()));
+				nrofDelivered[m.getPriority()]++;
+				hopCounts[m.getPriority()].add(m.getHops().size() - 1);
 				
 				if (m.isResponse()) {
-					rtt[m.getPriority().ordinal()].add(getSimTime() -	m.getRequest().getCreationTime());
-					nrofResponseDelivered[m.getPriority().ordinal()]++;
+					rtt[m.getPriority()].add(getSimTime() -	m.getRequest().getCreationTime());
+					nrofResponseDelivered[m.getPriority()]++;
 					
 					if (messageResponseDeliveredPerSubscription.containsKey(subID)) {
 						messageResponseDeliveredPerSubscription.put(subID,
@@ -336,7 +336,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 		
 		creationTimes.put(m.getID(), getSimTime());
-		nrofCreated[m.getPriority().ordinal()]++;
+		nrofCreated[m.getPriority()]++;
 
 		Integer subID = Integer.valueOf(m.getSubscriptionID());
 		if (messageCreatedPerSubscription.containsKey(subID)) {
@@ -348,7 +348,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 		
 		if (m.getResponseSize() > 0) {
-			nrofResponseReqCreated[m.getPriority().ordinal()]++;
+			nrofResponseReqCreated[m.getPriority()]++;
 			
 			if (messageResponseCreatedPerSubscription.containsKey(subID)) {
 				messageResponseCreatedPerSubscription.put(subID,
@@ -369,7 +369,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			nrofHelloMessagesStarted++;
 		}
 		else {
-			nrofStarted[m.getPriority().ordinal()]++;
+			nrofStarted[m.getPriority()]++;
 
 			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageStartedPerSubscription.containsKey(subID)) {
@@ -384,7 +384,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 
 	@Override
 	public void done() {
-		int arraySize = Message.PRIORITY_LEVEL.values().length;
+		int arraySize = Message.MAX_PRIORITY_LEVEL + 1;
 		
 		double deliveryProb[] = new double[arraySize];	// delivery probability
 		double responseProb[] = new double[arraySize];	// request-response success probability

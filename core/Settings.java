@@ -450,6 +450,7 @@ public class Settings {
 			values.add(s.next().trim());
 		}
 		
+		s.close();
 		return values.toArray(new String[0]);
 	}
 
@@ -740,6 +741,7 @@ public class Settings {
 			}
 			result += s.getSetting(scan.next());
 		}
+		scan.close();
 		
 		return result;
 	}

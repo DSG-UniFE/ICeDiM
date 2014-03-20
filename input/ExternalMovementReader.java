@@ -143,6 +143,9 @@ public class ExternalMovementReader {
 			} catch (Exception e) {
 				throw new SettingsError("Invalid line '" + lastLine + "'");
 			}
+			finally {
+				lineScan.close();
+			}
 			
 			if (normalize) {
 				time -= minTime;
@@ -150,6 +153,7 @@ public class ExternalMovementReader {
 				y -= minY;
 			}
 		}
+		lineScan.close();
 		
 		if (!scanner.hasNextLine()) {	// add the last tuple of the file
 			moves.add(new Tuple<String, Coord>(id, new Coord(x,y)));

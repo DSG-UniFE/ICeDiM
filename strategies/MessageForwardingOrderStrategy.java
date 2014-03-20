@@ -5,7 +5,6 @@ package strategies;
 
 import java.util.List;
 
-import routing.MessageRouter;
 import core.Message;
 import core.SimError;
 

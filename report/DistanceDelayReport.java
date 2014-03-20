@@ -6,8 +6,6 @@ package report;
 
 import java.util.HashMap;
 
-import junit.framework.Assert;
-
 import core.Coord;
 import core.DTNHost;
 import core.Message;

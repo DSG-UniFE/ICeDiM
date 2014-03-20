@@ -109,6 +109,7 @@ public class AdjacencyGraphvizReport extends Report implements ConnectionListene
 		public String toString() {
 			return h1+HOST_DELIM+h2;
 		}
+		@SuppressWarnings("unused")
 		public int compareTo(Object o) {
 			return nrofConnections - ((ConnectionInfo)o).nrofConnections;
 		}

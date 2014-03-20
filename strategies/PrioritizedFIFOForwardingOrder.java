@@ -41,7 +41,7 @@ public class PrioritizedFIFOForwardingOrder extends MessageForwardingOrderStrate
 			}
 
 			diff = m1.getReceiveTime() - m2.getReceiveTime();
-			int pDiff = m1.getPriority().ordinal() - m2.getPriority().ordinal();
+			int pDiff = m1.getPriority() - m2.getPriority();
 			if ((pDiff == 0) && (diff == 0)) {
 				return 0;
 			}

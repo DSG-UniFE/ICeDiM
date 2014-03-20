@@ -231,9 +231,8 @@ public class DTN2Events implements EventQueue {
 		id = "bundle."+from+"-"+to+"-"+bundle.creation_timestamp_time+
 			"-"+bundle.creation_timestamp_seq_no;
 		// TODO: handle message priority here
-		MessageCreateEvent e = new MessageCreateEvent(from, to, id,
-								Message.PRIORITY_LEVEL.NO_P.ordinal(),
-								(int)(bundle.file.length()), 0, SimClock.getTime());
+		MessageCreateEvent e = new MessageCreateEvent(from, to, id, Message.NO_PRIORITY_LEVEL,
+											(int)(bundle.file.length()), 0, SimClock.getTime());
 		synchronized (this.events) {
 			this.events.add(e);
 		}

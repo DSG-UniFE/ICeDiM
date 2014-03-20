@@ -49,7 +49,7 @@ public class InfoPanel extends JPanel implements ActionListener{
 	 */
 	@SuppressWarnings("unchecked")
 	public void showInfo(DTNHost host) {
-		Vector messages = new Vector<Message>(host.getMessageCollection());
+		Vector<Message> messages = new Vector<Message>(host.getMessageCollection());
 		Collections.sort(messages);
 		reset();
 		this.selectedHost = host;

@@ -79,6 +79,7 @@ public class DistanceDelayReportTest extends TestCase {
 		assertEquals("2.0 1.5 1 tst1",reader.readLine());
 		assertEquals("2.0 0.5 1 tst2",reader.readLine());
 		assertEquals("5.0 1.0 2 tst3",reader.readLine());
+		reader.close();
 	}
 	
 

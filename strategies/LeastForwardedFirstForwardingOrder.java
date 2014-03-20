@@ -45,7 +45,7 @@ public class LeastForwardedFirstForwardingOrder extends MessageForwardingOrderSt
 			int pDiff, timesForwardedDiff;
 			
 			timesForwardedDiff = m1.getForwardTimes() - m2.getForwardTimes();
-			pDiff = m1.getPriority().ordinal() - m2.getPriority().ordinal();
+			pDiff = m1.getPriority() - m2.getPriority();
 			if ((timesForwardedDiff == 0) && (pDiff == 0) && (diff == 0)) {
 				return 0;
 			}

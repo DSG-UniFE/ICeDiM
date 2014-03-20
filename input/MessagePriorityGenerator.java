@@ -5,6 +5,7 @@ package input;
 
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
+import core.Message;
 import core.Settings;
 import core.SimError;
 
@@ -53,6 +54,9 @@ public class MessagePriorityGenerator {
 			prioritySlotRanges[0] = 0.0;
 			prioritySlotRanges[prioritySlotRanges.length - 1] = 1.0;
 			System.arraycopy(tempVals, 0, prioritySlotRanges, 1, tempVals.length);
+			
+			Message.MAX_PRIORITY_LEVEL = Math.max(Message.MAX_PRIORITY_LEVEL,
+													prioritySlotRanges.length - 2);
 		}
 	}
 	
