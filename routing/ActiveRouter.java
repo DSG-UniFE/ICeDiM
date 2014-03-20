@@ -323,7 +323,7 @@ public abstract class ActiveRouter extends MessageRouter {
 				// skip the message(s) that router is sending
 				continue;
 			}
-			if (m.getCreationTime() < oldestMessage.getCreationTime()) {
+			if (m.getReceiveTime() < oldestMessage.getReceiveTime()) {
 				oldestMessage = m;
 			}
 		}
@@ -372,8 +372,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			return new ArrayList<Tuple<Message, Connection>>(0); 
 		}
 
-		List<Tuple<Message, Connection>> forTuples = 
-			new ArrayList<Tuple<Message, Connection>>();
+		List<Tuple<Message, Connection>> forTuples = new ArrayList<Tuple<Message, Connection>>();
 		for (Message m : getMessageCollection()) {
 			for (Connection con : getConnections()) {
 				DTNHost to = con.getOtherNode(getHost());
@@ -412,7 +411,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	}
 	
 	 /**
-	  * Goes trough the messages until the other node accepts one
+	  * Goes through all messages until the other node accepts one
 	  * for receiving (or doesn't accept any). If a transfer is started, the
 	  * connection is included in the list of sending connections.
 	  * @param con Connection trough which the messages are sent
@@ -446,7 +445,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * accepted a message.
 	 */
 	protected Connection tryMessagesToConnections(List<Message> messages,
-			List<Connection> connections) {
+													List<Connection> connections) {
 		for (int i=0, n=connections.size(); i<n; i++) {
 			Connection con = connections.get(i);
 			Message started = tryAllMessages(con, messages); 

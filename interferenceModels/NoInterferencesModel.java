@@ -20,23 +20,23 @@ import core.SimError;
  * is, any frame received when the interface was idle).
  * @author Alex
  */
-public final class NaiveInterferenceModel implements InterferenceModel {
+public final class NoInterferencesModel implements InterferenceModel {
 
 	NetworkInterface networkInterface;
 	HashMap<String, MessageReception> receivingMessagesList;
 	
-	public NaiveInterferenceModel() {
+	public NoInterferencesModel() {
 		networkInterface = null;
 		receivingMessagesList = new HashMap<String, MessageReception>();
 	}
 	
-	public NaiveInterferenceModel(Settings s) {
+	public NoInterferencesModel(Settings s) {
 		this();
 	}
 
 	@Override
 	public InterferenceModel replicate() {
-		return new NaiveInterferenceModel();
+		return new NoInterferencesModel();
 	}
 	
 	@Override
@@ -57,16 +57,10 @@ public final class NaiveInterferenceModel implements InterferenceModel {
 		
 		// Check for an interference
 		MessageReception newMessageReception = new MessageReception(m, con);
-		for (MessageReception msgReception : receivingMessagesList.values()) {
-			if (!msgReception.getConnection().isMessageTransferred()) {
-				newMessageReception.setInterfered(true);
-				break;
-			}
-		}
 		receivingMessagesList.put(m.getID() + "_i" + con.getSenderInterface().getAddress(),
 									newMessageReception);
 		
-		return newMessageReception.isInterfered() ? RECEPTION_INTERFERENCE : RECEPTION_OK;
+		return RECEPTION_OK;
 	}
 
 	@Override
@@ -75,9 +69,6 @@ public final class NaiveInterferenceModel implements InterferenceModel {
 		if (msgReception != null) {
 			if (!msgReception.getConnection().isMessageTransferred()) {
 				return RECEPTION_INCOMPLETE;
-			}
-			else if (msgReception.isInterfered()) {
-				return RECEPTION_INTERFERENCE;
 			}
 			return RECEPTION_COMPLETED_CORRECTLY;
 		}
@@ -100,19 +91,10 @@ public final class NaiveInterferenceModel implements InterferenceModel {
 	public Message retrieveTransferredMessage(String msgID, Connection con) {
 		MessageReception msgReception = findCorrectMessageInList(msgID, con);
 		if (msgReception != null) {
-			if (msgReception.getConnection().isMessageTransferred() &&
-				!msgReception.isInterfered()) {
+			if (msgReception.getConnection().isMessageTransferred()) {
 				removeMessageFromList(msgID, con);
 				return msgReception.getMessage();
-			}
-			else if (msgReception.getConnection().isMessageTransferred()) {
-				// Interference: remove message and return null
-				if (null == removeMessageFromList(msgID, con)) {
-					throw new SimError("Failed to remove MessageReception entry from interference model");
-				}
-				return null;
-			}
-			
+			}			
 			// Message transfer incomplete
 			return null;
 		}
@@ -133,14 +115,13 @@ public final class NaiveInterferenceModel implements InterferenceModel {
 
 	@Override
 	public List<Message> retrieveAllTransferredMessages() {
-		ArrayList<Message> transferredMessages = new ArrayList<Message>(1);
+		ArrayList<Message> transferredMessages = new ArrayList<Message>();
 		MessageReception[] messageReceptionArray = receivingMessagesList.values().
 													toArray(new MessageReception[0]);
-		for (int i = 0; i < messageReceptionArray.length; ++i) {
-			if (messageReceptionArray[i].isTransferCompletedCorrectly()) {
-				transferredMessages.add(messageReceptionArray[i].getMessage());
-				removeMessageFromList(messageReceptionArray[i].getMessage().getID(),
-										messageReceptionArray[i].getConnection());
+		for (MessageReception mr : messageReceptionArray) {
+			if (mr.isTransferCompletedCorrectly()) {
+				transferredMessages.add(mr.getMessage());
+				removeMessageFromList(mr.getMessage().getID(), mr.getConnection());
 			}
 		}
 		

@@ -22,7 +22,7 @@ Scenario.endTime = 43200
 btInterface.type = SimpleBroadcastInterface
 # The Interference model of the communication
 # is chosen for each interface
-btInterface.interferenceModel = NaiveInterferenceModel
+btInterface.interferenceModel = NoInterferencesModel
 # Transmit speed of 2.1 Mbps = 280KBps
 btInterface.transmitSpeed = 280k
 btInterface.transmitRange = 10
@@ -31,7 +31,7 @@ btInterface.transmitRange = 10
 highspeedInterface.type = SimpleBroadcastInterface
 # The Interference model of the communication
 # is chosen for each interface
-highspeedInterface.interferenceModel = NaiveInterferenceModel
+highspeedInterface.interferenceModel = NoInterferencesModel
 # Transmit speed of 54 Mbps = 6.75MBps
 highspeedInterface.transmitSpeed = 6.75M
 highspeedInterface.transmitRange = 1000
