@@ -63,14 +63,21 @@ public class FIFOForwardingOrder extends MessageForwardingOrderStrategy {
 	}
 	
 	@Override
-	public <T> List<T> MessageProcessingOrder(List<T> inputList) {
+	public <T> List<T> messageProcessingOrder(List<T> inputList) {
 		Collections.sort(inputList, FIFOForwardingOrder.comparator);
 		
 		return inputList;
 	}
 
 	@Override
-	public int ComparatorMethod(Message m1, Message m2) {
+	public <T> List<T> reverseProcessingOrder(List<T> inputList) {
+		/* FIFO queueing strategy also deletes elements in FIFO,
+		 * so this method does the same as the above one */
+		return messageProcessingOrder(inputList);
+	}
+
+	@Override
+	public int comparatorMethod(Message m1, Message m2) {
 		return FIFOForwardingOrder.comparator.compare(m1, m2);
 	}
 

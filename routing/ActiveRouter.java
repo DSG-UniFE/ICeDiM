@@ -299,7 +299,6 @@ public abstract class ActiveRouter extends MessageRouter {
 	protected boolean makeRoomForNewMessage(int size, int priority) {
 		return makeRoomForMessage(size, priority);
 	}
-
 	
 	/**
 	 * Returns the oldest (by receive time) message in the message buffer 
@@ -311,56 +310,19 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * (no messages in buffer or all messages in buffer are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
-	protected Message getOldestMessageInQueue(boolean excludeMsgBeingSent) {
-		Message messageList[] = this.getMessageCollection().toArray(new Message[0]);
-		if (messageList.length == 0) {
-			return null;
-		}
-		
-		Message oldestMessage = messageList[0];
-		for (Message m : messageList) {
+	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
+		List<Message> sortedList = reverseOrderByQueueMode(new ArrayList<Message>(getMessageCollection()));
+		for (Message m : sortedList) {
 			if (excludeMsgBeingSent && isSending(m.getID())) {
 				// skip the message(s) that router is sending
 				continue;
 			}
-			if (m.getReceiveTime() < oldestMessage.getReceiveTime()) {
-				oldestMessage = m;
-			}
-		}
-		
-		return oldestMessage;
-	}
-
-	
-	/**
-	 * Returns the oldest (by receive time) message in the message buffer 
-	 * (that is not being sent if excludeMsgBeingSent is true).
-	 * @param excludeMsgBeingSent If true, excludes message(s) that are
-	 * being sent from the oldest message check (i.e. if oldest message is
-	 * being sent, the second oldest message is returned)
-	 * @return The oldest message or null if no message could be returned
-	 * (no messages in buffer or all messages in buffer are being sent and
-	 * exludeMsgBeingSent is true)
-	 */
-	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {
-		if (messageForwardingStrategy.getQueueForwardingMode() ==
-				MessageForwardingOrderStrategy.QueueForwardingOrderMode.FIFO) {
-			return getOldestMessageInQueue(excludeMsgBeingSent);
-		}
-		
-		List<Message> sortedList = sortByQueueMode(new ArrayList<Message>(
-													this.getMessageCollection()));
-		for (int i = sortedList.size() - 1; i >= 0; i--) {
-			if (excludeMsgBeingSent && isSending(sortedList.get(i).getID())) {
-				// skip the message(s) that router is sending
-				continue;
-			}
-			return sortedList.get(i);
+			return m;
 		}
 		
 		return null;
 	}
-	
+
 	/**
 	 * Returns a list of message-connections tuples of the messages whose
 	 * recipient is some host that we're connected to at the moment.

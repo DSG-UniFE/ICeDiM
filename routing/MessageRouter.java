@@ -611,18 +611,28 @@ public abstract class MessageRouter {
 		for (MessageListener ml : this.mListeners) {
 			ml.messageDeleted(removed, this.host, drop);
 		}
-	}
-	
+	}	
 	
 	/**
-	 * Sorts/shuffles the given list according to the current sending queue 
-	 * mode. The list can contain either Message or Tuple<Message, Connection> 
-	 * objects. Other objects cause error. 
-	 * @param list The list to sort or shuffle
-	 * @return The sorted/shuffled list
+	 * Sorts the given list according to the current sending queue 
+	 * strategy. The list can contain either Message or
+	 * Tuple<Message, Connection> objects. Other objects cause error.
+	 * @param list The list to sort
+	 * @return The sorted list
 	 */
 	protected <T> List<T> sortByQueueMode(List<T> list) {
-		return messageForwardingStrategy.MessageProcessingOrder(list);
+		return messageForwardingStrategy.messageProcessingOrder(list);
+	}
+	
+	/**
+	 * Sorts the given list in reverse order, according to the current
+	 * sending queue strategy. The list can contain either Message or
+	 * Tuple<Message, Connection> objects. Other objects cause error.
+	 * @param list The list to sort
+	 * @return The list sorted in reverse order
+	 */
+	protected <T> List<T> reverseOrderByQueueMode(List<T> list) {
+		return messageForwardingStrategy.reverseProcessingOrder(list);
 	}
 
 	/**
@@ -634,7 +644,7 @@ public abstract class MessageRouter {
 	 *          message should come first, or 0 if the ordering isn't defined
 	 */
 	protected int compareByQueueMode(Message m1, Message m2) {
-		return messageForwardingStrategy.ComparatorMethod(m1, m2);
+		return messageForwardingStrategy.comparatorMethod(m1, m2);
 	}
 	
 	/**

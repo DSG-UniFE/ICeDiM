@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = default_scenario
+Scenario.name = default_scenario_spray_n_wait
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 43200s == 12h
@@ -73,7 +73,8 @@ Scenario.nrofHostGroups = 6
 
 # Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
-Group.router = EpidemicRouter
+#Group.router = EpidemicRouter
+Group.router = SprayAndWaitRouter
 Group.bufferSize = 5M
 Group.waitTime = 0, 120
 # All nodes have the bluetooth interface
@@ -83,14 +84,16 @@ Group.interface1 = btInterface
 Group.speed = 0.5, 1.5
 # Message TTL of 300 minutes (5 hours)
 Group.msgTtl = 300
-Group.sendQueueMode = 1
+Group.sendQueueMode = 2
 # Common subscriptions for all groups
 # If subIDs is specified, maxSize is ignored (maxSize used only for the random generation of subscriptions)
 #Group.maxSize = 5
 #Group.maxSubID = 10
 Group.subIDs = 0,1
-
 Group.nrofHosts = 40
+
+SprayAndWaitRouter.nrofCopies = 10
+SprayAndWaitRouter.binaryMode = true
 
 # group1 (pedestrians) specific settings
 Group1.groupID = p
