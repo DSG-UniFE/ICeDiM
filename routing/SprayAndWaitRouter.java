@@ -56,20 +56,24 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	@Override
 	public Message messageTransferred(String id, Connection con) {
 		Message msg = super.messageTransferred(id, con);
-		Integer nrofCopies = (Integer)msg.getProperty(MSG_COUNT_PROPERTY);
-		
-		assert nrofCopies != null : "Not a SnW message: " + msg;
-		
-		if (isBinary) {
-			/* in binary S'n'W the receiving node gets ceil(n/2) copies */
-			nrofCopies = (int)Math.ceil(nrofCopies/2.0);
+		// Check if message is null (interference, or out-of-synch) 
+		if (msg != null) {
+			Integer nrofCopies = (Integer)msg.getProperty(MSG_COUNT_PROPERTY);
+			
+			assert nrofCopies != null : "Not a SnW message: " + msg;
+			
+			if (isBinary) {
+				/* in binary S'n'W the receiving node gets ceil(n/2) copies */
+				nrofCopies = (int)Math.ceil(nrofCopies/2.0);
+			}
+			else {
+				/* in standard S'n'W the receiving node gets only single copy */
+				nrofCopies = 1;
+			}
+			
+			msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
 		}
-		else {
-			/* in standard S'n'W the receiving node gets only single copy */
-			nrofCopies = 1;
-		}
 		
-		msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
 		return msg;
 	}
 	
