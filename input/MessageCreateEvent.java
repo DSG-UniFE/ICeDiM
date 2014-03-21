@@ -7,7 +7,7 @@ package input;
 import core.DTNHost;
 import core.Message;
 import core.World;
-import core.disService.PublishSubscriber;
+import core.disService.PublisherSubscriber;
 import core.disService.SubscriptionListManager;
 
 /**
@@ -45,9 +45,9 @@ public class MessageCreateEvent extends MessageEvent {
 		DTNHost to = world.getNodeByAddress(this.toAddr);
 		DTNHost from = world.getNodeByAddress(this.fromAddr);
 		
-		int subID = SubscriptionListManager.DEFAULT_SUB_ID;
-		if (from.getRouter() instanceof PublishSubscriber) {	
-			PublishSubscriber router = (PublishSubscriber) from.getRouter();
+		Integer subID = SubscriptionListManager.DEFAULT_SUB_ID;
+		if (from.getRouter() instanceof PublisherSubscriber) {	
+			PublisherSubscriber router = (PublisherSubscriber) from.getRouter();
 			subID = router.generateRandomSubID();
 			if (subID == SubscriptionListManager.INVALID_SUB_ID) {
 				// Node does not generate messages
@@ -56,8 +56,9 @@ public class MessageCreateEvent extends MessageEvent {
 		}
 	
 		// No priority - Use the PrioritizedMessageEventGenerator to generate messages with priorities
-		Message m = new Message(from, to, this.id, this.size, priority, subID);
+		Message m = new Message(from, to, this.id, this.size, priority);
 		m.setResponseSize(this.responseSize);
+		m.addProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY, subID);
 		from.createNewMessage(m);
 	}
 	

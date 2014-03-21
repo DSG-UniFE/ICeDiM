@@ -29,8 +29,6 @@ public class Message implements Comparable<Message> {
 	private DTNHost to;
 	/** Identifier of the message */
 	private String id;
-	/** Subscription ID the message belongs to */
-	private final int subscriptionID;
 	/** message priority level */
 	private final int priority;
 	/** Size of the message (bytes) */
@@ -84,7 +82,6 @@ public class Message implements Comparable<Message> {
 		this.size = size;
 		this.path = new ArrayList<DTNHost>();
 		this.uniqueId = nextUniqueId;
-		this.subscriptionID = NO_SUB_ID;
 		this.priority = NO_PRIORITY_LEVEL;
 		
 		this.timeCreated = SimClock.getTime();
@@ -111,15 +108,13 @@ public class Message implements Comparable<Message> {
 	 * @param priority The priority level of the message (type = {@code int})
 	 * @param SubscriptionID The ID of the subscription the message belongs to
 	 */
-	public Message(DTNHost from, DTNHost to, String id, int size,
-					int priority, int subscriptionID) {
+	public Message(DTNHost from, DTNHost to, String id, int size, int priority) {
 		this.from = from;
 		this.to = to;
 		this.id = id;
 		this.size = size;
 		this.path = new ArrayList<DTNHost>();
-		this.uniqueId = nextUniqueId;
-		this.subscriptionID = subscriptionID;
+		this.uniqueId = Message.nextUniqueId;
 		this.priority = priority;
 		
 		this.timeCreated = SimClock.getTime();
@@ -131,8 +126,8 @@ public class Message implements Comparable<Message> {
 		this.properties = null;
 		this.appID = null;
 		
-		Message.nextUniqueId++;
 		addNodeOnPath(from);
+		Message.nextUniqueId++;
 	}
 	
 	/**
@@ -157,15 +152,6 @@ public class Message implements Comparable<Message> {
 	 */
 	public String getID() {
 		return this.id;
-	}
-	
-	/**
-	 * Returns the ID of the subscription
-	 * to which the message belong
-	 * @return the subscriptionID
-	 */
-	public int getSubscriptionID() {
-		return subscriptionID;
 	}
 
 	/**
@@ -429,12 +415,26 @@ public class Message implements Comparable<Message> {
 		this.properties.put(key, value);
 	}
 	
+
+	/**
+	 * Deep copies message properties from other message.
+	 * @param m The message from which properties are copied
+	 */
+	public void copyPropertiesFrom(Message m) {		
+		if (m.properties != null) {
+			Set<String> keys = m.properties.keySet();
+			for (String key : keys) {
+				updateProperty(key, m.getProperty(key));
+			}
+		}
+	}
+	
 	/**
 	 * Returns a replicate of this message (identical except for the unique id)
 	 * @return A replicate of the message
 	 */
 	public Message replicate() {
-		Message m = new Message(from, to, id, size, priority, subscriptionID);
+		Message m = new Message(from, to, id, size, priority);
 		m.copyFrom(this);
 		return m;
 	}

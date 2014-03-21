@@ -9,8 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import strategies.MessageForwardingOrderStrategy;
-
 import core.NetworkInterface;
 import core.Connection;
 import core.DTNHost;
@@ -138,7 +136,8 @@ public abstract class ActiveRouter extends MessageRouter {
 			(m.getResponseSize() > 0)) {
 			// generate a response message
 			Message res = new Message(this.getHost(),m.getFrom(), RESPONSE_PREFIX+m.getID(),
-										m.getResponseSize(), m.getPriority(), m.getSubscriptionID());
+										m.getResponseSize(), m.getPriority());
+			res.copyPropertiesFrom(m);
 			this.createNewMessage(res);
 			this.getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
 		}

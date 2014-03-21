@@ -134,6 +134,10 @@ public class SubscriptionListManager {
 	}
 	
 	public boolean containsSubscriptionID(Integer subID) {
+		if (subID == null) {
+			throw new SimError("Null values as subscription IDs are not valid");
+		}
+		
 		return subscriptionList.contains(subID);
 	}
 	
@@ -142,6 +146,10 @@ public class SubscriptionListManager {
 	}
 	
 	public void addSubscriptionToList(Integer subID) {
+		if (subID == null) {
+			throw new SimError("Null values as subscription IDs are not valid");
+		}
+		
 		if (!containsSubscriptionID(subID)) {
 			subscriptionList.add(subID);
 		}
@@ -182,7 +190,7 @@ public class SubscriptionListManager {
 		if (subscriptionList.size() == 0) {
 			return INVALID_SUB_ID;
 		}
-		return subscriptionList.get(SubscriptionListManager.getRandomID(subscriptionList.size()));
+		return subscriptionList.get(SubscriptionListManager.getRandomID(subscriptionList.size() - 1));
 	}
 	
 	static private int getRandomID(int maxSubID) {

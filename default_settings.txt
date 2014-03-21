@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = default_scenario_spray_n_wait
+Scenario.name = default_scenario_disservice
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 43200s == 12h
@@ -74,7 +74,8 @@ Scenario.nrofHostGroups = 6
 # Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
 #Group.router = EpidemicRouter
-Group.router = SprayAndWaitRouter
+#Group.router = SprayAndWaitRouter
+Group.router = DisServiceRouter
 Group.bufferSize = 5M
 Group.waitTime = 0, 120
 # All nodes have the bluetooth interface
@@ -87,9 +88,9 @@ Group.msgTtl = 300
 Group.sendQueueMode = 2
 # Common subscriptions for all groups
 # If subIDs is specified, maxSize is ignored (maxSize used only for the random generation of subscriptions)
-#Group.maxSize = 5
-#Group.maxSubID = 10
-Group.subIDs = 0,1
+Group.maxSize = 5
+Group.maxSubID = 10
+#Group.subIDs = 0,1,2
 Group.nrofHosts = 40
 
 SprayAndWaitRouter.nrofCopies = 10

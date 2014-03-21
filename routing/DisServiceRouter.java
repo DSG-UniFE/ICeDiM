@@ -15,11 +15,11 @@ import core.SimClock;
 import core.SimError;
 import core.disService.DisServiceHelloMessage;
 import core.disService.NeighborInfo;
-import core.disService.PublishSubscriber;
+import core.disService.PublisherSubscriber;
 import core.disService.SubscriptionListManager;
 import core.disService.WorldState;
 
-public class DisServiceRouter extends BroadcastEnabledRouter implements PublishSubscriber {
+public class DisServiceRouter extends BroadcastEnabledRouter implements PublisherSubscriber {
 	/** Seconds between the broadcast of two subsequent HELLO Messages. */
 	public static final String PING_INTERVAL_PERIOD = "pingInterval";
 	
@@ -123,9 +123,9 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements PublishS
 			 */
 		nextSearch:
 			for (Message pm : messageList) {
-				for (NeighborInfo neighborInfo : nearbyNodes) { 
-					if (neighborInfo.getSubscriptionList().
-							containsSubscriptionID(pm.getSubscriptionID()) &&
+				for (NeighborInfo neighborInfo : nearbyNodes) {
+					Integer subID = (Integer) pm.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+					if (neighborInfo.getSubscriptionList().containsSubscriptionID(subID) &&
 						!neighborInfo.getReceivedMessagesList().contains(pm.getID())) {
 						if (BROADCAST_OK != tryBroadcastOneMessage (pm, ni)) {
 							throw new SimError("Impossible transmit message " + pm +

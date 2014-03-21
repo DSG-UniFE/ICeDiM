@@ -13,7 +13,7 @@ import core.Message;
 import core.MessageListener;
 import core.SimError;
 import core.disService.DisServiceHelloMessage;
-import core.disService.PublishSubscriber;
+import core.disService.PublisherSubscriber;
 import core.disService.SubscriptionListManager;
 
 /**
@@ -162,8 +162,8 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	
 	@Override
 	public void registerNode(DTNHost node) {
-		if (node instanceof PublishSubscriber) {
-			PublishSubscriber destNode = (PublishSubscriber) node;
+		if (node instanceof PublisherSubscriber) {
+			PublisherSubscriber destNode = (PublisherSubscriber) node;
 			
 			SubscriptionListManager sl = destNode.getSubscriptionList();
 			for (int subID : sl.getSubscriptionList()) {
@@ -192,11 +192,10 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		if (isWarmupID(m.getID())) {
 			return;
 		}
-		
+
+		Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);		
 		if (dropped) {
 			nrofDropped[m.getPriority()]++;
-			
-			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageDroppedPerSubscription.containsKey(subID)) {
 				messageDroppedPerSubscription.put(subID,
 					Integer.valueOf(messageDroppedPerSubscription.get(subID).intValue() + 1));
@@ -207,8 +206,6 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 		else {
 			nrofRemoved[m.getPriority()]++;
-			
-			Integer subID = Integer.valueOf(m.getSubscriptionID());
 			if (messageRemovedPerSubscription.containsKey(subID)) {
 				messageRemovedPerSubscription.put(subID,
 					Integer.valueOf(messageRemovedPerSubscription.get(subID).intValue() + 1));
@@ -231,8 +228,8 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 		else {		
 			nrofAborted[m.getPriority()]++;
-			
-			Integer subID = Integer.valueOf(m.getSubscriptionID());
+
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 			if (messageAbortedPerSubscription.containsKey(subID)) {
 				messageAbortedPerSubscription.put(subID,
 					Integer.valueOf(messageAbortedPerSubscription.get(subID).intValue() + 1));
@@ -250,8 +247,8 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 		else {
 			nrofInterfered[m.getPriority()]++;
-			
-			Integer subID = Integer.valueOf(m.getSubscriptionID());
+
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 			if (messageInterferedPerSubscription.containsKey(subID)) {
 				messageInterferedPerSubscription.put(subID,
 					Integer.valueOf(messageInterferedPerSubscription.get(subID).intValue() + 1));
@@ -273,7 +270,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		else {
 			nrofRelayed[m.getPriority()]++;
 
-			Integer subID = Integer.valueOf(m.getSubscriptionID());
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 			if (messageRelayedPerSubscription.containsKey(subID)) {
 				messageRelayedPerSubscription.put(subID,
 					Integer.valueOf(messageRelayedPerSubscription.get(subID).intValue() + 1));
@@ -301,8 +298,8 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 				}
 			}
 
-			if (to.getRouter() instanceof PublishSubscriber) {
-				PublishSubscriber destNode = (PublishSubscriber) to.getRouter();
+			if (to.getRouter() instanceof PublisherSubscriber) {
+				PublisherSubscriber destNode = (PublisherSubscriber) to.getRouter();
 				if (subID <= SubscriptionListManager.INVALID_SUB_ID) {
 					throw new SimError("Message subscription ID (" + subID + ") is invalid");
 				}
@@ -338,7 +335,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		creationTimes.put(m.getID(), getSimTime());
 		nrofCreated[m.getPriority()]++;
 
-		Integer subID = Integer.valueOf(m.getSubscriptionID());
+		Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		if (messageCreatedPerSubscription.containsKey(subID)) {
 			messageCreatedPerSubscription.put(subID,
 				Integer.valueOf(messageCreatedPerSubscription.get(subID).intValue() + 1));
@@ -371,7 +368,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		else {
 			nrofStarted[m.getPriority()]++;
 
-			Integer subID = Integer.valueOf(m.getSubscriptionID());
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 			if (messageStartedPerSubscription.containsKey(subID)) {
 				messageStartedPerSubscription.put(subID,
 					Integer.valueOf(messageStartedPerSubscription.get(subID).intValue() + 1));
