@@ -62,6 +62,41 @@ public class VBRConnection extends Connection {
 		return retVal;
 	}
 
+	@Override
+	public void copyMessageTransfer(DTNHost from, Connection c) {
+		if (!c.isTransferOngoing()) {
+			return;
+		}
+		if (from != c.getSenderNode()) {
+			throw new SimError("The present node and specified connection's" +
+								" sender node are different");
+		}
+		
+		if (!(c instanceof VBRConnection)) {
+			throw new SimError("Present and remote connections are of different types");
+		}
+		VBRConnection vbrc = (VBRConnection) c;
+		
+		if (underwayTransfer != null) {
+			if (getRemainingByteCount() >= vbrc.getRemainingByteCount()) {
+				// The transmission currently set lasts longer than the other one --> do nothing
+				return;
+			}
+			
+			// Remove current transfer from the receiving interface
+			getSenderInterface().removeOutOfSynchTransfer(getMessage().getID(), this);
+		}
+		
+		underwayTransfer = (vbrc.getRemainingByteCount() == vbrc.getMessage().getSize()) ?
+							new Transfer (this, from, vbrc.getMessage(), vbrc.getRemainingByteCount() - 1) :
+							new Transfer (this, from, vbrc.getMessage(), vbrc.getRemainingByteCount());
+		msgsize = underwayTransfer.getBytesToTransfer();
+		msgsent = 0;
+		currentspeed = vbrc.currentspeed;
+		
+		getReceiverInterface().beginNewOutOfSynchTransfer(getMessage(), this);
+	}
+
 	/**
 	 * Calculate the current transmission speed from the information
 	 * given by the interfaces, and calculate the missing data amount.
@@ -75,7 +110,7 @@ public class VBRConnection extends Connection {
 			currentspeed = othspeed;
 		}
 		
-		msgsent = msgsent + currentspeed;
+		msgsent += currentspeed;
 	}
 	
 	/**

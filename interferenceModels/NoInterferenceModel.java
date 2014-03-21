@@ -20,23 +20,23 @@ import core.SimError;
  * is, any frame received when the interface was idle).
  * @author Alex
  */
-public final class NoInterferencesModel implements InterferenceModel {
+public final class NoInterferenceModel implements InterferenceModel {
 
 	NetworkInterface networkInterface;
 	HashMap<String, MessageReception> receivingMessagesList;
 	
-	public NoInterferencesModel() {
+	public NoInterferenceModel() {
 		networkInterface = null;
 		receivingMessagesList = new HashMap<String, MessageReception>();
 	}
 	
-	public NoInterferencesModel(Settings s) {
+	public NoInterferenceModel(Settings s) {
 		this();
 	}
 
 	@Override
 	public InterferenceModel replicate() {
-		return new NoInterferencesModel();
+		return new NoInterferenceModel();
 	}
 	
 	@Override
@@ -54,9 +54,13 @@ public final class NoInterferencesModel implements InterferenceModel {
 		NetworkInterface ni = con.getReceiverInterface();
 		assert (ni == networkInterface) : "The receiving interface of connection " +
 				con + " and the one associated with this interference model differ";
+		if (con.getMessageBytesTransferred() != 0) {
+			throw new SimError("Impossible to receive a new message if transfer is not" +
+								" synchronized with the remote network interface");
+		}
 		
 		// Check for an interference
-		MessageReception newMessageReception = new MessageReception(m, con);
+		MessageReception newMessageReception = new MessageReception(m, con, true);
 		receivingMessagesList.put(m.getID() + "_i" + con.getSenderInterface().getAddress(),
 									newMessageReception);
 		
@@ -67,13 +71,23 @@ public final class NoInterferencesModel implements InterferenceModel {
 	public int isMessageTransferredCorrectly(String msgID, Connection con) {
 		MessageReception msgReception = findCorrectMessageInList(msgID, con);
 		if (msgReception != null) {
+			if (!msgReception.isTransferInSynch()) {
+				return RECEPTION_OUT_OF_SYNCH;
+			}
 			if (!msgReception.getConnection().isMessageTransferred()) {
 				return RECEPTION_INCOMPLETE;
 			}
 			return RECEPTION_COMPLETED_CORRECTLY;
 		}
-		
+
 		return MESSAGE_ID_NOT_FOUND;
+	}
+
+	@Override
+	public void beginNewOutOfSynchTransfer(Message m, Connection con) {
+		MessageReception newMessageReception = new MessageReception(m, con, false);
+		receivingMessagesList.put(m.getID() + "_i" + con.getSenderInterface().getAddress(),
+									newMessageReception);
 	}
 
 	@Override
@@ -92,9 +106,19 @@ public final class NoInterferencesModel implements InterferenceModel {
 		MessageReception msgReception = findCorrectMessageInList(msgID, con);
 		if (msgReception != null) {
 			if (msgReception.getConnection().isMessageTransferred()) {
-				removeMessageFromList(msgID, con);
+				// Message transfer complete --> remove message
+				if (null == removeMessageFromList(msgID, con)) {
+					throw new SimError("Failed to remove MessageReception entry from interference model");
+				}
+				if (!msgReception.isTransferInSynch()) {
+					// Message was out of synch --> return null
+					return null;
+				}
+
+				// Transfer completed successfully --> return message
 				return msgReception.getMessage();
-			}			
+			}
+			
 			// Message transfer incomplete
 			return null;
 		}
@@ -121,7 +145,14 @@ public final class NoInterferencesModel implements InterferenceModel {
 		for (MessageReception mr : messageReceptionArray) {
 			if (mr.isTransferCompletedCorrectly()) {
 				transferredMessages.add(mr.getMessage());
-				removeMessageFromList(mr.getMessage().getID(), mr.getConnection());
+				if (null == removeMessageFromList(mr.getMessage().getID(), mr.getConnection())) {
+					throw new SimError("Failed to remove MessageReception entry from interference model");
+				}
+			}
+			else if (mr.isTransferCompleted()) {
+				if (null == removeMessageFromList(mr.getMessage().getID(), mr.getConnection())) {
+					throw new SimError("Failed to remove MessageReception entry from interference model");
+				}
 			}
 		}
 		
@@ -139,6 +170,13 @@ public final class NoInterferencesModel implements InterferenceModel {
 		}
 		
 		return null;
+	}
+
+	@Override
+	public Message removeOutOfSynchTransfer(String msgID, Connection con) {
+		MessageReception mr = removeMessageFromList(msgID, con);
+		
+		return mr == null ? null : mr.getMessage();
 	}
 	
 	private MessageReception findCorrectMessageInList (String msgID, Connection con) {

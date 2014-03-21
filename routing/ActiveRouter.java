@@ -591,7 +591,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		/* in theory we can have multiple sending connections even though
 		  currently all routers allow only one concurrent sending connection */
-		for (int i=0; i<this.sendingConnections.size(); ) {
+		for (int i = 0; i < this.sendingConnections.size();) {
 			boolean removeCurrent = false;
 			Connection con = sendingConnections.get(i);
 			

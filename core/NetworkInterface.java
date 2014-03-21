@@ -212,6 +212,19 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public List<Connection> getConnections() {
 		return this.connections;
 	}
+	
+	public boolean isConnectedTo(NetworkInterface ni) {
+		assert this != ni : "Error: references to remote and local NetworkInterface are the same!";
+		
+		List<Connection> connections = getConnections();
+		for (Connection con : connections) {
+			if (con.isConnectedToHost(ni.getHost())) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
 	/**
 	 * Returns the list of nodes currently reachable through this interface
@@ -305,8 +318,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * the connection to work in the derived class, then call 
 	 * connect(Connection, NetworkInterface) for the actual connection.
 	 * @param anotherInterface The interface to connect to
+	 * @return 
 	 */
-	public abstract void connect(NetworkInterface anotherInterface);
+	public abstract Connection connect(NetworkInterface anotherInterface);
 
 	/**
 	 * Connects this host to another host. The derived class should check 
@@ -549,6 +563,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 
 	/**
 	 * Receive a message on the specified connection
+	 * @param m Message to be received
 	 * @param con Connection to be used for the trasfer
 	 * @return an int among {@code RECEPTION_OK}, if successful,
 	 * {@code RECEPTION_DENIED_DUE_TO_SEND}, in the interface is
@@ -561,6 +576,33 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 							con.getMessage().getID().equals(m.getID()));
 		
 		return interferenceModel.beginNewReception(m, con);
+	}
+
+	/**
+	 * Hands off to the interference model the information
+	 * about a new, transmitting network interface that
+	 * has just fallen into the connection range.
+	 * @param m the Message under transfer
+	 * @param con the Connection transferring the Message
+	 */
+	public void beginNewOutOfSynchTransfer(Message m, Connection con) {
+		Assert.assertTrue("There is no traffic ongoing on this connection", con.isTransferOngoing());
+		Assert.assertTrue("Message and connection passed as parameters do not match!",
+							con.getMessage().getID().equals(m.getID()));
+		interferenceModel.beginNewOutOfSynchTransfer(m, con);
+	}
+
+	/**
+	 * Removes an out-of-synch transfer from the interference
+	 * model. This method should only be called when both the
+	 * interfaces involved in a connection are transmitting, and
+	 * we need to remove the 
+	 */
+	public void removeOutOfSynchTransfer(String msgID, Connection con) {
+		if (null == interferenceModel.removeOutOfSynchTransfer(msgID, con)) {
+			throw new SimError("Impossible to remove the specified out-of-synch" +
+								" transfer from the interference model");
+		}
 	}
 
 	/**
@@ -622,8 +664,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * on whether the other node is in range or active 
 	 * (cf. {@link #connect(NetworkInterface)}).
 	 * @param anotherInterface The interface to create the connection to
+	 * @return 
 	 */
-	public abstract void createConnection(NetworkInterface anotherInterface);
+	public abstract Connection createConnection(NetworkInterface anotherInterface);
 	
 	/**
 	 * Disconnect a connection between this and another host.
@@ -680,6 +723,24 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 			// Transfer was completed --> finalize transfer before connection goes down
 			//getHost().getRouter().changedConnection(con);
 			con.finalizeTransfer();
+		}
+	}
+
+	/**
+	 * Start sending data also on the specified Connection.
+	 * @param con Connection that will transfer data.
+	 */
+	public void duplicateTransfer(Connection con) {
+		if (!this.isSendingData()) {
+			return;
+		}
+		
+		for (Connection c : connections) {
+			if ((c != con) && c.isTransferOngoing() &&
+				(c.getSenderNode() == getHost())) {
+				con.copyMessageTransfer(getHost(), c);
+				return;
+			}
 		}
 	}
 

@@ -51,11 +51,14 @@ public class TestInterface extends NetworkInterface {
 	 * the connection to work in the derived class, then call 
 	 * connect(Connection, NetworkInterface) for the actual connection.
 	 * @param anotherInterface The host to connect to
+	 * @return 
 	 */
-	public void connect(NetworkInterface anotherInterface) {
-		Connection con = new CBRConnection(this.getHost(),this,
-				anotherInterface.getHost(),anotherInterface, transmitSpeed);
+	public Connection connect(NetworkInterface anotherInterface) {
+		Connection con = new CBRConnection(this.getHost(),this, anotherInterface.getHost(),
+											anotherInterface, transmitSpeed);
 		this.connect(con, anotherInterface);
+		
+		return con;
 	}
 
 	@Override
@@ -127,9 +130,10 @@ public class TestInterface extends NetworkInterface {
 	 * on whether the other node is in range or active 
 	 * (cf. {@link #connect(DTNHost)}).
 	 * @param anotherHost The host to create the connection to
+	 * @return 
 	 */
-	public void createConnection(NetworkInterface anotherInterface) {
-		connect(anotherInterface);
+	public Connection createConnection(NetworkInterface anotherInterface) {
+		return connect(anotherInterface);
 	}
 
 }

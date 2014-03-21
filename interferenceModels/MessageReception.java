@@ -14,20 +14,22 @@ import core.Message;
  */
 public class MessageReception {
 
-	private Message message;
-	private Connection connection;
+	private final Message message;
+	private final Connection connection;
+	private final boolean isTransferInSynch;
 	private boolean isInterfered;
 	
-	MessageReception(Message m, Connection con) {
-		this (m, con, false);
+	MessageReception(Message m, Connection con, boolean synch) {
+		this (m, con, synch, false);
 	}
 
-	MessageReception(Message m, Connection con, boolean interference) {
+	MessageReception(Message m, Connection con, boolean synch, boolean interference) {
 		this.message = m;
 		this.connection = con;
 		this.isInterfered = interference;
+		this.isTransferInSynch = synch;
 	}
-	
+
 
 	public Message getMessage() {
 		return message;
@@ -35,7 +37,11 @@ public class MessageReception {
 
 	public Connection getConnection() {
 		return connection;
-	}	
+	}
+
+	public boolean isTransferInSynch() {
+		return isTransferInSynch;
+	}
 
 	public boolean isInterfered() {
 		return isInterfered;
@@ -45,8 +51,12 @@ public class MessageReception {
 		this.isInterfered = isInterfered;
 	}
 	
+	public boolean isTransferCompleted() {
+		return getConnection().isMessageTransferred();
+	}
+	
 	public boolean isTransferCompletedCorrectly() {
-		return getConnection().isMessageTransferred() && !isInterfered();
+		return getConnection().isMessageTransferred() && isTransferInSynch() && !isInterfered();
 	}
 
 }

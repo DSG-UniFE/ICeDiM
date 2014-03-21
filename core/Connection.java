@@ -130,6 +130,13 @@ public abstract class Connection {
 	 */
 	public abstract int startTransfer(DTNHost from, Message m);
 
+
+	/**
+	 * Copy the message transfer process from the specified connection.
+	 * @param c The connection from which the transfer is copied
+	 */
+	public abstract void copyMessageTransfer(DTNHost from, Connection c);
+
 	/**
 	 * Calculate the current transmission speed from the information
 	 * given by the interfaces, and calculate the missing data amount.
@@ -178,11 +185,14 @@ public abstract class Connection {
 		assert underwayTransfer != null : "Nothing to finalize in " + this;
 		assert underwayTransfer.getSender() != null : "msgFromNode is not set";
 		
-		bytesTransferred += underwayTransfer.getMsgOnFly().getSize();
-		bytesTransferredForThroughput += underwayTransfer.getMsgOnFly().getSize();
-		bytesTransferredForGoodput += underwayTransfer.getMsgOnFly().getSize();
-
-		underwayTransfer.getReceiver().messageTransferred(underwayTransfer.getMsgOnFly().getID(), this);
+		// Update counters
+		bytesTransferred += underwayTransfer.getBytesToTransfer();
+		if (underwayTransfer.isTransferSynchronized()) {
+			bytesTransferredForThroughput += underwayTransfer.getBytesToTransfer();
+			bytesTransferredForGoodput += underwayTransfer.getBytesToTransfer();
+		}
+		
+		underwayTransfer.getReceiver().messageTransferred(underwayTransfer.getMsgOnFly().getID(), this);		
 		clearMsgOnFly();
 	}
 
@@ -216,7 +226,24 @@ public abstract class Connection {
 	/** 
 	 * Gets the current connection speed
 	 */
-	public abstract double getSpeed();	
+	public abstract double getSpeed();
+
+	/**
+	 * Returns the total amount of bytes this connection has transferred so far
+	 * (including all transfers).
+	 */
+	public int getMessageBytesTransferred() {
+		if (underwayTransfer == null) {
+			return 0;
+		}
+		
+		if (isMessageTransferred()) {
+			return underwayTransfer.getMsgOnFly().getSize();
+		}
+		else {
+			return underwayTransfer.getMsgOnFly().getSize() - getRemainingByteCount();
+		}
+	}
 
 	/**
 	 * Returns the total amount of bytes this connection has transferred so far
@@ -226,14 +253,13 @@ public abstract class Connection {
 		if (underwayTransfer == null) {
 			return bytesTransferred;
 		}
+
+		if (isMessageTransferred()) {
+			return bytesTransferred + underwayTransfer.getMsgOnFly().getSize();
+		}
 		else {
-			if (isMessageTransferred()) {
-				return bytesTransferred + underwayTransfer.getMsgOnFly().getSize();
-			}
-			else {
-				return bytesTransferred + 
-						(underwayTransfer.getMsgOnFly().getSize() - getRemainingByteCount());
-			}
+			return bytesTransferred + (underwayTransfer.getMsgOnFly().getSize() -
+										getRemainingByteCount());
 		}
 	}
 
@@ -391,11 +417,26 @@ class Transfer {
 	private Connection transferringConnection;
 	private DTNHost msgFromNode;
 	private Message msgOnFly;
+	private int bytesToTransfer;
 	
 	public Transfer(Connection transferringConnection, DTNHost senderNode, Message m) {
 		this.transferringConnection = transferringConnection;
 		this.msgFromNode = senderNode;
 		this.msgOnFly = m;
+		this.bytesToTransfer = m.getSize();
+	}
+	
+	public Transfer(Connection transferringConnection, DTNHost senderNode,
+					Message m, int bytesToTransfer) {
+		if (bytesToTransfer > m.getSize()) {
+			throw new SimError("Wrong bytesToTransfer value; specified value" + 
+								" is larger than whole message size");
+		}
+		
+		this.transferringConnection = transferringConnection;
+		this.msgFromNode = senderNode;
+		this.msgOnFly = m;
+		this.bytesToTransfer = bytesToTransfer;
 	}
 	
 	public DTNHost getSender() {
@@ -416,5 +457,13 @@ class Transfer {
 	
 	public Message getMsgOnFly() {
 		return msgOnFly;
+	}
+
+	public int getBytesToTransfer() {
+		return bytesToTransfer;
+	}
+	
+	public boolean isTransferSynchronized() {
+		return bytesToTransfer == msgOnFly.getSize();
 	}
 }

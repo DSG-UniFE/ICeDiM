@@ -26,9 +26,10 @@ public interface InterferenceModel {
 	public static final int RECEPTION_DENIED_DUE_TO_SEND = -2;
 	/** Return code for a message interfered error */
 	public static final int RECEPTION_INCOMPLETE = -3;
+	/** Return code for a message out of synch */
+	public static final int RECEPTION_OUT_OF_SYNCH = -4;
 
 
-	
 	/**
 	 * Returns a copy of this interference model.
 	 * @return a copy of this interference model.
@@ -75,6 +76,16 @@ public interface InterferenceModel {
 	int isMessageTransferredCorrectly (String msgID, Connection con);
 	
 	/**
+	 * This method has to be called whenever a new network interface
+	 * is transmitting a message and falls into the connection range
+	 * of this interface. It allows the interference model to correctly
+	 * simulate all possible interference events.
+	 * @param m Message which is being transferred
+	 * @param con Connection transferring the message {@code m}
+	 */
+	void beginNewOutOfSynchTransfer (Message m, Connection con);
+	
+	/**
 	 * This method force an interference event to occur. The status
 	 * of interfered is set for the specified message.
 	 * @param msgID String representing the messageID
@@ -99,8 +110,8 @@ public interface InterferenceModel {
 	
 	/**
 	 * This method allows the caller to retrieve all the
-	 * messages which have are being transferred.
-	 * It can be useful for statistics purposes.
+	 * messages which are being transferred. It could be
+	 * useful for statistics purposes.
 	 * @return a List containing all Messages being transferred.
 	 */
 	List<Message> getListOfMessagesInTransfer();
@@ -113,12 +124,24 @@ public interface InterferenceModel {
 	List<Message> retrieveAllTransferredMessages();
 	
 	/**
-	 * This method notifies the InterferenceModel that 
+	 * This method notifies the InterferenceModel that
+	 * the specified message transfer has been aborted
 	 * @param msgID String representing the messageID
-	 * @return the requested Message, if the transfer completed
-	 * without interferences, or {@code null} if the transfer is
-	 * not completed or an interference has occurred.
+	 * @param con Connection transferring the message
+	 * @return the Message identified by the specified
+	 * parameters, or {@code null} if the no match was found.
 	 */
 	Message abortMessageReception (String msgID, Connection con);
+
+	/**
+	 * This method notifies the InterferenceModel that
+	 * the specified out-of-synch transfer can be safely
+	 * removed from the interference model.
+	 * @param msgID String representing the messageID
+	 * @param con Connection transferring the message
+	 * @return the Message identified by the specified
+	 * parameters, or {@code null} if the no match was found.
+	 */
+	Message removeOutOfSynchTransfer(String msgID, Connection con);
 
 }

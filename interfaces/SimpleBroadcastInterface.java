@@ -4,6 +4,7 @@
  */
 package interfaces;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import routing.MessageRouter;
@@ -47,11 +48,13 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	 * active and within range of this host for the connection to succeed. 
 	 * @param anotherInterface The interface to connect to
 	 */
-	public void connect(NetworkInterface anotherInterface) {
+	public Connection connect(NetworkInterface anotherInterface) {
 		if (isScanning() && anotherInterface.getHost().isActive() &&
 			isWithinRange(anotherInterface)) {
-			createConnection(anotherInterface);
+			return createConnection(anotherInterface);
 		}
+		
+		return null;
 	}
 
 	/** 
@@ -59,7 +62,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	 * on whether the other node is in range or active 
 	 * @param anotherInterface The interface to create the connection to
 	 */
-	public void createConnection(NetworkInterface anotherInterface) {
+	public Connection createConnection(NetworkInterface anotherInterface) {
 		if (!isConnected(anotherInterface) && (this != anotherInterface)) {    			
 			// connection speed is the lower one of the two speeds 
 			int conSpeed = anotherInterface.getTransmitSpeed();
@@ -70,7 +73,11 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 			Connection con = new CBRConnection(this.host, this, anotherInterface.getHost(),
 												anotherInterface, conSpeed);
 			connect(con, anotherInterface);
+			
+			return con;
 		}
+		
+		return null;
 	}
 	
 	/**
@@ -142,7 +149,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 		for (Connection con : this.connections) {
 			retVal = con.startTransfer(getHost(), m);
 			if ((retVal != MessageRouter.RCV_OK) && (retVal != MessageRouter.DENIED_INTERFERENCE)) {
-				throw new SimError("Error on a connection which had resulted ready for transferring");
+				throw new SimError("Error on a connection which resulted ready for transferring");
 			}
 		}
 		
@@ -156,7 +163,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	public void update() {
 		// First break the old ones
 		optimizer.updateLocation(this);
-		for (int i=0; i<this.connections.size(); ) {
+		for (int i = 0; i < this.connections.size();) {
 			Connection con = this.connections.get(i);
 			NetworkInterface anotherInterface = con.getOtherInterface(this);
 
@@ -171,12 +178,31 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 				i++;
 			}
 		}
+		
 		// Then find new possible connections
 		Collection<NetworkInterface> interfaces = optimizer.getNearInterfaces(this);
-		for (NetworkInterface i : interfaces) {
-			connect(i);
+		ArrayList<Connection> newConnections = new ArrayList<Connection>();
+		for (NetworkInterface ni : interfaces) {
+			if (!ni.isConnectedTo(this)) {
+				Connection newConnection = connect(ni);
+				if (newConnection != null) {
+					newConnections.add(newConnection);
+				}
+			}
 		}
-		// TODO: new possible interferences arise here!!!
+		
+		// Finally check if new connections could result in interferences
+		if (this.isSendingData()) {
+			// transmit remaining data also onto new connections
+			for (Connection con : newConnections) {
+				duplicateTransfer(con);
+			}
+		}
+		for (Connection con : newConnections) {
+			if (con.getOtherInterface(this).isSendingData()) {
+				con.getOtherInterface(this).duplicateTransfer(con);
+			}
+		}
 	}
 
 	/**

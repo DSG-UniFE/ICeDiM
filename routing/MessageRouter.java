@@ -391,6 +391,15 @@ public abstract class MessageRouter {
 			}
 			return null;
 		}
+		else if (receiveResult == InterferenceModel.RECEPTION_OUT_OF_SYNCH) {
+			if (receivingInterface.retrieveTransferredMessage(msgID, con) != null) {
+				throw new SimError("A message was returned by NetworkInterface.retrieveTransferredMessage() " + 
+									"method even if an interference was detected");
+			}
+			
+			// No need to notify listeners; only remove transfer from the InterferenceModel 
+			return null;
+		}
 
 		// receiveResult == InterferenceModel.RECEPTION_COMPLETED_CORRECTLY
 		Message incoming = receivingInterface.retrieveTransferredMessage(msgID, con);
@@ -440,11 +449,18 @@ public abstract class MessageRouter {
 	 * would have been ready; or -1 if the number of bytes is not known
 	 */
 	public void messageAborted(String msgID, Connection con) {
-		// TODO: add support for out-of-synch received messages in the interference model
 		NetworkInterface receivingInterface = con.getReceiverInterface();
 		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
 		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
 			// Abortion is not necessary
+			return;
+		}
+		else if (receiveResult == InterferenceModel.RECEPTION_OUT_OF_SYNCH) {
+			if (null == receivingInterface.abortMessageReception(con)) {
+				throw new SimError("abortMessageReception() method could not abort " +
+									"any transfer on specified connection");
+			}
+			// No notifications to listeners are necessary (transfer not synched)
 			return;
 		}
 		else if (receiveResult != InterferenceModel.RECEPTION_INCOMPLETE) {

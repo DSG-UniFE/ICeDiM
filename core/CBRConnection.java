@@ -62,6 +62,43 @@ public class CBRConnection extends Connection {
 
 		return retVal;
 	}
+	
+	public void copyMessageTransfer(DTNHost from, Connection c) {
+		if (!c.isTransferOngoing()) {
+			return;
+		}
+		if (from != c.getSenderNode()) {
+			throw new SimError("The present node and specified connection's" +
+								" sender node are different");
+		}
+		
+		if (!(c instanceof CBRConnection)) {
+			throw new SimError("Present and remote connections are of different types");
+		}
+		CBRConnection cbrc = (CBRConnection) c;
+		
+		if (underwayTransfer != null) {
+			if (underwayTransfer.getMsgOnFly().getSize() == underwayTransfer.getBytesToTransfer()) {
+				throw new SimError("Trying to copy an out-of-synch transfer over a synchronized one");
+			}
+			if (getRemainingByteCount() >= cbrc.getRemainingByteCount()) {
+				// The transmission currently set lasts longer than the other one --> do nothing
+				return;
+			}
+			
+			// Remove current transfer from the receiving interface (which will then turn into the sender one)
+			getReceiverInterface().removeOutOfSynchTransfer(getMessage().getID(), this);
+		}
+		
+		// Copying a transfer is done for out-of-synch transfers only --> it never transfers all data
+		underwayTransfer = (cbrc.getRemainingByteCount() == cbrc.getMessage().getSize()) ?
+							new Transfer (this, from, cbrc.getMessage(), cbrc.getRemainingByteCount() - 1) :
+							new Transfer (this, from, cbrc.getMessage(), cbrc.getRemainingByteCount());
+		speed = (int) cbrc.getSpeed();
+		transferDoneTime = cbrc.transferDoneTime;
+		
+		getReceiverInterface().beginNewOutOfSynchTransfer(getMessage(), this);
+	}
 
 	/**
 	 * Aborts the transfer of the currently transferred message.

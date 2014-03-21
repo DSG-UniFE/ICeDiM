@@ -62,19 +62,21 @@ public class InterferenceLimitedInterface extends NetworkInterface {
 	 * Tries to connect this host to another host. The other host must be
 	 * active and within range of this host for the connection to succeed. 
 	 * @param anotherInterface The host to connect to
+	 * @return 
 	 */
-	public void connect(NetworkInterface anotherInterface) {
-		if (isScanning() 
-				&& anotherInterface.getHost().isActive()
-				&& isWithinRange(anotherInterface)
-				&& !isConnected(anotherInterface) 
-				&& (this != anotherInterface)) {
+	public Connection connect(NetworkInterface anotherInterface) {
+		if (isScanning() && anotherInterface.getHost().isActive() &&
+			isWithinRange(anotherInterface) && !isConnected(anotherInterface) &&
+			(this != anotherInterface)) {
 			// new contact within range
-
 			Connection con = new VBRConnection(this.host, this,
-					anotherInterface.getHost(), anotherInterface);
+								anotherInterface.getHost(), anotherInterface);
 			connect(con, anotherInterface);
+			
+			return con;
 		}
+		
+		return null;
 	}
 
 	@Override
@@ -180,15 +182,20 @@ public class InterferenceLimitedInterface extends NetworkInterface {
 	 * Creates a connection to another host. This method does not do any checks
 	 * on whether the other node is in range or active
 	 * @param anotherInterface The interface to create the connection to
+	 * @return 
 	 */
-	public void createConnection(NetworkInterface anotherInterface) {
+	public Connection createConnection(NetworkInterface anotherInterface) {
 		if (!isConnected(anotherInterface) && (this != anotherInterface)) {
 			// new contact within range
 
 			Connection con = new VBRConnection(this.host, this, 
 					anotherInterface.getHost(), anotherInterface);
 			connect(con,anotherInterface);
+			
+			return con;
 		}
+		
+		return null;
 	}
 
 	/**

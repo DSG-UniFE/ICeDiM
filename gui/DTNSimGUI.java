@@ -30,6 +30,9 @@ import core.SimClock;
  *
  */
 public class DTNSimGUI extends DTNSimUI {
+	/** The message to visualize to the user when the simulation is over */
+	private static final String SIMULATION_DONE_S = "Simulation Done!";
+	
 	private MainWindow main;
 	private PlayField field;
 	private GUIControls guiControls;
@@ -132,8 +135,7 @@ public class DTNSimGUI extends DTNSimUI {
 		this.update(true); // force final GUI update
 		
 		if (!simCancelled) { // NOT cancelled -> leave the GUI running
-			JOptionPane.showMessageDialog(getParentFrame(),
-					"Simulation done");
+			JOptionPane.showMessageDialog(getParentFrame(),SIMULATION_DONE_S);
 		}
 		else { // was cancelled -> exit immediately
 			System.exit(0);
