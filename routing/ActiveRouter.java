@@ -388,7 +388,7 @@ public abstract class ActiveRouter extends MessageRouter {
 				continue;
 			}
 			
-			int retVal = startTransfer(m, con); 
+			int retVal = startTransfer(m, con);
 			if (retVal == RCV_OK) {
 				return m;	// accepted a message, don't try others
 			}
