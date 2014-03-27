@@ -47,7 +47,7 @@ public class MessageChecker implements MessageListener {
 	@Override
 	public void registerNode(DTNHost node) {}
 	
-	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
 		this.add(m, where, null, TYPE_DELETE, dropped, null);
 	}
 

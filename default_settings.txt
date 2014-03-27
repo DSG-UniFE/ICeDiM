@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = default_scenario_disservice
+Scenario.name = default_scenario_dd
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 43200s == 12h
@@ -73,9 +73,10 @@ Scenario.nrofHostGroups = 6
 
 # Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
-#Group.router = EpidemicRouter
+Group.router = EpidemicRouter
 #Group.router = SprayAndWaitRouter
-Group.router = DisServiceRouter
+#Group.router = ProphetRouterWithEstimation
+#Group.router = DirectDeliveryRouter
 Group.bufferSize = 5M
 Group.waitTime = 0, 120
 # All nodes have the bluetooth interface
@@ -93,8 +94,12 @@ Group.maxSubID = 10
 #Group.subIDs = 0,1,2
 Group.nrofHosts = 40
 
+# Settings for Spray n Wait router
 SprayAndWaitRouter.nrofCopies = 10
 SprayAndWaitRouter.binaryMode = true
+
+# Settings for PROPHET router
+ProphetRouterWithEstimation.timeScale = 60
 
 # group1 (pedestrians) specific settings
 Group1.groupID = p
@@ -191,7 +196,7 @@ MapBasedMovement.mapFile4 = data/shops.wkt
 ## Reports - all report names have to be valid report classes
 
 # how many reports to load
-Report.nrofReports = 1
+Report.nrofReports = 3
 # length of the warm up period (simulated seconds)
 Report.warmup = 0
 # default directory of reports (can be overridden per Report with output setting)
@@ -199,6 +204,8 @@ Report.reportDir = reports/
 # Report classes to load
 # PrioritizedMessageStatsReport reports stats for priority-based routers
 Report.report1 = PrioritizedMessageStatsReport
+Report.report2 = CSVPrioritizedMessageDeliveryReport
+Report.report3 = CSVPrioritizedMessageDropReport
 
 ## Default settings for some routers settings
 ProphetRouter.secondsInTimeUnit = 30

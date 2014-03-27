@@ -490,8 +490,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * (e.g. the message got delivered to final destination). This effects the
 	 * way the removing is reported to the message listeners.
 	 */
-	public void deleteMessage(String id, boolean drop) {
-		this.router.deleteMessage(id, drop);
+	public void deleteMessage(String id, boolean drop, String cause) {
+		this.router.deleteMessage(id, drop, cause);
 	}
 
 	/**

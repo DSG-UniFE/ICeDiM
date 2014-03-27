@@ -178,7 +178,7 @@ public class MaxPropRouter extends ActiveRouter {
 	private void deleteAckedMessages() {
 		for (String id : this.ackedMessageIds) {
 			if (this.hasMessage(id) && !isSending(id)) {
-				this.deleteMessage(id, false);
+				this.deleteMessage(id, false, "message acknowledged");
 			}
 		}
 	}
@@ -204,9 +204,10 @@ public class MaxPropRouter extends ActiveRouter {
 	protected void transferDone(Connection con) {
 		Message m = con.getMessage();
 		/* was the message delivered to the final recipient? */
-		if (m.getTo() == con.getOtherNode(getHost())) { 
-			this.ackedMessageIds.add(m.getID()); // yes, add to ACKed messages
-			this.deleteMessage(m.getID(), false); // delete from buffer
+		if (m.getTo() == con.getOtherNode(getHost())) {
+			 // Add to ACKed messages and then delete from buffer 
+			this.ackedMessageIds.add(m.getID());
+			this.deleteMessage(m.getID(), false, "message delivered to final recipient");
 		}
 	}
 	

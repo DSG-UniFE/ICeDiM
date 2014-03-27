@@ -35,8 +35,9 @@ public interface MessageListener {
 	 * @param m The message that was deleted
 	 * @param where The host where the message was deleted
 	 * @param dropped True if the message was dropped, false if removed
+	 * @param cause a String describing the reason for the deletion
 	 */
-	public void messageDeleted(Message m, DTNHost where, boolean dropped);
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause);
 	
 	/**
 	 * Method is called when a message's transfer was aborted before 

@@ -176,7 +176,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		else if (deleteDelivered && (retVal == DENIED_OLD) && 
 				(m.getTo() == con.getOtherNode(this.getHost()))) {
 			/* final recipient has already received the msg -> delete it */
-			this.deleteMessage(m.getID(), false);
+			this.deleteMessage(m.getID(), false, "message already delivered");
 		}
 		
 		return retVal;
@@ -269,7 +269,8 @@ public abstract class ActiveRouter extends MessageRouter {
 
 		// commit deletes by notifying event listeners about the deletes
 		for (Message m : deletedMessages) {
-			notifyListenersAboutMessageDelete(m, true);	// true identifies dropped messages
+			// true identifies dropped messages
+			notifyListenersAboutMessageDelete(m, true, "buffer size exceeded");
 		}
 		return true;
 	}
@@ -282,7 +283,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		for (int i=0; i<messages.length; i++) {
 			int ttl = messages[i].getTtl(); 
 			if (ttl <= 0) {
-				deleteMessage(messages[i].getID(), true);
+				deleteMessage(messages[i].getID(), true, "TTL expired");
 			}
 		}
 	}
@@ -370,7 +371,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		return null;
 	}
-	
+
 	 /**
 	  * Goes through all messages until the other node accepts one
 	  * for receiving (or doesn't accept any). If a transfer is started, the
@@ -382,16 +383,21 @@ public abstract class ActiveRouter extends MessageRouter {
 	  */
 	protected Message tryAllMessages(Connection con, List<Message> messages) {
 		for (Message m : messages) {
+			if (m.getSenderNode() == con.getOtherNode(getHost())) {
+				// Avoid to send a message right back to the sender
+				continue;
+			}
+			
 			int retVal = startTransfer(m, con); 
 			if (retVal == RCV_OK) {
 				return m;	// accepted a message, don't try others
 			}
-			else if (retVal > 0) { 
+			else {
 				return null; // should try later -> don't bother trying others
 			}
 		}
 		
-		return null; // no message was accepted		
+		return null; // no message was accepted
 	}
 
 	/**
@@ -407,7 +413,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	protected Connection tryMessagesToConnections(List<Message> messages,
 													List<Connection> connections) {
-		for (int i=0, n=connections.size(); i<n; i++) {
+		for (int i = 0, n = connections.size(); i < n; i++) {
 			Connection con = connections.get(i);
 			Message started = tryAllMessages(con, messages); 
 			if (started != null) { 
@@ -428,14 +434,12 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	protected Connection tryAllMessagesToAllConnections(){
 		List<Connection> connections = getConnections();
-		if (connections.size() == 0 || this.getNrofMessages() == 0) {
+		if ((connections.size() == 0) || (this.getNrofMessages() == 0)) {
 			return null;
 		}
 
-		List<Message> messages = 
-			new ArrayList<Message>(this.getMessageCollection());
-		this.sortByQueueMode(messages);
-
+		List<Message> messages = sortByQueueMode(new ArrayList<Message>(this.getMessageCollection()));
+		
 		return tryMessagesToConnections(messages, connections);
 	}
 		

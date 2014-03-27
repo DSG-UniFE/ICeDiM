@@ -188,7 +188,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		}
 	}
 	
-	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}

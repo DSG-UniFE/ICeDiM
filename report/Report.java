@@ -74,7 +74,7 @@ public abstract class Report {
 	 * if such is found, uses that as the output file name. Otherwise
 	 * scenarioname_classname.txt is used as the file name.
 	 */
-	public Report(){
+	public Report() {
 		this.lastOutputSuffix = 0;
 		this.outputInterval = -1;
 		this.warmupIDs = null;
@@ -285,7 +285,8 @@ public abstract class Report {
 	 * @param id The ID
 	 */
 	protected void addWarmupID(String id) {
-		if (this.warmupIDs == null) { // lazy creation of the Set
+		if (this.warmupIDs == null) {
+			// lazy creation of the Set
 			this.warmupIDs = new HashSet<String>();
 		}
 		

@@ -110,13 +110,13 @@ public class StandardEventsReader implements ExternalEventsReader {
 					msgId = lineScan.next();
 					hostAddr = getHostAddress(lineScan.next());
 					events.add(new MessageDeleteEvent(hostAddr, msgId,
-							time, true));
+							time, true, "general drop event"));
 				}
 				else if (action.equals(REMOVE)) {
 					msgId = lineScan.next();
 					hostAddr = getHostAddress(lineScan.next());
 					events.add(new MessageDeleteEvent(hostAddr, msgId,
-							time, false));
+							time, false, "general remove event"));
 				}
 				else if (action.equals(CONNECTION)) {
 					String connEventType;

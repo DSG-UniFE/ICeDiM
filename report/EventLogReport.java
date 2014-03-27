@@ -61,9 +61,9 @@ public class EventLogReport extends Report
 	}
 
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
 		processEvent((dropped ? StandardEventsReader.DROP : 
-			StandardEventsReader.REMOVE), where, null, m, null);
+			StandardEventsReader.REMOVE), where, null, m, cause);
 	}
 
 	@Override

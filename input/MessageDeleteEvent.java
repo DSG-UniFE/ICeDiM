@@ -17,7 +17,8 @@ import core.World;
 
 public class MessageDeleteEvent extends MessageEvent {
 	/** is the delete caused by a drop (not "normal" removing) */
-	private boolean drop; 
+	private boolean drop;
+	private String cause;
 	
 	/**
 	 * Creates a message delete event
@@ -25,9 +26,10 @@ public class MessageDeleteEvent extends MessageEvent {
 	 * @param id ID of the message
 	 * @param time Time when the message is deleted
 	 */
-	public MessageDeleteEvent(int host, String id, double time, boolean drop) {
+	public MessageDeleteEvent(int host, String id, double time, boolean drop, String cause) {
 		super(host, host, id, time);
 		this.drop = drop;
+		this.cause = cause;
 	}
 	
 	/**
@@ -43,10 +45,10 @@ public class MessageDeleteEvent extends MessageEvent {
 				ids.add(m.getID());
 			}
 			for (String nextId : ids) {
-				host.deleteMessage(nextId, drop);
+				host.deleteMessage(nextId, drop, cause);
 			}
 		} else {
-			host.deleteMessage(id, drop);
+			host.deleteMessage(id, drop, cause);
 		}
 	}
 

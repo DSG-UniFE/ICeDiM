@@ -181,7 +181,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 
 		// commit deletes by notifying event listeners about the deletes
 		for (Message m : deletedMessages) {
-			notifyListenersAboutMessageDelete(m, true);	// true identifies dropped messages
+			// true identifies dropped messages
+			notifyListenersAboutMessageDelete(m, true, "buffer size exceeded");
 		}
 		return true;
 	}
@@ -256,7 +257,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		if (deleteDelivered && retVal == DENIED_OLD && 
 			m.getTo() == con.getOtherNode(this.getHost())) {
 			/* final recipient has already received the msg -> delete it */
-			this.deleteMessage(m.getID(), false);
+			this.deleteMessage(m.getID(), false, "message already delivered");
 		}
 		
 		return retVal;
@@ -293,8 +294,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		for (int i=0; i<messages.length; i++) {
 			int ttl = messages[i].getTtl(); 
 			if (ttl <= 0) {
-				deleteMessage(messages[i].getID(), true);
-				//Assert.assertTrue("Impossible to find ", receivedMsgIDs.remove(messages[i].getId()));
+				deleteMessage(messages[i].getID(), true, "TTL expired");
 			}
 		}
 	}

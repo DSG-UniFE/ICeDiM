@@ -50,7 +50,7 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param where The host where the message was deleted
 	 * @param dropped True if the message was dropped, false if removed
 	 */
-	public void messageDeleted(Message m, DTNHost where, boolean dropped) {}
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
 	
 	/**
 	 * Method is called when a message's transfer was aborted before 

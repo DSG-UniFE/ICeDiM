@@ -101,7 +101,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 					c.abortTransfer();
 				}
 			}
-			this.deleteMessage(id, false);			
+			this.deleteMessage(id, false, "message already delivered");			
 		}
 	}
 	
@@ -152,7 +152,7 @@ public class EpidemicOracleRouter extends ActiveRouter {
 		
 		/* was the message delivered to the final recipient? */
 		if (m.getTo() == con.getOtherNode(getHost())) { 
-			this.deleteMessage(m.getID(), false);
+			this.deleteMessage(m.getID(), false, "message delivered to final recipient");
 		}
 	}
 	

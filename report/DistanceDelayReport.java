@@ -91,7 +91,7 @@ public class DistanceDelayReport extends Report implements MessageListener {
 
 	@Override
 	public void registerNode(DTNHost node) {}
-	public void messageDeleted(Message m, DTNHost where, boolean dropped) {}
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
 

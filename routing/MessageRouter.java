@@ -338,6 +338,9 @@ public abstract class MessageRouter {
 	public int receiveMessage(Message m, Connection con) {
 		Message newMessage = m.replicate();
 		NetworkInterface receivingInterface = con.getReceiverInterface();
+		if (!getHost().getInterfaces().contains(receivingInterface)) {
+			throw new SimError("receiveMessage method invoked on the wrong host!");
+		}
 		
 		int receptionValue = receivingInterface.beginNewReception(newMessage, con);
 		for (MessageListener ml : this.mListeners) {
@@ -353,7 +356,7 @@ public abstract class MessageRouter {
 			return DENIED_INTERFERENCE;
 		}
 		
-		 // superclass accepts messages if the interference model accepts it
+		 // Superclass accepts messages if the interference model accepts it
 		return RCV_OK;
 	}
 	
@@ -577,14 +580,14 @@ public abstract class MessageRouter {
 	 * should be set to true. False value indicates e.g. remove of message
 	 * because it was delivered to final destination.  
 	 */
-	public void deleteMessage(String id, boolean drop) {
+	public void deleteMessage(String id, boolean drop, String cause) {
 		Message removed = removeFromMessages(id); 
 		if (removed == null) {
 			throw new SimError("no message for id " + id + " to remove at " + host);
 		}
 		
 		for (MessageListener ml : this.mListeners) {
-			ml.messageDeleted(removed, this.host, drop);
+			ml.messageDeleted(removed, this.host, drop, cause);
 		}
 	}
 	
@@ -607,9 +610,9 @@ public abstract class MessageRouter {
 	 * should be set to true. False value indicates e.g. remove of message
 	 * because it was delivered to final destination.  
 	 */
-	public void notifyListenersAboutMessageDelete(Message removed, boolean drop) {		
+	public void notifyListenersAboutMessageDelete(Message removed, boolean drop, String cause) {		
 		for (MessageListener ml : this.mListeners) {
-			ml.messageDeleted(removed, this.host, drop);
+			ml.messageDeleted(removed, this.host, drop, cause);
 		}
 	}	
 	

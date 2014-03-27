@@ -266,12 +266,22 @@ public class EventLogPanel extends JPanel
 		processEvent(conDownCheck, "Connection DOWN", host1, host2, null);
 	}
 
-	public void messageDeleted(Message m, DTNHost where, boolean dropped) {
-		if (!dropped) {
-			processEvent(msgRemoveCheck, "Message removed", where, null, m);
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
+		if ((cause == null) || (cause.length() == 0)) {
+			if (!dropped) {
+				processEvent(msgRemoveCheck, "Message removed", where, null, m);
+			}
+			else {
+				processEvent(msgDropCheck, "Message dropped", where, null, m);
+			}
 		}
 		else {
-			processEvent(msgDropCheck, "Message dropped", where, null, m);
+			if (!dropped) {
+				processEvent(msgRemoveCheck, "Message removed due to " + cause, where, null, m);
+			}
+			else {
+				processEvent(msgDropCheck, "Message dropped due to " + cause, where, null, m);
+			}
 		}
 	}
 
