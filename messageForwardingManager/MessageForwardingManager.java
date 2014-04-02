@@ -71,7 +71,7 @@ public abstract class MessageForwardingManager {
 	 * Returns the next message to be forwarded
 	 * to neighboring nodes.
 	 * @return the Message to be forwarded, or
-	 * {@code null} if no messages are available
+	 * {@code null} if no messages are available.
 	 */
 	abstract public Message getNextMessage();
 	
@@ -80,7 +80,7 @@ public abstract class MessageForwardingManager {
 	 * to neighboring nodes and advance the pointer
 	 * to the messages in the queue in a single call.
 	 * @return the Message to be forwarded, or
-	 * {@code null} if no messages are available
+	 * {@code null} if no messages are available.
 	 */
 	abstract public Message getNextMessageAndAdvanceQueue();
 
@@ -94,28 +94,29 @@ public abstract class MessageForwardingManager {
 	abstract public void resetMessageOrder();
 
 	/**
-	 * Returns a list of Messages ordered accoding
-	 * to the specified implementation and to the
-	 * current position in the queue
-	 * @return the ordered List of Messages available
+	 * Returns a new list of Messages containing all the
+	 * Messages belonging to the list passed as parameter
+	 * and ordered accoding to the specified implementation.
+	 * @param inputList the {@code List<Message>} to order. 
+	 * @return the ordered List of Messages.
 	 */
 	abstract public List<Message> sortMessageList(List<Message> inputList);
 
 	/**
 	 * Returns a list of Messages ordered accoding
 	 * to the specified implementation and to the
-	 * current position in the queue
-	 * @return the ordered List of Messages available
+	 * current position in the queue.
+	 * @return the ordered List of Messages available.
 	 */
 	abstract public List<Message> getOrderedMessageQueue();
 
-
 	/**
 	 * Returns true if the two lists passed as parameters
-	 * are one the permutation of the other
-	 * @param l1 first List of messages
-	 * @param l2 second List of messages
-	 * @return true if l1 and l2 are permutations of the same list
+	 * are one the permutation of the other.
+	 * @param l1 first List of messages.
+	 * @param l2 second List of messages.
+	 * @return true if l1 and l2 are permutations
+	 * of the same list.
 	 */
 	public boolean isPermutationOf(List<Message> l1, List<Message> l2) {
 		if (l1.size() != l2.size()) {
