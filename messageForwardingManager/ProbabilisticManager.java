@@ -109,7 +109,9 @@ public class ProbabilisticManager extends MessageForwardingManager {
 			probabilityVector.add(probabilityAccumulator);
 		}
 
-		// Increase probability of the first element, if necessary
+		/* Increase probability of the first element, in case of a strictly
+		 * positive remainder. This is done by adding the remainder to each
+		 * range extreme, with the exception of the first one (0.0). */
 		final double probabilityDifference = 1.0 - probabilityAccumulator;
 		if (probabilityDifference > 0.0) {
 			for (int i = 1; i < probabilityVector.size(); ++i) {
