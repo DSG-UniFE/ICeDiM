@@ -131,7 +131,7 @@ public class MessageQueueManager {
 	}
 
 	public <T> List<T> reverseOrderByQueueMode(List<T> list) {
-		return messageOrderingStrategy.reverseProcessingOrder(list);
+		return messageOrderingStrategy.sortListInReverseOrder(list);
 	}
 
 	public int compareByQueueMode(Message m1, Message m2) {

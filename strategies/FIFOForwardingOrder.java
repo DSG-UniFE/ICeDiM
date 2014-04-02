@@ -70,7 +70,7 @@ public class FIFOForwardingOrder extends MessageOrderingStrategy {
 	}
 
 	@Override
-	public <T> List<T> reverseProcessingOrder(List<T> inputList) {
+	public <T> List<T> sortListInReverseOrder(List<T> inputList) {
 		/* FIFO queueing strategy also deletes elements in FIFO,
 		 * so this method does the same as the above one */
 		return messageProcessingOrder(inputList);

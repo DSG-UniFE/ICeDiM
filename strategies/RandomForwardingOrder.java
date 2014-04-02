@@ -42,7 +42,7 @@ public class RandomForwardingOrder extends MessageOrderingStrategy {
 	}
 
 	@Override
-	public <T> List<T> reverseProcessingOrder(List<T> inputList) {
+	public <T> List<T> sortListInReverseOrder(List<T> inputList) {
 		/* Random queueing strategy also deletes elements randomly,
 		 * so this method does the same as the above one */
 		return messageProcessingOrder(inputList);
