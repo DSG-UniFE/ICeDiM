@@ -8,6 +8,7 @@ import routing.EpidemicRouter;
 import routing.MessageRouter;
 import core.DTNHost;
 import core.Message;
+import core.MessageQueueManager;
 
 /**
  * Tests for EpidemicRouter and, due the simple nature of Epidemic router,
@@ -19,8 +20,8 @@ public class EpidemicRouterTest extends AbstractRouterTest {
 	
 	@Override
 	public void setUp() throws Exception {
-		ts.putSetting(MessageRouter.MSG_TTL_S, ""+TTL);
-		ts.putSetting(MessageRouter.B_SIZE_S, ""+BUFFER_SIZE);
+		ts.putSetting(MessageRouter.MSG_TTL_S, "" + TTL);
+		ts.putSetting(MessageQueueManager.B_SIZE_S, "" + BUFFER_SIZE);
 		setRouterProto(new EpidemicRouter(ts));
 		super.setUp();
 	}

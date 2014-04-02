@@ -17,7 +17,7 @@ import core.Tuple;
  *
  */
 
-public class LeastForwardedFirstForwardingOrder extends MessageForwardingOrderStrategy {
+public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy {
 	
 	static LeastForwardedFirstForwardingOrder singletonInstance = null;
 	static Comparator<Object> comparator = new Comparator<Object>() {
@@ -99,20 +99,17 @@ public class LeastForwardedFirstForwardingOrder extends MessageForwardingOrderSt
 			}
 		}
 	};
-	
-	private LeastForwardedFirstForwardingOrder() {
-		super(MessageForwardingOrderStrategy.QueueForwardingOrderMode.Prioritized_LFF_FIFO);
-	}
-	
-	/* (non-Javadoc)
-	 * @see strategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
-	 */
+
 	static LeastForwardedFirstForwardingOrder getForwardingOrderInstance() {
 		if (singletonInstance == null) {
 			singletonInstance = new LeastForwardedFirstForwardingOrder();
 		}
 		
 		return singletonInstance;
+	}
+	
+	private LeastForwardedFirstForwardingOrder() {
+		super(MessageOrderingStrategy.QueueForwardingOrderMode.Prioritized_LFF_FIFO);
 	}
 	
 	@Override

@@ -20,20 +20,27 @@ public class MessagePriorityGenerator {
 	 *  one and only priority level is defined with 0 and 1 as extremes. */
 	public static final String MESSAGE_PRIORITY_SLOT_S = "prioritySlots";
 	
+	/** Seed for the random generation of priority levels */
+	public static final String RANDOMIZER_SEED_S = "rndSeed";
+	
 	private static MersenneTwisterRNG randomGenerator = null;
-	private static final double defaultPrioritySlotRanges[] = {0.0, 1.0};
+	private static final long SEED = 1;
+	private static final double DEFAULT_PRIORITY_SLOT_RANGES[] = {0.0, 1.0};
 	
 	private final double prioritySlotRanges[];
 	
 	public MessagePriorityGenerator(Settings s) {
 		if (randomGenerator == null) {
+			// Singleton
 			randomGenerator = new MersenneTwisterRNG();
+			long seed = s.contains(RANDOMIZER_SEED_S) ? s.getInt(RANDOMIZER_SEED_S) : SEED;
+			randomGenerator.setSeed(seed);
 		}
 		
 		if (!s.contains(MESSAGE_PRIORITY_SLOT_S)) {
-			prioritySlotRanges = new double[defaultPrioritySlotRanges.length];
-			System.arraycopy(defaultPrioritySlotRanges, 0, prioritySlotRanges, 0,
-								defaultPrioritySlotRanges.length);
+			prioritySlotRanges = new double[DEFAULT_PRIORITY_SLOT_RANGES.length];
+			System.arraycopy(DEFAULT_PRIORITY_SLOT_RANGES, 0, prioritySlotRanges, 0,
+								DEFAULT_PRIORITY_SLOT_RANGES.length);
 		}
 		else {
 			double tempVals[] = s.getCsvDoubles(MESSAGE_PRIORITY_SLOT_S);
@@ -62,9 +69,8 @@ public class MessagePriorityGenerator {
 	
 	public int randomlyGenerateNextPriority() {
 		double randD = randomGenerator.nextDouble();
-
-		for (int i = 0; i < prioritySlotRanges.length - 1; i++) {
-			if ((randD >= prioritySlotRanges[i]) && (randD < prioritySlotRanges[i + 1])) {
+		for (int i = 1; i < prioritySlotRanges.length; i++) {
+			if (randD < prioritySlotRanges[i]) {
 				return i;
 			}
 		}

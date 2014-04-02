@@ -91,7 +91,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		DTNHost other = con.getOtherNode(getHost());
 		/* do a copy to avoid concurrent modification exceptions 
 		 * (startTransfer may remove messages) */
-		ArrayList<Message> temp = new ArrayList<Message>(this.getMessageCollection());
+		ArrayList<Message> temp = new ArrayList<Message>(getMessageCollection());
 		for (Message m : temp) {
 			if (other == m.getTo()) {
 				if (startTransfer(m, con) == RCV_OK) {
@@ -99,6 +99,7 @@ public abstract class ActiveRouter extends MessageRouter {
 				}
 			}
 		}
+		
 		return false;
 	}
 	
@@ -173,8 +174,8 @@ public abstract class ActiveRouter extends MessageRouter {
 			// started transfer
 			addToSendingConnections(con);
 		}
-		else if (deleteDelivered && (retVal == DENIED_OLD) && 
-				(m.getTo() == con.getOtherNode(this.getHost()))) {
+		else if (deleteDelivered && (retVal == DENIED_OLD) &&
+			(m.getTo() == con.getOtherNode(this.getHost()))) {
 			/* final recipient has already received the msg -> delete it */
 			this.deleteMessage(m.getID(), false, "message already delivered");
 		}
@@ -237,28 +238,29 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * @return True if enough space could be freed, false if not
 	 */
 	protected boolean makeRoomForMessage(int size, int priority) {
-		if (size > this.getBufferSize()) {
-			return false; // message too big for the buffer
+		if (size > getBufferSize()) {
+			// message too big for the buffer
+			return false;
 		}
 			
 		int freeBuffer = this.getFreeBufferSize();
 		ArrayList<Message> deletedMessages = new ArrayList<Message>();
-		/* delete messages from the buffer until there's enough space */
+		// delete messages from the buffer until there's enough space
 		while (freeBuffer < size) {
-			Message m = getLeastImportantMessageInQueue(true); // don't remove msgs being sent
-
+			// can't remove messages being sent --> use true as parameter
+			Message m = getLeastImportantMessageInQueue(true);
 			if ((m == null) || (m.getPriority() > priority)) {
-				//return false
-				break; // couldn't remove any more messages
+				// can't remove any more messages
+				break;
 			}
-			
-			/* delete message from the buffer as "drop" */
+
+			// delete message from the buffer as "drop"
 			deleteMessageWithoutRaisingEvents(m.getID());
 			deletedMessages.add(m);
 			freeBuffer += m.getSize();
 		}
 		
-		/* notify message drops only if necessary amount of space was freed */
+		// notify message drops only if necessary amount of space was freed
 		if (freeBuffer < size) {
 			// rollback deletes and return false
 			for (Message m : deletedMessages) {
@@ -270,7 +272,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		// commit deletes by notifying event listeners about the deletes
 		for (Message m : deletedMessages) {
 			// true identifies dropped messages
-			notifyListenersAboutMessageDelete(m, true, "buffer size exceeded");
+			notifyListenersAboutMessageDelete(m, true, "Buffer size exceeded");
 		}
 		return true;
 	}
@@ -311,7 +313,8 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * exludeMsgBeingSent is true)
 	 */
 	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
-		List<Message> sortedList = reverseOrderByQueueMode(new ArrayList<Message>(getMessageCollection()));
+		List<Message> sortedList = getListOfMessagesInReverseOrder(
+									new ArrayList<Message>(getMessageCollection()));
 		for (Message m : sortedList) {
 			if (excludeMsgBeingSent && isSending(m.getID())) {
 				// skip the message(s) that router is sending
@@ -438,8 +441,8 @@ public abstract class ActiveRouter extends MessageRouter {
 			return null;
 		}
 
-		List<Message> messages = sortByQueueMode(new ArrayList<Message>(this.getMessageCollection()));
-		
+		List<Message> messages = getSortedListOfMessages(
+									new ArrayList<Message>(getMessageCollection()));
 		return tryMessagesToConnections(messages, connections);
 	}
 		
@@ -459,7 +462,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		Tuple<Message, Connection> t =
-			tryMessagesForConnected(sortByQueueMode(getMessagesForConnected()));
+			tryMessagesForConnected(getSortedListOfMessages(getMessagesForConnected()));
 
 		if (t != null) {
 			return t.getValue(); // started transfer

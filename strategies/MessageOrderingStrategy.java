@@ -12,8 +12,7 @@ import core.SimError;
  * @author Alex
  *
  */
-public abstract class MessageForwardingOrderStrategy {
-
+public abstract class MessageOrderingStrategy {
 	/**
 	 * Message/fragment sending queue type -setting id ({@value}). 
 	 * This setting affects the order the messages and fragments are sent if the
@@ -35,7 +34,7 @@ public abstract class MessageForwardingOrderStrategy {
 	abstract public <T> List<T> reverseProcessingOrder(List<T> inputList);
 	abstract public int comparatorMethod(Message m1, Message m2);
 	
-	static public MessageForwardingOrderStrategy MessageForwardingStrategyFactory
+	static public MessageOrderingStrategy MessageForwardingStrategyFactory
 									(QueueForwardingOrderMode qfom) {
 		switch (qfom) {
 		case Random:
@@ -52,7 +51,7 @@ public abstract class MessageForwardingOrderStrategy {
 		}
 	}
 	
-	protected MessageForwardingOrderStrategy (QueueForwardingOrderMode qfom) {
+	protected MessageOrderingStrategy (QueueForwardingOrderMode qfom) {
 		this.queueForwardingMode = qfom;
 	}
 	

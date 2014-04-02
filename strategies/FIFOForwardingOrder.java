@@ -16,7 +16,7 @@ import core.Tuple;
  * @author Alex
  *
  */
-public class FIFOForwardingOrder extends MessageForwardingOrderStrategy {
+public class FIFOForwardingOrder extends MessageOrderingStrategy {
 
 	static FIFOForwardingOrder singletonInstance = null;
 	static Comparator<Object> comparator = new Comparator<Object>() {
@@ -48,7 +48,7 @@ public class FIFOForwardingOrder extends MessageForwardingOrderStrategy {
 	};
 	
 	private FIFOForwardingOrder() {
-		super(MessageForwardingOrderStrategy.QueueForwardingOrderMode.FIFO);
+		super(MessageOrderingStrategy.QueueForwardingOrderMode.FIFO);
 	}
 	
 	/* (non-Javadoc)

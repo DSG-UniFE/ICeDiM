@@ -4,9 +4,9 @@
  */
 package test;
 
-import routing.MessageRouter;
 import routing.ProphetRouter;
 import core.Message;
+import core.MessageQueueManager;
 
 /**
  * Tests for PRoPHET router
@@ -17,7 +17,7 @@ public class ProphetRouterTest extends AbstractRouterTest {
 	
 	@Override
 	public void setUp() throws Exception {
-		ts.putSetting(MessageRouter.B_SIZE_S, ""+BUFFER_SIZE);
+		ts.putSetting(MessageQueueManager.B_SIZE_S, ""+BUFFER_SIZE);
 		ts.putSetting(ProphetRouter.PROPHET_NS + "." + 
 				ProphetRouter.SECONDS_IN_UNIT_S , SECONDS_IN_TIME_UNIT+"");
 		setRouterProto(new ProphetRouter(ts));

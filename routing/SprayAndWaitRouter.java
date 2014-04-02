@@ -10,6 +10,7 @@ import java.util.List;
 import core.Connection;
 import core.Message;
 import core.Settings;
+import core.SimError;
 
 /**
  * Implementation of Spray and wait router as depicted in 
@@ -81,7 +82,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	public boolean createNewMessage(Message m) {
 		makeRoomForNewMessage(m.getSize(), m.getPriority());
 
-		m.setTtl(this.msgTtl);
+		m.setTtl(this.msgTTL);
 		m.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
 		addToMessages(m, true);
 		return true;
@@ -100,11 +101,11 @@ public class SprayAndWaitRouter extends ActiveRouter {
 		}
 		
 		/* create a list of SAWMessages that have copies left to distribute */
-		List<Message> copiesLeft = sortByQueueMode(getMessagesWithCopiesLeft());
+		List<Message> copiesLeft = getSortedListOfMessages(getMessagesWithCopiesLeft());
 		
 		if (copiesLeft.size() > 0) {
 			/* try to send those messages */
-			this.tryMessagesToConnections(copiesLeft, getConnections());
+			tryMessagesToConnections(copiesLeft, getConnections());
 		}
 	}
 	
@@ -118,8 +119,10 @@ public class SprayAndWaitRouter extends ActiveRouter {
 
 		for (Message m : getMessageCollection()) {
 			Integer nrofCopies = (Integer)m.getProperty(MSG_COUNT_PROPERTY);
-			assert nrofCopies != null : "SnW message " + m + " didn't have " + 
-				"nrof copies property!";
+			if (nrofCopies == null) {
+				throw new SimError("SnW message " + m + " didn't have the nrofcopies property!");
+			}
+			
 			if (nrofCopies > 1) {
 				list.add(m);
 			}

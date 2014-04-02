@@ -80,13 +80,9 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		DTNHost other = con.getOtherNode(getHost());
 		/* do a copy to avoid concurrent modification exceptions 
 		 * (startTransfer may remove messages) */
-		//ArrayList<Message> temp = new ArrayList<Message>(this.getMessageCollection());
-		Collection<Message> temp = this.getMessageCollection();
-		List<Message> messagesList = new ArrayList<Message>(temp);
-		this.sortByQueueMode(messagesList);
-		
-		//for (Message m : temp) {
-		for (Message m : messagesList) {
+		List<Message> sortedMessageList = getSortedListOfMessages(
+											new ArrayList<Message>(getMessageCollection()));
+		for (Message m : sortedMessageList) {
 			if (other == m.getTo()) {
 				if (startTransfer(m, con) == RCV_OK) {
 					// A deliverable message is found and will be delivered via con
@@ -94,6 +90,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 				}
 			}
 		}
+		
 		return false;
 	}
 	
@@ -472,10 +469,4 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * @param con The connection whose transfer was finalized
 	 */
 	protected void transferDone(Connection con) { }
-
-	List<Message> getOrderedMessageList() {
-		List<Message> messagesList = new ArrayList<Message>(this.getMessageCollection());
-		
-		return sortByQueueMode(messagesList);
-	}
 }

@@ -424,7 +424,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param to Host the message should be sent to
 	 */
 	public void sendMessage(String id, DTNHost to) {
-		this.router.sendMessage(id, to);
+		router.sendMessage(id, to);
 	}
 
 	/**
@@ -451,7 +451,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @return True if this host started a transfer, false if not
 	 */
 	public boolean requestDeliverableMessages(Connection con) {
-		return this.router.requestDeliverableMessages(con);
+		return router.requestDeliverableMessages(con);
 	}
 
 	/**
@@ -460,7 +460,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param from From who the message was from
 	 */
 	public void messageTransferred(String id, Connection con) {
-		this.router.messageTransferred(id, con);
+		router.messageTransferred(id, con);
 	}
 
 	/**
@@ -479,7 +479,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param m The message to create
 	 */
 	public void createNewMessage(Message m) {
-		this.router.createNewMessage(m);
+		router.createNewMessage(m);
 	}
 
 	/**
@@ -491,7 +491,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * way the removing is reported to the message listeners.
 	 */
 	public void deleteMessage(String id, boolean drop, String cause) {
-		this.router.deleteMessage(id, drop, cause);
+		router.deleteMessage(id, drop, cause);
 	}
 
 	/**
@@ -501,7 +501,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param con The connection which is transferring the message
 	 */
 	public void messageInterfered(String id, Connection con) {
-		this.router.messageInterfered(id, con);
+		router.messageInterfered(id, con);
 	}
 
 	/**
@@ -527,7 +527,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @see Comparable#compareTo(Object)
 	 */
 	public int compareTo(DTNHost h) {
-		return this.getAddress() - h.getAddress();
+		return getAddress() - h.getAddress();
 	}
 
 }

@@ -14,6 +14,9 @@ import core.disService.SubscriptionListManager;
  * External event for creating a message.
  */
 public class MessageCreateEvent extends MessageEvent {
+	
+	private static final long serialVersionUID = 1L;
+	
 	protected int size;
 	protected int responseSize;
 	protected int priority;
@@ -42,8 +45,8 @@ public class MessageCreateEvent extends MessageEvent {
 	 */
 	@Override
 	public void processEvent(World world) {
-		DTNHost to = world.getNodeByAddress(this.toAddr);
-		DTNHost from = world.getNodeByAddress(this.fromAddr);
+		DTNHost to = world.getNodeByAddress(toAddr);
+		DTNHost from = world.getNodeByAddress(fromAddr);
 		
 		Integer subID = SubscriptionListManager.DEFAULT_SUB_ID;
 		if (from.getRouter() instanceof PublisherSubscriber) {	
@@ -56,8 +59,8 @@ public class MessageCreateEvent extends MessageEvent {
 		}
 	
 		// No priority - Use the PrioritizedMessageEventGenerator to generate messages with priorities
-		Message m = new Message(from, to, this.id, this.size, priority);
-		m.setResponseSize(this.responseSize);
+		Message m = new Message(from, to, id, size, priority);
+		m.setResponseSize(responseSize);
 		m.addProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY, subID);
 		from.createNewMessage(m);
 	}

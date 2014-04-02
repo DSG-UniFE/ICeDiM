@@ -9,17 +9,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import strategies.MessageForwardingOrderStrategy;
-
 import core.Application;
 import core.Connection;
 import core.DTNHost;
 import core.InterferenceModel;
 import core.Message;
 import core.MessageListener;
+import core.MessageQueueManager;
 import core.NetworkInterface;
 import core.Settings;
-import core.SettingsError;
 import core.SimClock;
 import core.SimError;
 
@@ -27,16 +25,9 @@ import core.SimError;
  * Superclass for message routers.
  */
 public abstract class MessageRouter {
-	/** Message buffer size -setting id ({@value}). Integer value in bytes.*/
-	public static final String B_SIZE_S = "bufferSize";
-	/**
-	 * Message TTL -setting id ({@value}). Value is in minutes and must be
-	 * an integer. 
-	 */ 
+	/** Message TTL -setting id ({@value}). Integer expressed in minutes */
 	public static final String MSG_TTL_S = "msgTtl";
 	
-	public static final String SEND_QUEUE_MODE_S = "sendQueueMode";	
-
 	/** Receive return value for a successful broadcast */
 	public static final int BROADCAST_OK = 0;
 	/** Receive return value for an unsuccessful broadcast */
@@ -55,20 +46,18 @@ public abstract class MessageRouter {
 	public static final int DENIED_INTERFERENCE = 5;
 	/** Receive return value for unspecified reason */
 	public static final int DENIED_UNSPECIFIED = 99;
-	/** Strategy which implements the specified queue mode */
-	public MessageForwardingOrderStrategy messageForwardingStrategy;
+
 	
+	/** Message queueing manager */
+	private MessageQueueManager messageQueueManager;
+	/** TTL for all messages */
+	protected final int msgTTL;
+	/** List of listeners for logging purposes */
 	private List<MessageListener> mListeners;
-	/** The messages this router is carrying */
-	private HashMap<String, Message> messages; 
 	/** The messages this router has received as the final recipient */
 	private HashMap<String, Message> deliveredMessages;
 	/** Host where this router belongs to */
 	private DTNHost host;
-	/** size of the buffer */
-	private int bufferSize;
-	/** TTL for all messages */
-	protected int msgTtl;
 
 	/** applications attached to the host */
 	private HashMap<String, Collection<Application>> applications = null;
@@ -80,27 +69,9 @@ public abstract class MessageRouter {
 	 * @param s The settings object
 	 */
 	public MessageRouter(Settings s) {
-		this.bufferSize = Integer.MAX_VALUE; // defaults to rather large buffer	
-		this.msgTtl = Message.INFINITE_TTL;
+		this.msgTTL = s.contains(MSG_TTL_S) ? s.getInt(MSG_TTL_S) : Message.INFINITE_TTL;
+		this.messageQueueManager = new MessageQueueManager(s);
 		this.applications = new HashMap<String, Collection<Application>>();
-		
-		if (s.contains(B_SIZE_S)) {
-			this.bufferSize = s.getInt(B_SIZE_S);
-		}
-		if (s.contains(MSG_TTL_S)) {
-			this.msgTtl = s.getInt(MSG_TTL_S);
-		}
-		
-		int sendQueueMode = 0;
-		if (s.contains(SEND_QUEUE_MODE_S)) {
-			sendQueueMode = s.getInt(SEND_QUEUE_MODE_S);
-			if (sendQueueMode < 0 || sendQueueMode >=
-					MessageForwardingOrderStrategy.QueueForwardingOrderMode.values().length) {
-				throw new SettingsError("Invalid value for " + s.getFullPropertyName(SEND_QUEUE_MODE_S));
-			}
-		}
-		messageForwardingStrategy = MessageForwardingOrderStrategy.MessageForwardingStrategyFactory(
-				MessageForwardingOrderStrategy.QueueForwardingOrderMode.values()[sendQueueMode]);
 	}
 	
 	/**
@@ -111,7 +82,6 @@ public abstract class MessageRouter {
 	 * @param mListeners The message listeners
 	 */
 	public void init(DTNHost host, List<MessageListener> mListeners) {
-		this.messages = new HashMap<String, Message>();
 		this.deliveredMessages = new HashMap<String, Message>();
 		this.mListeners = mListeners;
 		this.host = host;
@@ -122,11 +92,9 @@ public abstract class MessageRouter {
 	 * @param r Router to copy the settings from.
 	 */
 	protected MessageRouter(MessageRouter r) {
-		this.bufferSize = r.bufferSize;
-		this.msgTtl = r.msgTtl;
-		this.messageForwardingStrategy = r.messageForwardingStrategy;
-
-		this.applications = new HashMap<String, Collection<Application>>();
+		this.msgTTL = r.msgTTL;
+		this.messageQueueManager = new MessageQueueManager(r.messageQueueManager);
+		this.applications = new HashMap<String, Collection<Application>>();		
 		for (Collection<Application> apps : r.applications.values()) {
 			for (Application app : apps) {
 				addApplication(app.replicate());
@@ -158,8 +126,8 @@ public abstract class MessageRouter {
 	 * @param id ID of the message
 	 * @return The message
 	 */
-	protected Message getMessage(String id) {
-		return this.messages.get(id);
+	protected Message getMessage(String msgID) {
+		return messageQueueManager.getMessage(msgID);
 	}
 	
 	/**
@@ -167,8 +135,8 @@ public abstract class MessageRouter {
 	 * @param id Identifier of the message
 	 * @return True if the router has message with this id, false if not
 	 */
-	protected boolean hasMessage(String id) {
-		return this.messages.containsKey(id);
+	protected boolean hasMessage(String msgID) {
+		return messageQueueManager.hasMessage(msgID);
 	}
 	
 	/**
@@ -198,7 +166,7 @@ public abstract class MessageRouter {
 	 * this host as the final recipient.
 	 */
 	protected boolean isDeliveredMessage(Message m) {
-		return (this.deliveredMessages.containsKey(m.getID()));
+		return deliveredMessages.containsKey(m.getID());
 	}
 	
 	/**
@@ -210,7 +178,7 @@ public abstract class MessageRouter {
 	 * @return a reference to the messages of this router in collection
 	 */
 	public Collection<Message> getMessageCollection() {
-		return this.messages.values();
+		return messageQueueManager.getMessageCollection();
 	}
 	
 	/**
@@ -218,7 +186,7 @@ public abstract class MessageRouter {
 	 * @return How many messages this router has
 	 */
 	public int getNrofMessages() {
-		return this.messages.size();
+		return messageQueueManager.getNumberOfMessages();
 	}
 	
 	/**
@@ -226,7 +194,7 @@ public abstract class MessageRouter {
 	 * @return The size or Integer.MAX_VALUE if the size isn't defined.
 	 */
 	public int getBufferSize() {
-		return this.bufferSize;
+		return messageQueueManager.getBufferSize();
 	}
 	
 	/**
@@ -237,17 +205,7 @@ public abstract class MessageRouter {
 	 * size isn't defined)
 	 */
 	public int getFreeBufferSize() {
-		int occupancy = 0;
-		
-		if (this.getBufferSize() == Integer.MAX_VALUE) {
-			return Integer.MAX_VALUE;
-		}
-		
-		for (Message m : getMessageCollection()) {
-			occupancy += m.getSize();
-		}
-		
-		return this.getBufferSize() - occupancy;
+		return messageQueueManager.getFreeBufferSize();
 	}
 	
 	/**
@@ -268,7 +226,8 @@ public abstract class MessageRouter {
 		if (m == null) throw new SimError("no message for id " +
 				id + " to send at " + this.host);
  
-		Message m2 = m.replicate();	// send a replicate of the message
+		// send a replication of the message
+		Message m2 = m.replicate();
 		for (Connection con : getHost().getConnections()) {
 			if (con.getOtherNode(getHost()) == to) {
 				to.receiveMessage(m2, con);
@@ -522,31 +481,14 @@ public abstract class MessageRouter {
 	 * message, if false, nothing is informed.
 	 */
 	protected void addToMessages(Message m, boolean newMessage) {
-		if (messages.containsKey(m.getID())) {
-			// Message is already in queue
+		if (messageQueueManager.hasMessage(m)) {
 			return;
 		}
+		messageQueueManager.addMessageToQueue(m);
 
-		setForwardedTimesToMinAmongMessages(m);
-		messages.put(m.getID(), m);
-		
 		if (newMessage) {
 			for (MessageListener ml : mListeners) {
 				ml.newMessage(m);
-			}
-		}
-	}
-	
-	private void setForwardedTimesToMinAmongMessages(Message m) {
-		if (messages.size() > 0) {
-			int min = Integer.MAX_VALUE;
-			for (Message msg : messages.values()) {
-				if (msg.getForwardTimes() < min) {
-					min = msg.getForwardTimes();
-				}
-			}
-			while (m.getForwardTimes() < min) {
-					m.incrementForwardTimes();
 			}
 		}
 	}
@@ -556,8 +498,8 @@ public abstract class MessageRouter {
 	 * @param id Identifier of the message to remove
 	 * @return The removed message or null if message for the ID wasn't found
 	 */
-	protected Message removeFromMessages(String id) {
-		return messages.remove(id);
+	protected Message removeFromMessages(String msgID) {
+		return messageQueueManager.removeMessage(msgID);
 	}
 	
 	/**
@@ -567,8 +509,9 @@ public abstract class MessageRouter {
 	 * the message was too big for the buffer)
 	 */
 	public boolean createNewMessage(Message m) {
-		m.setTtl(msgTtl);
+		m.setTtl(msgTTL);
 		addToMessages(m, true);
+		
 		return true;
 	}
 	
@@ -583,9 +526,9 @@ public abstract class MessageRouter {
 	public void deleteMessage(String id, boolean drop, String cause) {
 		Message removed = removeFromMessages(id); 
 		if (removed == null) {
-			throw new SimError("no message for id " + id + " to remove at " + host);
+			throw new SimError("No message for id " + id + " to remove at " + getHost());
 		}
-		
+
 		for (MessageListener ml : this.mListeners) {
 			ml.messageDeleted(removed, this.host, drop, cause);
 		}
@@ -598,9 +541,9 @@ public abstract class MessageRouter {
 	 * because it was delivered to final destination.  
 	 */
 	public void deleteMessageWithoutRaisingEvents(String id) {
-		Message removed = removeFromMessages(id); 
-		if (removed == null) throw new SimError("no message for id " +
-				id + " to remove at " + this.host);
+		if (null == removeFromMessages(id)) {
+			throw new SimError("No message for id " + id + " to remove at " + getHost());
+		}
 	}
 	
 	/**
@@ -623,8 +566,8 @@ public abstract class MessageRouter {
 	 * @param list The list to sort
 	 * @return The sorted list
 	 */
-	protected <T> List<T> sortByQueueMode(List<T> list) {
-		return messageForwardingStrategy.messageProcessingOrder(list);
+	protected <T> List<T> getSortedListOfMessages(List<T> list) {
+		return messageQueueManager.sortByQueueMode(list);
 	}
 	
 	/**
@@ -634,8 +577,8 @@ public abstract class MessageRouter {
 	 * @param list The list to sort
 	 * @return The list sorted in reverse order
 	 */
-	protected <T> List<T> reverseOrderByQueueMode(List<T> list) {
-		return messageForwardingStrategy.reverseProcessingOrder(list);
+	protected <T> List<T> getListOfMessagesInReverseOrder(List<T> list) {
+		return messageQueueManager.reverseOrderByQueueMode(list);
 	}
 
 	/**
@@ -646,8 +589,8 @@ public abstract class MessageRouter {
 	 * @return -1 if the first message should come first, 1 if the second 
 	 *          message should come first, or 0 if the ordering isn't defined
 	 */
-	protected int compareByQueueMode(Message m1, Message m2) {
-		return messageForwardingStrategy.comparatorMethod(m1, m2);
+	protected int compareMessagesByQueueMode(Message m1, Message m2) {
+		return messageQueueManager.compareByQueueMode(m1, m2);
 	}
 	
 	/**

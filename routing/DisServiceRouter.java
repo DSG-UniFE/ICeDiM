@@ -110,10 +110,11 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			 * Check if we have some messages which should be transferred
 			 * Transfer most requested message or the one less forwarded
 			 */
-			List<Message> messageList = getOrderedMessageList();
+			List<Message> sortedMessageList = getSortedListOfMessages(
+												new ArrayList<Message>(getMessageCollection()));
 			List<NeighborInfo> nearbyNodes = worldState.getActiveNeighborInfosByNetworkInterface(ni);
 			
-			if ((nearbyNodes.size() == 0) || (messageList.size() == 0)) {
+			if ((nearbyNodes.size() == 0) || (sortedMessageList.size() == 0)) {
 				// Nothing to do
 				return;
 			}
@@ -122,7 +123,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			 * If yes, we try to broadcast the message through the selected interface
 			 */
 		nextSearch:
-			for (Message pm : messageList) {
+			for (Message pm : sortedMessageList) {
 				for (NeighborInfo neighborInfo : nearbyNodes) {
 					Integer subID = (Integer) pm.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 					if (neighborInfo.getSubscriptionList().containsSubscriptionID(subID) &&
@@ -142,7 +143,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			}
 			else {
 				// then try broadcasting messages in queue order
-				Message pm = messageList.get(0);
+				Message pm = sortedMessageList.get(0);
 				if (BROADCAST_OK != tryBroadcastOneMessage (pm, ni)) {
 					throw new SimError("Impossible transmit message " + pm +
 										" via Network Interface" + ni);
