@@ -126,12 +126,12 @@ public class MessageQueueManager {
 		return getBufferSize() - occupancy;
 	}
 
-	public <T> List<T> sortByQueueMode(List<T> list) {
-		return messageOrderingStrategy.sortList(list);
+	public <T> void sortByQueueMode(List<T> list) {
+		messageOrderingStrategy.sortList(list);
 	}
 
-	public <T> List<T> reverseOrderByQueueMode(List<T> list) {
-		return messageOrderingStrategy.sortListInReverseOrder(list);
+	public <T> void reverseOrderByQueueMode(List<T> list) {
+		messageOrderingStrategy.sortListInReverseOrder(list);
 	}
 
 	public int compareByQueueMode(Message m1, Message m2) {

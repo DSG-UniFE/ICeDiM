@@ -71,7 +71,7 @@ public class MessagePriorityGenerator {
 		double randD = randomGenerator.nextDouble();
 		for (int i = 1; i < prioritySlotRanges.length; i++) {
 			if (randD < prioritySlotRanges[i]) {
-				return i;
+				return i-1;
 			}
 		}
 		

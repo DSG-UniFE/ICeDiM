@@ -563,11 +563,12 @@ public abstract class MessageRouter {
 	 * Sorts the given list according to the current sending queue 
 	 * strategy. The list can contain either Message or
 	 * Tuple<Message, Connection> objects. Other objects cause error.
-	 * @param list The list to sort
+	 * @param inputList The list to sort
 	 * @return The sorted list
 	 */
-	protected <T> List<T> getSortedListOfMessages(List<T> list) {
-		return messageQueueManager.sortByQueueMode(list);
+	protected <T> List<T> getSortedListOfMessages(List<T> inputList) {
+		messageQueueManager.sortByQueueMode(inputList);
+		return inputList;
 	}
 	
 	/**
@@ -577,8 +578,9 @@ public abstract class MessageRouter {
 	 * @param list The list to sort
 	 * @return The list sorted in reverse order
 	 */
-	protected <T> List<T> getListOfMessagesInReverseOrder(List<T> list) {
-		return messageQueueManager.reverseOrderByQueueMode(list);
+	protected <T> List<T> getListOfMessagesInReverseOrder(List<T> inputList) {
+		messageQueueManager.reverseOrderByQueueMode(inputList);
+		return inputList;
 	}
 
 	/**

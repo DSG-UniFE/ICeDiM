@@ -113,17 +113,13 @@ public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy 
 	}
 	
 	@Override
-	public <T> List<T> sortList(List<T> inputList) {
+	public <T> void sortList(List<T> inputList) {
 		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.comparator);
-		
-		return inputList;
 	}
 
 	@Override
-	public <T> List<T> sortListInReverseOrder(List<T> inputList) {
+	public <T> void sortListInReverseOrder(List<T> inputList) {
 		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.reverseOrderComparator);
-		
-		return inputList;
 	}
 	
 	@Override

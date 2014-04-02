@@ -22,11 +22,15 @@ import strategies.MessageOrderingStrategy;
  */
 public class ProbabilisticManager extends MessageForwardingManager {
 
-	/** random number generator */
+	/** Random number generator */
 	static MersenneTwisterRNG randomGenerator = null;
+	/** Random number generator's seed */
 	static final long SEED = 1;
 	
+	/** The list of messages ordered according to their priority value */
 	List<Message> orderedMessageList;
+	/** The list of ranges to establish the probability for each message
+	 * to be randomly picked from the {@code orderedMessageList}*/
 	List<Double> probabilityVector;
 	
 	
@@ -47,7 +51,7 @@ public class ProbabilisticManager extends MessageForwardingManager {
 	@Override
 	public Message getNextMessage() {
 		checkOrderedListConsistency();
-		return drawMessageFromOrderedList();
+		return drawMessageFromOrderedList(orderedMessageList, probabilityVector);
 	}
 
 	@Override
@@ -61,21 +65,30 @@ public class ProbabilisticManager extends MessageForwardingManager {
 
 	@Override
 	public void resetMessageOrder() {
-		orderedMessageList = messageOrderingStrategy.sortList(messageQueueManager.getMessageList());
-		computeProbabilityVector();
+		// Reset and order the orderedMessageList attribute 
+		orderedMessageList = messageQueueManager.getMessageList();
+		messageOrderingStrategy.sortList(orderedMessageList);
+		
+		probabilityVector = computeProbabilityVector(orderedMessageList);
 	}
 
 	@Override
 	public List<Message> getOrderedMessageQueue() {
 		checkOrderedListConsistency();
-		List<Message> result = new ArrayList<Message>(orderedMessageList.size());
-		for (int i = 0; i < orderedMessageList.size(); ++i) {
-			/* Calling drawMessageFromOrderedList() avoids unnecessary
-			 * calls to the checkOrderedListConsistency() method */
-			result.set(i, drawMessageFromOrderedList());
+		return createRandomlyOrderedMessageList(orderedMessageList, probabilityVector);
+	}
+
+	@Override
+	public List<Message> sortMessageList(List<Message> inputList) {
+		if (inputList == null) {
+			return new ArrayList<Message>(0);
+		}
+		if (inputList.size() <= 1) {
+			return new ArrayList<Message>(inputList);
 		}
 		
-		return result;
+		// Compute probability vector and then a new randomly ordered list from it
+		return createRandomlyOrderedMessageList(inputList, computeProbabilityVector(inputList));
 	}
 	
 	private void checkOrderedListConsistency() {
@@ -88,14 +101,22 @@ public class ProbabilisticManager extends MessageForwardingManager {
 		}
 	}
 
-	private void computeProbabilityVector() {
-		if ((orderedMessageList == null) || (orderedMessageList.size() == 0)) {
-			return;
+	/**
+	 * Computes a new probability vector according to the
+	 * priority of the Messages in the list passed as parameter.
+	 * @param messageList the list of Messages used by the
+	 * method to build a new probability vector.
+	 * @return a {@code List<Double>} which represents the
+	 * computed probability vector of the Message list in input.
+	 */
+	private List<Double> computeProbabilityVector(List<Message> messageList) {
+		if ((messageList == null) || (messageList.size() == 0)) {
+			return new ArrayList<Double>(0);
 		}
-		probabilityVector = new ArrayList<Double>(orderedMessageList.size());
+		ArrayList<Double> probVector = new ArrayList<Double>(orderedMessageList.size());
 		
 		double totalWeight = 0.0;
-		for (Message m : orderedMessageList) {
+		for (Message m : messageList) {
 			totalWeight += m.getPriority() + 1.0;
 		}
 		totalWeight = Math.max(totalWeight, 1.0);
@@ -103,9 +124,9 @@ public class ProbabilisticManager extends MessageForwardingManager {
 		// Assign probabilities to the vector
 		final double probabilityStep = 1.0 / totalWeight;
 		double probabilityAccumulator = 0.0;
-		for (Message m : orderedMessageList) {
+		for (Message m : messageList) {
 			probabilityAccumulator += (m.getPriority() + 1.0) * probabilityStep;
-			probabilityVector.add(probabilityAccumulator);
+			probVector.add(probabilityAccumulator);
 		}
 
 		/* Increase probability of the first element, in case of a strictly
@@ -113,34 +134,44 @@ public class ProbabilisticManager extends MessageForwardingManager {
 		 * range extreme, with the exception of the first one (0.0). */
 		final double probabilityDifference = 1.0 - probabilityAccumulator;
 		if (probabilityDifference > 0.0) {
-			for (int i = 1; i < probabilityVector.size(); ++i) {
-				probabilityVector.set(i, probabilityVector.get(i) + probabilityDifference);
+			for (int i = 1; i < probVector.size(); ++i) {
+				probVector.set(i, probVector.get(i) + probabilityDifference);
 			}
 		}
+		
+		return probVector;
 	}
 
 	/**
-	 * Randomly extracts a message from the ordered queue.
-	 * Higher priority messages has higher probability.
+	 * Randomly extracts a message from the list passed as
+	 * the first parameter and ordered in accordance with
+	 * the probability vector passed as the second parameter.
+	 * @param messageList the list of Messages from which
+	 * the method will randomly extract one.
+	 * @param probVector a {@code List<Double>} containing the
+	 * probability ranges to establish message priority values.
 	 * @return a Message randomly extracted from the queue.
 	 */
-	private Message drawMessageFromOrderedList() {
-		return orderedMessageList.get(findMessageIndex(randomGenerator.nextDouble()));
+	private Message drawMessageFromOrderedList(List<Message> messageList, List<Double> probVector) {
+		return messageList.get(findMessageIndex(randomGenerator.nextDouble(), probVector));
 	}
 
 	/**
 	 * Finds the index of the Message in the ordered queue
 	 * that corresponds to the value passed as parameter.
 	 * @param a double value in the range 0-1.
-	 * @return the index of a Message in the ordered queue.
+	 * @param probVector a {@code List<Double>} containing
+	 * the probability ranges to establish message priority values.
+	 * @return the index the range which contains the value
+	 * passed as the first parameter.
 	 */
-	private int findMessageIndex(double randomVal) {
+	private int findMessageIndex(double randomVal, List<Double> probVector) {
 		if ((randomVal < 0.0) || (randomVal > 1.0)) {
 			throw new SimError("Random value " + randomVal + " does not belong to the range 0-1");
 		}
 
-		for (int i = 1; i < probabilityVector.size(); ++i) {
-			if (randomVal <= probabilityVector.get(i)) {
+		for (int i = 1; i < probVector.size(); ++i) {
+			if (randomVal <= probVector.get(i)) {
 				return i;
 			}
 		}
@@ -148,5 +179,29 @@ public class ProbabilisticManager extends MessageForwardingManager {
 		throw new SimError("Unable to find an index that matches the value " + randomVal);
 	}
 
+	/**
+	 * Randomly orders the list passed as parameter.
+	 * @param inputList the List to sort randomly.
+	 * @param probVector a {@code List<Double>} containing
+	 * the probability ranges to establish message priority values.
+	 * @return the List passed as input parameter sorted randomly.
+	 */
+	private List<Message> createRandomlyOrderedMessageList(List<Message> inputList,
+															List<Double> probVector) {
+		List<Message> result = new ArrayList<Message>(inputList.size());
+		for (int i = 0; i < inputList.size(); ++i) {
+			/* Calling drawMessageFromOrderedList() avoids unnecessary
+			 * calls to the checkOrderedListConsistency() method */
+			Message m = drawMessageFromOrderedList(inputList, probVector);
+			int index = inputList.indexOf(m);
+			while (result.contains(m)) {
+				// Avoid to add duplicates to the result list
+				m = inputList.get(++index % inputList.size());
+			}
+			result.set(i, m);
+		}
+		
+		return result;
+	}
+
 }
- 

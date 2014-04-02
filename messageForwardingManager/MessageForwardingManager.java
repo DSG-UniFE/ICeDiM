@@ -99,6 +99,14 @@ public abstract class MessageForwardingManager {
 	 * current position in the queue
 	 * @return the ordered List of Messages available
 	 */
+	abstract public List<Message> sortMessageList(List<Message> inputList);
+
+	/**
+	 * Returns a list of Messages ordered accoding
+	 * to the specified implementation and to the
+	 * current position in the queue
+	 * @return the ordered List of Messages available
+	 */
 	abstract public List<Message> getOrderedMessageQueue();
 
 

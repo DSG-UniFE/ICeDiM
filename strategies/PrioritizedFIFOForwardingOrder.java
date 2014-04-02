@@ -98,17 +98,13 @@ public class PrioritizedFIFOForwardingOrder extends MessageOrderingStrategy {
 	}
 
 	@Override
-	public <T> List<T> sortList(List<T> inputList) {
+	public <T> void sortList(List<T> inputList) {
 		Collections.sort(inputList, PrioritizedFIFOForwardingOrder.comparator);
-		
-		return inputList;
 	}
 
 	@Override
-	public <T> List<T> sortListInReverseOrder(List<T> inputList) {
+	public <T> void sortListInReverseOrder(List<T> inputList) {
 		Collections.sort(inputList, PrioritizedFIFOForwardingOrder.reverseOrderComparator);
-
-		return inputList;
 	}
 	
 	@Override

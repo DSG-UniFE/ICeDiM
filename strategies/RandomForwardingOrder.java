@@ -36,16 +36,15 @@ public class RandomForwardingOrder extends MessageOrderingStrategy {
 	}
 	
 	@Override
-	public <T> List<T> sortList(List<T> inputList) {
+	public <T> void sortList(List<T> inputList) {
 		Collections.shuffle(inputList, new Random(SimClock.getIntTime()));
-		return inputList;
 	}
 
 	@Override
-	public <T> List<T> sortListInReverseOrder(List<T> inputList) {
+	public <T> void sortListInReverseOrder(List<T> inputList) {
 		/* Random queueing strategy also deletes elements randomly,
 		 * so this method does the same as the above one */
-		return sortList(inputList);
+		sortList(inputList);
 	}
 	
 	@Override

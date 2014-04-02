@@ -61,7 +61,8 @@ public class FIFOManager extends MessageForwardingManager {
 	@Override
 	public void resetMessageOrder() {
 		indexInList = 0;
-		messageOrderedList = messageOrderingStrategy.sortList(messageQueueManager.getMessageList());
+		messageOrderedList = messageQueueManager.getMessageList();
+		messageOrderingStrategy.sortList(messageOrderedList);
 	}
 
 	@Override
@@ -78,8 +79,26 @@ public class FIFOManager extends MessageForwardingManager {
 		
 		return result;
 	}
+
+	@Override
+	public List<Message> sortMessageList(List<Message> inputList) {
+		if (inputList == null) {
+			return new ArrayList<Message>(0);
+		}
+		if (inputList.size() <= 1) {
+			return new ArrayList<Message>(inputList.size());
+		}
+		
+		List<Message> orderedList = new ArrayList<Message>(inputList);
+		messageOrderingStrategy.sortList(orderedList);
+		
+		return orderedList;
+	}
 	
-	
+	/**
+	 * Checks the consistency of the {@code messageOrderedList} attribute
+	 * and calls the {@link FIFOManager.resetMessageOrder} method if necessary
+	 * */
 	private void checkConsistency() {
 		if ((messageOrderedList == null) || (messageOrderedList.size() == 0) ||
 			indexInList >= messageOrderedList.size()) {
