@@ -63,7 +63,7 @@ public class FIFOForwardingOrder extends MessageOrderingStrategy {
 	}
 	
 	@Override
-	public <T> List<T> messageProcessingOrder(List<T> inputList) {
+	public <T> List<T> sortList(List<T> inputList) {
 		Collections.sort(inputList, FIFOForwardingOrder.comparator);
 		
 		return inputList;
@@ -73,7 +73,7 @@ public class FIFOForwardingOrder extends MessageOrderingStrategy {
 	public <T> List<T> sortListInReverseOrder(List<T> inputList) {
 		/* FIFO queueing strategy also deletes elements in FIFO,
 		 * so this method does the same as the above one */
-		return messageProcessingOrder(inputList);
+		return sortList(inputList);
 	}
 
 	@Override

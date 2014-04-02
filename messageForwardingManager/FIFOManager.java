@@ -61,8 +61,7 @@ public class FIFOManager extends MessageForwardingManager {
 	@Override
 	public void resetMessageOrder() {
 		indexInList = 0;
-		messageOrderedList = messageOrderingStrategy.messageProcessingOrder(
-														messageQueueManager.getMessageList());
+		messageOrderedList = messageOrderingStrategy.sortList(messageQueueManager.getMessageList());
 	}
 
 	@Override

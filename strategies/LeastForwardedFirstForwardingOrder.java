@@ -113,7 +113,7 @@ public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy 
 	}
 	
 	@Override
-	public <T> List<T> messageProcessingOrder(List<T> inputList) {
+	public <T> List<T> sortList(List<T> inputList) {
 		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.comparator);
 		
 		return inputList;

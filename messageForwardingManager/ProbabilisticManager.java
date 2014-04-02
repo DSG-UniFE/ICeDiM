@@ -61,8 +61,7 @@ public class ProbabilisticManager extends MessageForwardingManager {
 
 	@Override
 	public void resetMessageOrder() {
-		orderedMessageList = messageOrderingStrategy.messageProcessingOrder(
-				messageQueueManager.getMessageList());
+		orderedMessageList = messageOrderingStrategy.sortList(messageQueueManager.getMessageList());
 		computeProbabilityVector();
 	}
 
