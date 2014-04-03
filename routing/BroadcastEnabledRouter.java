@@ -80,7 +80,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		DTNHost other = con.getOtherNode(getHost());
 		/* do a copy to avoid concurrent modification exceptions 
 		 * (startTransfer may remove messages) */
-		List<Message> sortedMessageList = getSortedListOfMessages(
+		List<Message> sortedMessageList = sortListOfMessages(
 											new ArrayList<Message>(getMessageCollection()));
 		for (Message m : sortedMessageList) {
 			if (other == m.getTo()) {

@@ -566,7 +566,7 @@ public abstract class MessageRouter {
 	 * @param inputList The list to sort
 	 * @return The sorted list
 	 */
-	protected <T> List<T> getSortedListOfMessages(List<T> inputList) {
+	protected List<Message> sortListOfMessages(List<Message> inputList) {
 		messageQueueManager.sortByQueueMode(inputList);
 		return inputList;
 	}
@@ -578,7 +578,7 @@ public abstract class MessageRouter {
 	 * @param list The list to sort
 	 * @return The list sorted in reverse order
 	 */
-	protected <T> List<T> getListOfMessagesInReverseOrder(List<T> inputList) {
+	protected List<Message> getListOfMessagesInReverseOrder(List<Message> inputList) {
 		messageQueueManager.reverseOrderByQueueMode(inputList);
 		return inputList;
 	}

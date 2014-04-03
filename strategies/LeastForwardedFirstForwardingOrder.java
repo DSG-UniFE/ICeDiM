@@ -7,45 +7,24 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import core.Connection;
 import core.Message;
-import core.SimError;
-import core.Tuple;
 
 /**
  * @author Alex
  *
  */
-
 public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy {
 	
 	static LeastForwardedFirstForwardingOrder singletonInstance = null;
-	static Comparator<Object> comparator = new Comparator<Object>() {
+	static Comparator<Message> comparator = new Comparator<Message>() {
 		/** Compares two tuples by their messages' receiving time, priority,
 		 *  and the number of times they were forwarded */
-		@SuppressWarnings("unchecked")
 		@Override
-		public int compare(Object o1, Object o2) {
-			double diff;
-			Message m1, m2;
+		public int compare(Message m1, Message m2) {
+			double diff = m1.getReceiveTime() - m2.getReceiveTime();
+			int pDiff = m1.getPriority() - m2.getPriority();
+			int timesForwardedDiff = m1.getForwardTimes() - m2.getForwardTimes();
 			
-			if (o1 instanceof Tuple) {
-				m1 = ((Tuple<Message, Connection>)o1).getKey();
-				m2 = ((Tuple<Message, Connection>)o2).getKey();
-			}
-			else if (o1 instanceof Message) {
-				m1 = (Message) o1;
-				m2 = (Message) o2;
-			}
-			else {
-				throw new SimError("Invalid type of objects in the list");
-			}
-
-			diff = m1.getReceiveTime() - m2.getReceiveTime();
-			int pDiff, timesForwardedDiff;
-			
-			timesForwardedDiff = m1.getForwardTimes() - m2.getForwardTimes();
-			pDiff = m1.getPriority() - m2.getPriority();
 			if ((timesForwardedDiff == 0) && (pDiff == 0) && (diff == 0)) {
 				return 0;
 			}
@@ -60,32 +39,15 @@ public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy 
 		}
 	};
 	
-	static Comparator<Object> reverseOrderComparator = new Comparator<Object>() {
+	static Comparator<Message> reverseOrderComparator = new Comparator<Message>() {
 		/** Compares two tuples by their messages' receiving time, priority,
 		 *  and the number of times they were forwarded */
-		@SuppressWarnings("unchecked")
 		@Override
-		public int compare(Object o1, Object o2) {
-			double diff;
-			Message m1, m2;
+		public int compare(Message m1, Message m2) {
+			double diff = m1.getReceiveTime() - m2.getReceiveTime();
+			int pDiff = m1.getPriority() - m2.getPriority();
+			int timesForwardedDiff = m1.getForwardTimes() - m2.getForwardTimes();
 			
-			if (o1 instanceof Tuple) {
-				m1 = ((Tuple<Message, Connection>)o1).getKey();
-				m2 = ((Tuple<Message, Connection>)o2).getKey();
-			}
-			else if (o1 instanceof Message) {
-				m1 = (Message) o1;
-				m2 = (Message) o2;
-			}
-			else {
-				throw new SimError("Invalid type of objects in the list");
-			}
-
-			diff = m1.getReceiveTime() - m2.getReceiveTime();
-			int pDiff, timesForwardedDiff;
-			
-			timesForwardedDiff = m1.getForwardTimes() - m2.getForwardTimes();
-			pDiff = m1.getPriority() - m2.getPriority();
 			if ((timesForwardedDiff == 0) && (pDiff == 0) && (diff == 0)) {
 				return 0;
 			}
@@ -113,12 +75,12 @@ public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy 
 	}
 	
 	@Override
-	public <T> void sortList(List<T> inputList) {
+	public void sortList(List<Message> inputList) {
 		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.comparator);
 	}
 
 	@Override
-	public <T> void sortListInReverseOrder(List<T> inputList) {
+	public void sortListInReverseOrder(List<Message> inputList) {
 		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.reverseOrderComparator);
 	}
 	

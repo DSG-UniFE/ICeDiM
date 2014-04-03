@@ -11,6 +11,8 @@ import core.World;
  * A connection up/down event.
  */
 public class ConnectionEvent extends ExternalEvent {
+	private static final long serialVersionUID = 1L;
+	
 	/** address of the node the (dis)connection is from */
 	protected int fromAddr;
 	/** address of the node the (dis)connection is to */

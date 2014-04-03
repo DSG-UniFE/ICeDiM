@@ -21,6 +21,7 @@ import core.DTNHost;
 import core.Message;
 import core.Settings;
 import core.SimClock;
+import core.SimError;
 import core.Tuple;
 
 /**
@@ -478,6 +479,9 @@ public class MaxPropRouterWithEstimation extends ActiveRouter {
 		 * collect all the messages that could be sent */
 		for (Connection con : getConnections()) {
 			DTNHost other = con.getOtherNode(getHost());
+			if (!(other.getRouter() instanceof MaxPropRouterWithEstimation)) {
+				throw new SimError("Remote router is not an instance of MaxPropRouterWithEstimation");
+			}
 			MaxPropRouterWithEstimation othRouter = (MaxPropRouterWithEstimation)other.getRouter();
 			
 			if (othRouter.isTransferring()) {
@@ -487,9 +491,8 @@ public class MaxPropRouterWithEstimation extends ActiveRouter {
 			for (Message m : msgCollection) {
 				/* skip messages that the other host has or that have
 				 * passed the other host */
-				if (othRouter.hasMessage(m.getID()) ||
-						m.getHops().contains(other)) {
-					continue; 
+				if (othRouter.hasMessage(m.getID()) || m.getHops().contains(other)) {
+					continue;
 				}
 				messages.add(new Tuple<Message, Connection>(m,con));
 			}			
@@ -502,7 +505,7 @@ public class MaxPropRouterWithEstimation extends ActiveRouter {
 		/* sort the message-connection tuples according to the criteria
 		 * defined in MaxPropTupleComparator */ 
 		Collections.sort(messages, new MaxPropTupleComparator(calcThreshold()));
-		return tryMessagesForConnected(messages);	
+		return tryMessagesForConnection(messages);
 	}
 	
 	/**

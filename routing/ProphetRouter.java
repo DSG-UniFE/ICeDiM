@@ -17,6 +17,7 @@ import core.DTNHost;
 import core.Message;
 import core.Settings;
 import core.SimClock;
+import core.SimError;
 import core.Tuple;
 
 /**
@@ -216,6 +217,9 @@ public class ProphetRouter extends ActiveRouter {
 		   probability of delivery by the other host */
 		for (Connection con : getConnections()) {
 			DTNHost other = con.getOtherNode(getHost());
+			if (!(other.getRouter() instanceof ProphetRouter)) {
+				throw new SimError("Remote router is not an instance of ProphetRouter");
+			}
 			ProphetRouter othRouter = (ProphetRouter)other.getRouter();
 			
 			if (othRouter.isTransferring()) {
@@ -239,7 +243,7 @@ public class ProphetRouter extends ActiveRouter {
 		
 		// sort the message-connection tuples
 		Collections.sort(messages, new TupleComparator());
-		return tryMessagesForConnected(messages);	// try to send messages
+		return tryMessagesForConnection(messages);	// try to send messages
 	}
 	
 	/**

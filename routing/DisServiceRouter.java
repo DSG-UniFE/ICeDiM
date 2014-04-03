@@ -110,7 +110,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			 * Check if we have some messages which should be transferred
 			 * Transfer most requested message or the one less forwarded
 			 */
-			List<Message> sortedMessageList = getSortedListOfMessages(
+			List<Message> sortedMessageList = sortListOfMessages(
 												new ArrayList<Message>(getMessageCollection()));
 			List<NeighborInfo> nearbyNodes = worldState.getActiveNeighborInfosByNetworkInterface(ni);
 			

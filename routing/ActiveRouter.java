@@ -171,8 +171,9 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		int retVal = ni.sendUnicastMessageViaConnection(m, con);
 		if (retVal == NetworkInterface.UNICAST_OK) {
-			// started transfer
+			// started transfer and return RCV_OK
 			addToSendingConnections(con);
+			return RCV_OK;
 		}
 		else if (deleteDelivered && (retVal == DENIED_OLD) &&
 			(m.getTo() == con.getOtherNode(this.getHost()))) {
@@ -327,48 +328,73 @@ public abstract class ActiveRouter extends MessageRouter {
 	}
 
 	/**
-	 * Returns a list of message-connections tuples of the messages whose
-	 * recipient is some host that we're connected to at the moment.
-	 * @return a list of message-connections tuples
+	 * Returns a list of those messages whose recipient is the
+	 * host reachable through the specified Connection.
+	 * @param con the Connection to some host.
+	 * @return a List of messages to be delivered to the host
+	 * reachable through the specified Connection.
 	 */
-	protected List<Tuple<Message, Connection>> getMessagesForConnected() {
-		if (getNrofMessages() == 0 || getConnections().size() == 0) {
+	protected List<Message> getMessagesForConnection(Connection con) {
+		if (getNrofMessages() == 0) {
 			/* no messages -> empty list */
-			return new ArrayList<Tuple<Message, Connection>>(0); 
+			return new ArrayList<Message>(0); 
 		}
 
-		List<Tuple<Message, Connection>> forTuples = new ArrayList<Tuple<Message, Connection>>();
+		List<Message> messageList = new ArrayList<Message>();
 		for (Message m : getMessageCollection()) {
-			for (Connection con : getConnections()) {
-				DTNHost to = con.getOtherNode(getHost());
-				if (m.getTo() == to) {
-					forTuples.add(new Tuple<Message, Connection>(m,con));
-				}
+			DTNHost to = con.getOtherNode(getHost());
+			if (m.getTo() == to) {
+				messageList.add(m);
 			}
 		}
 		
-		return forTuples;
+		return messageList;
+	}
+	
+	/**
+	 * Tries to send messages for the connection specified in the order
+	 * they are in the list, until one of the connections starts
+	 * transferring or all messages have been tried.
+	 * @param messageList the list of Messages to try.
+	 * @param con the Connection through which send a Message.
+	 * @return The tuple whose connection accepted the message or null if
+	 * the connection could not send the message.
+	 */
+	protected Tuple<Message, Connection> tryMessagesForConnection(
+				List<Message> messageList, Connection con) {
+		if ((messageList == null) || (con == null) ||
+			(messageList.size() == 0)) {
+			// Nothing to do
+			return null;
+		}
+		
+		for (Message m : messageList) {
+			if (startTransfer(m, con) == RCV_OK) {
+				return new Tuple<Message, Connection>(m, con);
+			}
+		}
+		
+		return null;
 	}
 	
 	/**
 	 * Tries to send messages for the connections that are mentioned
 	 * in the Tuples in the order they are in the list until one of
 	 * the connections starts transferring or all tuples have been tried.
-	 * @param tuples The tuples to try
+	 * @param messageConnectionList The tuples to try.
 	 * @return The tuple whose connection accepted the message or null if
 	 * none of the connections accepted the message that was meant for them.
 	 */
-	protected Tuple<Message, Connection> tryMessagesForConnected(
-			List<Tuple<Message, Connection>> tuples) {
-		if (tuples.size() == 0) {
+	protected Tuple<Message, Connection> tryMessagesForConnection(
+				List<Tuple<Message, Connection>> messageConnectionList) {
+		if ((messageConnectionList == null) || (messageConnectionList.size() == 0)) {
+			// Nothing to do
 			return null;
 		}
 		
-		for (Tuple<Message, Connection> t : tuples) {
-			Message m = t.getKey();
-			Connection con = t.getValue();
-			if (startTransfer(m, con) == RCV_OK) {
-				return t;
+		for (Tuple<Message, Connection> tuple : messageConnectionList) {
+			if (startTransfer(tuple.getKey(), tuple.getValue()) == RCV_OK) {
+				return tuple;
 			}
 		}
 		
@@ -441,7 +467,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			return null;
 		}
 
-		List<Message> messages = getSortedListOfMessages(
+		List<Message> messages = sortListOfMessages(
 									new ArrayList<Message>(getMessageCollection()));
 		return tryMessagesToConnections(messages, connections);
 	}
@@ -456,16 +482,19 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	protected Connection exchangeDeliverableMessages() {
 		List<Connection> connections = getConnections();
-
 		if (connections.size() == 0) {
 			return null;
 		}
 		
-		Tuple<Message, Connection> t =
-			tryMessagesForConnected(getSortedListOfMessages(getMessagesForConnected()));
-
-		if (t != null) {
-			return t.getValue(); // started transfer
+		// Randomize order to improve fairness
+		Collections.shuffle(connections);
+		Tuple<Message, Connection> t = null;
+		for (Connection con : connections) {
+			t = tryMessagesForConnection(sortListOfMessages(getMessagesForConnection(con)), con);
+			if (t != null) {
+				// started transfer
+				return t.getValue();
+			}
 		}
 		
 		// didn't start transfer to any node -> ask messages from connected

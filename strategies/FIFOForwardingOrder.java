@@ -7,10 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import core.Connection;
 import core.Message;
-import core.SimError;
-import core.Tuple;
 
 /**
  * @author Alex
@@ -19,27 +16,12 @@ import core.Tuple;
 public class FIFOForwardingOrder extends MessageOrderingStrategy {
 
 	static FIFOForwardingOrder singletonInstance = null;
-	static Comparator<Object> comparator = new Comparator<Object>() {
+	static Comparator<Message> comparator = new Comparator<Message>() {
 		/** Compares two tuples by their messages' receiving time */
 		@Override
-		@SuppressWarnings("unchecked")
-		public int compare(Object o1, Object o2) {
-			double diff;
-			Message m1, m2;
+		public int compare(Message m1, Message m2) {
+			double diff = m1.getReceiveTime() - m2.getReceiveTime();
 			
-			if (o1 instanceof Tuple) {
-				m1 = ((Tuple<Message, Connection>)o1).getKey();
-				m2 = ((Tuple<Message, Connection>)o2).getKey();
-			}
-			else if (o1 instanceof Message) {
-				m1 = (Message) o1;
-				m2 = (Message) o2;
-			}
-			else {
-				throw new SimError("Invalid type of objects in the list");
-			}
-
-			diff = m1.getReceiveTime() - m2.getReceiveTime();
 			if (diff == 0) {
 				return 0;
 			}
@@ -63,12 +45,12 @@ public class FIFOForwardingOrder extends MessageOrderingStrategy {
 	}
 	
 	@Override
-	public <T> void sortList(List<T> inputList) {
+	public void sortList(List<Message> inputList) {
 		Collections.sort(inputList, FIFOForwardingOrder.comparator);
 	}
 
 	@Override
-	public <T> void sortListInReverseOrder(List<T> inputList) {
+	public void sortListInReverseOrder(List<Message> inputList) {
 		/* FIFO queueing strategy also deletes elements in FIFO,
 		 * so this method does the same as the above one */
 		sortList(inputList);

@@ -30,8 +30,8 @@ public abstract class MessageOrderingStrategy {
 	
 	private final QueueForwardingOrderMode queueForwardingMode;
 	
-	abstract public <T> void sortList(List<T> inputList);
-	abstract public <T> void sortListInReverseOrder(List<T> inputList);
+	abstract public void sortList(List<Message> inputList);
+	abstract public void sortListInReverseOrder(List<Message> inputList);
 	abstract public int comparatorMethod(Message m1, Message m2);
 	
 	static public MessageOrderingStrategy MessageForwardingStrategyFactory
