@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import junit.framework.Assert;
-
 /**
  * Network interface of a DTNHost. Takes care of connectivity among hosts.
  */
@@ -571,9 +569,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * reception triggers an interference
 	 */
 	public int beginNewReception(Message m, Connection con) {
-		Assert.assertTrue("There is no traffic ongoing on this connection", con.isTransferOngoing());
-		Assert.assertTrue("Message and connection passed as parameters do not match!",
-							con.getMessage().getID().equals(m.getID()));
+		assert con.isTransferOngoing() : "There is no traffic ongoing on this connection";
+		assert con.getMessage().getID().equals(m.getID()) : "Message and connection passed " +
+															"as parameters do not match!";
 		
 		return interferenceModel.beginNewReception(m, con);
 	}
@@ -586,9 +584,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param con the Connection transferring the Message
 	 */
 	public void beginNewOutOfSynchTransfer(Message m, Connection con) {
-		Assert.assertTrue("There is no traffic ongoing on this connection", con.isTransferOngoing());
-		Assert.assertTrue("Message and connection passed as parameters do not match!",
-							con.getMessage().getID().equals(m.getID()));
+		assert con.isTransferOngoing() : "There is no traffic ongoing on this connection";
+		assert con.getMessage().getID().equals(m.getID()) : "Message and connection passed " +
+															"as parameters do not match!";
 		interferenceModel.beginNewOutOfSynchTransfer(m, con);
 	}
 
