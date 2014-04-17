@@ -232,7 +232,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		ArrayList<DTNHost> reachableHosts = new ArrayList<DTNHost>();
 		for (Connection con : connections) {
 			assert con.isUp() : "Error: Connection in active connections list is down!";
-			reachableHosts.add(con.getOtherNode(this.host));
+			reachableHosts.add(con.getOtherNode(host));
 		}
 		
 		return reachableHosts;

@@ -13,7 +13,7 @@ import core.Message;
  * @author Alex
  *
  */
-public class FIFOForwardingOrder extends MessageOrderingStrategy {
+public class FIFOForwardingOrder extends MessagePrioritizationStrategy {
 
 	static FIFOForwardingOrder singletonInstance = null;
 	static Comparator<Message> comparator = new Comparator<Message>() {
@@ -30,7 +30,7 @@ public class FIFOForwardingOrder extends MessageOrderingStrategy {
 	};
 	
 	private FIFOForwardingOrder() {
-		super(MessageOrderingStrategy.QueueForwardingOrderMode.FIFO);
+		super(MessagePrioritizationStrategy.QueuePrioritizationMode.FIFO);
 	}
 	
 	/* (non-Javadoc)

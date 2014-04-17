@@ -253,17 +253,17 @@ public class MaxPropRouter extends ActiveRouter {
 	 */
     @Override
     protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {
-		Collection<Message> messages = this.getMessageCollection();
+		Collection<Message> messages = getMessageCollection();
 		List<Message> validMessages = new ArrayList<Message>();
 
-		for (Message m : messages) {	
+		for (Message m : messages) {
 			if (excludeMsgBeingSent && isSending(m.getID())) {
 				continue; // skip the message(s) that router is sending
 			}
 			validMessages.add(m);
 		}
 		
-		Collections.sort(validMessages, new MaxPropComparator(this.calcThreshold())); 
+		Collections.sort(validMessages, new MaxPropComparator(calcThreshold())); 
 		
 		return validMessages.get(validMessages.size()-1); // return last message
 	}
@@ -295,9 +295,9 @@ public class MaxPropRouter extends ActiveRouter {
 	 */
 	public double getCost(DTNHost from, DTNHost to) {
 		/* check if the cached values are OK */
-		if (this.costsForMessages == null || lastCostFrom != from) {
+		if (costsForMessages == null || lastCostFrom != from) {
 			/* cached costs are invalid -> calculate new costs */
-			this.allProbs.put(getHost().getAddress(), this.probs);
+			allProbs.put(getHost().getAddress(), probs);
 			int fromIndex = from.getAddress();
 			
 			/* calculate paths only to nodes we have messages to 
@@ -306,9 +306,9 @@ public class MaxPropRouter extends ActiveRouter {
 			for (Message m : getMessageCollection()) {
 				toSet.add(m.getTo().getAddress());
 			}
-						
-			this.costsForMessages = dijkstra.getCosts(fromIndex, toSet);
-			this.lastCostFrom = from; // store source host for caching checks
+			
+			costsForMessages = dijkstra.getCosts(fromIndex, toSet);
+			lastCostFrom = from; // store source host for caching checks
 		}
 		
 		if (costsForMessages.containsKey(to.getAddress())) {

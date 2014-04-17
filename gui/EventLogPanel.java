@@ -65,6 +65,7 @@ public class EventLogPanel extends JPanel
 	private EventLogControl msgCreateCheck;
 	private EventLogControl msgTransferStartCheck;
 	private EventLogControl msgRelayCheck;
+	private EventLogControl msgDuplicateCheck;
 	private EventLogControl msgRemoveCheck;
 	private EventLogControl msgDeliveredCheck;
 	private EventLogControl msgDropCheck;
@@ -118,6 +119,7 @@ public class EventLogPanel extends JPanel
 	private EventLogControlPanel createControls() {
 		EventLogControlPanel c = new EventLogControlPanel();
 		c.addHeading("connections");
+		
 		nodeRegistrationCheck = c.addControl("registration");
 		conUpCheck = c.addControl("up");
 		conDownCheck = c.addControl("down");
@@ -125,11 +127,13 @@ public class EventLogPanel extends JPanel
 		msgCreateCheck = c.addControl("created");
 		msgTransferStartCheck = c.addControl("started relay");
 		msgRelayCheck = c.addControl("relayed");
+		msgDuplicateCheck = c.addControl("duplicated relay");
 		msgDeliveredCheck = c.addControl("delivered");
 		msgRemoveCheck = c.addControl("removed");
 		msgDropCheck = c.addControl("dropped");
 		msgAbortCheck = c.addControl("aborted");
 		msgInterferedCheck = c.addControl("interfered");
+		
 		return c;
 	}
 	
@@ -266,6 +270,7 @@ public class EventLogPanel extends JPanel
 		processEvent(conDownCheck, "Connection DOWN", host1, host2, null);
 	}
 
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
 		if ((cause == null) || (cause.length() == 0)) {
 			if (!dropped) {
@@ -285,27 +290,35 @@ public class EventLogPanel extends JPanel
 		}
 	}
 
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
-		if (firstDelivery) {
-			processEvent(msgDeliveredCheck, "Message delivered", from, to, m); 
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (firstDelivery && finalTarget) {
+			processEvent(msgDeliveredCheck, "Message delivered to destination", from, to, m); 
 		}
-		else if (to == m.getTo()) {
+		else if (finalTarget) {
 			processEvent(msgDeliveredCheck, "Message delivered again", 
 					from, to, m);
 		}
-		else {
+		else if (firstDelivery) {
 			processEvent(msgRelayCheck, "Message relayed", from, to, m);
+		}
+		else {
+			processEvent(msgDuplicateCheck, "Message duplicate relay", from, to, m);
 		}
 	}
 
+	@Override
 	public void newMessage(Message m) {
 		processEvent(msgCreateCheck, "Message created", m.getFrom(), null, m);
 	}
-	
+
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
 		processEvent(msgAbortCheck, "Message relay aborted", from, to, m);
 	}
-	
+
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
 		processEvent(msgTransferStartCheck,"Message relay started", from, to, m);
 	}
@@ -335,7 +348,8 @@ public class EventLogPanel extends JPanel
 			gui.getInfoPanel().showInfo(m);
 		}
 	}
-	
+
+	@Override
 	public String toString() {
 		return this.getClass().getSimpleName() + " with " + 
 			this.eventPanes.size() + " events";

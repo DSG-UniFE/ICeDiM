@@ -27,7 +27,8 @@ public class SubscriptionListManager {
 	private int maxNumberOfSubscriptions;
 	private boolean areSubscriptionsRandom;
 	
-	public static int MAX_SUB_ID_FOR_SIMULATION = Integer.MIN_VALUE;
+	/** The highest SubscriptionID used in the simulation */
+	public static int MAX_SUB_ID_OF_SIMULATION = Integer.MIN_VALUE;
 	
 	private static MersenneTwisterRNG RandomIDGenerator = null;
 	
@@ -60,7 +61,7 @@ public class SubscriptionListManager {
 		this.areSubscriptionsRandom = true;
 		this.subscriptionList = new ArrayList<Integer>();
 		
-		MAX_SUB_ID_FOR_SIMULATION = Math.max(MAX_SUB_ID_FOR_SIMULATION, this.maxSubID);
+		MAX_SUB_ID_OF_SIMULATION = Math.max(MAX_SUB_ID_OF_SIMULATION, this.maxSubID);
 		randomizeSubscriptions();
 	}
 	
@@ -110,10 +111,10 @@ public class SubscriptionListManager {
 			randomizeSubscriptions();
 		}
 		
-		MAX_SUB_ID_FOR_SIMULATION = Math.max(MAX_SUB_ID_FOR_SIMULATION, this.maxSubID);
+		MAX_SUB_ID_OF_SIMULATION = Math.max(MAX_SUB_ID_OF_SIMULATION, this.maxSubID);
 	}
 	
-	private SubscriptionListManager(SubscriptionListManager sl) {
+	protected SubscriptionListManager(SubscriptionListManager sl) {
 		this.maxSubID = sl.maxSubID;
 		this.maxNumberOfSubscriptions = sl.maxNumberOfSubscriptions;
 		areSubscriptionsRandom = sl.areSubscriptionsRandom;

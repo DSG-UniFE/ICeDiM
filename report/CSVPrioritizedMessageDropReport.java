@@ -53,12 +53,14 @@ public class CSVPrioritizedMessageDropReport extends Report implements MessageLi
 	}
 
 	@Override
-	public void messageTransferred (Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
+	public void messageTransferred (Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
 		if (isWarmupID(m.getID())) {
 			// Ignore messages created during warmup
 			return;
 		}
-		if (firstDelivery && to.equals(m.getTo())) {
+		
+		if (firstDelivery && finalTarget) {
 			deliveredMessages.add(m.getID());
 		}
 	}

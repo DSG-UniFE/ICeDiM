@@ -135,7 +135,7 @@ public class Message implements Comparable<Message> {
 	 * @return the node this message is originally from
 	 */
 	public DTNHost getFrom() {
-		return this.from;
+		return from;
 	}
 
 	/**
@@ -143,7 +143,7 @@ public class Message implements Comparable<Message> {
 	 * @return the node this message is originally to
 	 */
 	public DTNHost getTo() {
-		return this.to;
+		return to;
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class Message implements Comparable<Message> {
 	 * @return The message id
 	 */
 	public String getID() {
-		return this.id;
+		return id;
 	}
 
 	/**
@@ -168,7 +168,7 @@ public class Message implements Comparable<Message> {
 	 * @return The unique id
 	 */
 	public int getUniqueId() {
-		return this.uniqueId;
+		return uniqueId;
 	}
 	
 	/**
@@ -176,7 +176,7 @@ public class Message implements Comparable<Message> {
 	 * @return the size of the message
 	 */
 	public int getSize() {
-		return this.size;
+		return size;
 	}
 
 	/**
@@ -184,7 +184,7 @@ public class Message implements Comparable<Message> {
 	 * @param node The node to add
 	 */
 	public void addNodeOnPath(DTNHost node) {
-		this.path.add(node);
+		path.add(node);
 	}
 	
 	/**
@@ -192,7 +192,7 @@ public class Message implements Comparable<Message> {
 	 * @return The list as vector
 	 */
 	public List<DTNHost> getHops() {
-		return this.path;
+		return path;
 	}
 	
 	/**
@@ -202,8 +202,8 @@ public class Message implements Comparable<Message> {
 	 * @return The node from which the message was received
 	 */
 	public DTNHost getSenderNode() {
-		if (this.path.size() > 1) {
-			return this.path.get(this.path.size() - 2);
+		if (path.size() > 1) {
+			return path.get(path.size() - 2);
 		}
 		
 		return null;
@@ -214,7 +214,7 @@ public class Message implements Comparable<Message> {
 	 * @return the amount of hops this message has passed
 	 */
 	public int getHopCount() {
-		return this.path.size() -1;
+		return path.size() -1;
 	}
 	
 	/** 
@@ -224,12 +224,11 @@ public class Message implements Comparable<Message> {
 	 * @return The TTL (minutes)
 	 */
 	public int getTtl() {
-		if (this.initTtl == INFINITE_TTL) {
+		if (initTtl == INFINITE_TTL) {
 			return Integer.MAX_VALUE;
 		}
 		else {
-			return (int)( ((this.initTtl * 60) -
-					(SimClock.getTime()-this.timeCreated)) /60.0 );
+			return (int)(((initTtl * 60) - (SimClock.getTime() - timeCreated)) / 60.0);
 		}
 	}
 	
@@ -241,7 +240,7 @@ public class Message implements Comparable<Message> {
 	 * @param ttl The time-to-live to set
 	 */
 	public void setTtl(int ttl) {
-		this.initTtl = ttl;
+		initTtl = ttl;
 	}
 	
 
@@ -272,7 +271,7 @@ public class Message implements Comparable<Message> {
 	 * @param time The time to set
 	 */
 	public void setReceiveTime(double time) {
-		this.timeReceived = time;
+		timeReceived = time;
 	}
 	
 	/**
@@ -280,7 +279,7 @@ public class Message implements Comparable<Message> {
 	 * @return The time
 	 */
 	public double getReceiveTime() {
-		return this.timeReceived;
+		return timeReceived;
 	}
 	
 	/**
@@ -288,7 +287,7 @@ public class Message implements Comparable<Message> {
 	 * @return the time when this message was created
 	 */
 	public double getCreationTime() {
-		return this.timeCreated;
+		return timeCreated;
 	}
 	
 	/**
@@ -296,7 +295,7 @@ public class Message implements Comparable<Message> {
 	 * @param request The request message
 	 */
 	public void setRequest(Message request) {
-		this.requestMsg = request;
+		requestMsg = request;
 	}
 	
 	/**
@@ -305,7 +304,7 @@ public class Message implements Comparable<Message> {
 	 * @return the message this message is response to
 	 */
 	public Message getRequest() {
-		return this.requestMsg;
+		return requestMsg;
 	}
 	
 	/**
@@ -313,7 +312,7 @@ public class Message implements Comparable<Message> {
 	 * @return true if this message is a response message
 	 */
 	public boolean isResponse() {
-		return this.requestMsg != null;
+		return requestMsg != null;
 	}
 	
 	/**
@@ -322,7 +321,7 @@ public class Message implements Comparable<Message> {
 	 * @param size Size of the response message
 	 */
 	public void setResponseSize(int size) {
-		this.responseSize = size;
+		responseSize = size;
 	}
 	
 	/**
@@ -376,13 +375,12 @@ public class Message implements Comparable<Message> {
 	 * @throws SimError if the message already has a value for the given key
 	 */
 	public void addProperty(String key, Object value) throws SimError {
-		if (this.properties != null && this.properties.containsKey(key)) {
+		if (properties != null && properties.containsKey(key)) {
 			/* check to prevent accidental name space collisions */
 			throw new SimError("Message " + this + " already contains value " + 
 					"for a key " + key);
 		}
-		
-		this.updateProperty(key, value);
+		updateProperty(key, value);
 	}
 	
 	/**
@@ -392,10 +390,10 @@ public class Message implements Comparable<Message> {
 	 * @return The stored object or null if it isn't found
 	 */
 	public Object getProperty(String key) {
-		if (this.properties == null) {
+		if (properties == null) {
 			return null;
 		}
-		return this.properties.get(key);
+		return properties.get(key);
 	}
 	
 	/**
@@ -406,13 +404,12 @@ public class Message implements Comparable<Message> {
 	 * @param value The new value to store
 	 */
 	public void updateProperty(String key, Object value) throws SimError {
-		if (this.properties == null) {
+		if (properties == null) {
 			/* lazy creation to prevent performance overhead for classes
 			   that don't use the property feature  */
-			this.properties = new HashMap<String, Object>();
-		}		
-
-		this.properties.put(key, value);
+			properties = new HashMap<String, Object>();
+		}
+		properties.put(key, value);
 	}
 	
 

@@ -34,14 +34,15 @@ public class MessageCreateEvent extends MessageEvent {
 	public MessageCreateEvent(int from, int to, String id, int priority, int size,
 								int responseSize, double time) {
 		super(from, to, id, time);
+		
 		this.size = size;
 		this.responseSize = responseSize;
 		this.priority = priority;
 	}
-
+	
 	
 	/**
-	 * Creates the message this event represents. 
+	 * Creates the message this event represents.
 	 */
 	@Override
 	public void processEvent(World world) {
@@ -49,13 +50,16 @@ public class MessageCreateEvent extends MessageEvent {
 		DTNHost from = world.getNodeByAddress(fromAddr);
 		
 		Integer subID = SubscriptionListManager.DEFAULT_SUB_ID;
-		if (from.getRouter() instanceof PublisherSubscriber) {	
+		if (from.getRouter() instanceof PublisherSubscriber) {
 			PublisherSubscriber router = (PublisherSubscriber) from.getRouter();
 			subID = router.generateRandomSubID();
 			if (subID == SubscriptionListManager.INVALID_SUB_ID) {
 				// Node does not generate messages
 				return;
 			}
+			
+			// TODO: check consequences for all routers
+			to = null;
 		}
 	
 		// No priority - Use the PrioritizedMessageEventGenerator to generate messages with priorities
@@ -67,7 +71,7 @@ public class MessageCreateEvent extends MessageEvent {
 	
 	@Override
 	public String toString() {
-		return super.toString() + " [" + fromAddr + "->" + toAddr + "] " +
-		"size:" + size + " CREATE";
+		return super.toString() + " [" + fromAddr + "->" + toAddr + "] size:" + size + " CREATE";
 	}
+	
 }

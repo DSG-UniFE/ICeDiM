@@ -90,10 +90,12 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 			return false;
 		}
 		
-		for (Connection con : this.connections) {
+		for (Connection con : connections) {
 			if (!con.isReadyForTransfer() || con.getOtherInterface(this).isSendingData()) {
-				// If a neighbor node is transmitting, deny the transfer
-				// Note that this might cause the exposed terminal problem 
+				/* We can safely assume that any connected interface is of the same kind.
+				 * If a neighbor node is transmitting, deny the transfer.
+				 * Note that this might cause the exposed terminal problem.
+				 */
 				return false;
 			}
 		}

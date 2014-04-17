@@ -214,7 +214,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @return Messages in a collection
 	 */
 	public Collection<Message> getMessageCollection() {
-		return this.router.getMessageCollection();
+		return router.getMessageCollection();
 	}
 
 	/**
@@ -222,7 +222,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @return How many messages the node is carrying currently.
 	 */
 	public int getNrofMessages() {
-		return this.router.getNrofMessages();
+		return router.getNrofMessages();
 	}
 
 	/**
@@ -445,9 +445,9 @@ public class DTNHost implements Comparable<DTNHost> {
 	}
 
 	/**
-	 * Requests for deliverable message from this host to be sent trough a
-	 * connection.
-	 * @param con The connection to send the messages trough
+	 * Requests for deliverable message from this host to be
+	 * sent through a connection.
+	 * @param con The connection to send the messages through
 	 * @return True if this host started a transfer, false if not
 	 */
 	public boolean requestDeliverableMessages(Connection con) {

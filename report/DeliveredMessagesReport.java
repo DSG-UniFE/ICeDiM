@@ -49,15 +49,17 @@ public class DeliveredMessagesReport extends Report implements MessageListener {
 	}
 	
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, 
-			boolean firstDelivery) {
-		if (!isWarmupID(m.getID()) && firstDelivery) {
-			int ttl = m.getTtl();
-			write(format(getSimTime()) + " " + m.getID() + " " + 
-					m.getSize() + " " + m.getHopCount() + " " + 
-					format(getSimTime() - m.getCreationTime()) + " " + 
-					m.getFrom() + " " + m.getTo() + " " +
-					(ttl != Integer.MAX_VALUE ? ttl : "n/a") +  
-					(m.isResponse() ? " Y " : " N ") + getPathString(m));
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+		
+		if (firstDelivery && finalTarget) {
+			write(format(getSimTime()) + " " + m.getID() + " " + m.getSize() + " " +
+							m.getHopCount() + " " + format(getSimTime() - m.getCreationTime()) +
+							" " + m.getFrom() + " " + m.getTo() + " " +
+							(m.getTtl() != Integer.MAX_VALUE ? m.getTtl() : "n/a") +
+							(m.isResponse() ? " Y " : " N ") + getPathString(m));
 		}
 	}
 
@@ -70,10 +72,12 @@ public class DeliveredMessagesReport extends Report implements MessageListener {
 	// nothing to implement for the rest
 	@Override
 	public void registerNode(DTNHost node) {}
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
-
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 

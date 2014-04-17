@@ -46,54 +46,58 @@ public class MessageChecker implements MessageListener {
 	
 	@Override
 	public void registerNode(DTNHost node) {}
-	
+
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
-		this.add(m, where, null, TYPE_DELETE, dropped, null);
+		add(m, where, null, TYPE_DELETE, dropped, null);
 	}
 
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
-		this.add(m, from, to, TYPE_ABORT, null, null);
+		add(m, from, to, TYPE_ABORT, null, null);
 	}
 
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {
-		this.add(m, from, to, TYPE_INTERFERED, null, null);
+		add(m, from, to, TYPE_INTERFERED, null, null);
 	}
 
+	@Override
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
-									boolean firstDelivery) {
-		this.add(m, from, to, TYPE_RELAY, null, firstDelivery);
+									boolean firstDelivery, boolean finalTarget) {
+		add(m, from, to, TYPE_RELAY, null, firstDelivery && finalTarget);
 	}
-	
+
+	@Override
 	public void newMessage(Message m) {
-		this.add(m, m.getFrom(), m.getTo(), TYPE_CREATE, null, null);
+		add(m, m.getFrom(), m.getTo(), TYPE_CREATE, null, null);
 	}
 	
-	
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		this.add(m, from, to, TYPE_START, null, null);
+		add(m, from, to, TYPE_START, null, null);
 	}
 
 	public boolean next() {
-		if (this.queue.size() == 0) {
+		if (queue.size() == 0) {
 			return false;
 		}
 		
-		MsgCheckerEvent e = this.queue.remove(0);
+		MsgCheckerEvent e = queue.remove(0);
+		lastMsg = e.msg;
+		lastFrom = e.from;
+		lastTo = e.to;		
+		lastType = e.type;
+		lastFirstDelivery = e.delivered;
+		lastDropped = e.dropped;
 		
-		this.lastMsg = e.msg;
-		this.lastFrom = e.from;
-		this.lastTo = e.to;		
-		this.lastType = e.type;
-		this.lastFirstDelivery = e.delivered;
-		this.lastDropped = e.dropped;
 		return true;
 
 	}
 	
 	private void add(Message m, DTNHost from, DTNHost to, String type,
 						Boolean dropped, Boolean delivered) {
-		this.queue.add(new MsgCheckerEvent(m,from,to,type,dropped,delivered));
+		queue.add(new MsgCheckerEvent(m,from,to,type,dropped,delivered));
 	}
 
 	/**
@@ -139,7 +143,7 @@ public class MessageChecker implements MessageListener {
 	}
 	
 	public String toString() {
-		return this.queue.size() + " event(s) : " + this.queue;
+		return queue.size() + " event(s) : " + queue;
 	}
 
 	private class MsgCheckerEvent {
@@ -151,7 +155,7 @@ public class MessageChecker implements MessageListener {
 		private String type;
 		
 		public MsgCheckerEvent(Message m, DTNHost from, DTNHost to,
-				String type, Boolean dropped, Boolean delivered) {
+								String type, Boolean dropped, Boolean delivered) {
 			this.msg = m;
 			this.from = from;
 			this.to = to;
@@ -161,7 +165,7 @@ public class MessageChecker implements MessageListener {
 		}
 
 		public String toString() {
-			return this.type + " (" + this.from + "->" + this.to+") " + this.msg;
+			return type + " (" + from + "->" + to+") " + msg;
 		}
 	}
 }

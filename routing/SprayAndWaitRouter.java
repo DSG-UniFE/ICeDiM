@@ -101,7 +101,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 		}
 		
 		/* create a list of SAWMessages that have copies left to distribute */
-		List<Message> copiesLeft = sortListOfMessages(getMessagesWithCopiesLeft());
+		List<Message> copiesLeft = sortListOfMessagesForForwarding(getMessagesWithCopiesLeft());
 		
 		if (copiesLeft.size() > 0) {
 			/* try to send those messages */

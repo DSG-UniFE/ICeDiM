@@ -80,8 +80,9 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param firstDelivery Was the target node final destination of the message
 	 * and received this message for the first time.
 	 */
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
-		if (firstDelivery) {
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (firstDelivery && finalTarget) {
 			// We received a BundleMessage that should be passed to dtnd
 			CLAParser p = DTN2Manager.getParser(to);
 			if (p != null) { // Check that there's a CLA connected to this node

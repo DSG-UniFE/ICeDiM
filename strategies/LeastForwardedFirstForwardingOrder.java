@@ -13,7 +13,7 @@ import core.Message;
  * @author Alex
  *
  */
-public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy {
+public class LeastForwardedFirstForwardingOrder extends MessagePrioritizationStrategy {
 	
 	static LeastForwardedFirstForwardingOrder singletonInstance = null;
 	static Comparator<Message> comparator = new Comparator<Message>() {
@@ -71,7 +71,7 @@ public class LeastForwardedFirstForwardingOrder extends MessageOrderingStrategy 
 	}
 	
 	private LeastForwardedFirstForwardingOrder() {
-		super(MessageOrderingStrategy.QueueForwardingOrderMode.Prioritized_LFF_FIFO);
+		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Prioritized_LFF_FIFO);
 	}
 	
 	@Override

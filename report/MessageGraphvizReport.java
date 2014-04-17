@@ -27,33 +27,43 @@ public class MessageGraphvizReport extends Report implements MessageListener {
 		init();
 	}
 
+	@Override
 	protected void init() {
 		super.init();
-		this.deliveredMessages = new Vector<Message>();		
+		
+		deliveredMessages = new Vector<Message>();		
 	}
 	
 	@Override
 	public void registerNode(DTNHost node) {}
 
+	@Override
 	public void newMessage(Message m) {
 		if (isWarmup()) {
 			addWarmupID(m.getID());
 		}
 	}
-	
-	public void messageTransferred(Message m, DTNHost from,
-			DTNHost to,	boolean firstDelivery) {
-		if (firstDelivery && !isWarmupID(m.getID())) {
+
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+		
+		if (firstDelivery && finalTarget) {
 			newEvent();
-			this.deliveredMessages.add(m);
+			deliveredMessages.add(m);
 		}
 	}
 
 	/* nothing to implement for these */
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {	}
+	@Override
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
-
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 

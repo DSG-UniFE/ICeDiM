@@ -7,7 +7,6 @@ package routing;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 import core.NetworkInterface;
 import core.Connection;
@@ -16,6 +15,7 @@ import core.Message;
 import core.MessageListener;
 import core.Settings;
 import core.SimClock;
+import core.SimError;
 import core.Tuple;
 
 /**
@@ -84,16 +84,21 @@ public abstract class ActiveRouter extends MessageRouter {
 	
 	@Override
 	public boolean requestDeliverableMessages(Connection con) {
-		if (!con.getInterfaceForNode(getHost()).isReadyToBeginTransfer()) {
+		NetworkInterface transferringInterface = con.getInterfaceForNode(getHost());
+		if (transferringInterface == null) {
+			throw new SimError("Connection " + con + " does not involve local host " + getHost());
+		}
+		if (!transferringInterface.isReadyToBeginTransfer()) {
 			return false;
 		}
 		
 		DTNHost other = con.getOtherNode(getHost());
-		/* do a copy to avoid concurrent modification exceptions 
-		 * (startTransfer may remove messages) */
-		ArrayList<Message> temp = new ArrayList<Message>(getMessageCollection());
+		/* The call sortAllReceivedMessagesForForwarding returns a copy of
+		 * received messages, in order to avoid concurrent modification
+		 * exceptions (startTransfer may remove messages) */
+		List<Message> temp = sortAllReceivedMessagesForForwarding();
 		for (Message m : temp) {
-			if (other == m.getTo()) {
+			if (isMessageDestination(m, other)) {
 				if (startTransfer(m, con) == RCV_OK) {
 					return true;
 				}
@@ -279,19 +284,6 @@ public abstract class ActiveRouter extends MessageRouter {
 	}
 	
 	/**
-	 * Drops messages whose TTL is less than zero.
-	 */
-	protected void dropExpiredMessages() {
-		Message[] messages = getMessageCollection().toArray(new Message[0]);
-		for (int i=0; i<messages.length; i++) {
-			int ttl = messages[i].getTtl(); 
-			if (ttl <= 0) {
-				deleteMessage(messages[i].getID(), true, "TTL expired");
-			}
-		}
-	}
-	
-	/**
 	 * Tries to make room for a new message. Current implementation simply
 	 * calls {@link #makeRoomForMessage(int)} and ignores the return value.
 	 * Therefore, if the message can't fit into buffer, the buffer is only 
@@ -314,8 +306,10 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * exludeMsgBeingSent is true)
 	 */
 	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
-		List<Message> sortedList = getListOfMessagesInReverseOrder(
+		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(
 									new ArrayList<Message>(getMessageCollection()));
+		
+		// Traverse the list in order and return the first available message
 		for (Message m : sortedList) {
 			if (excludeMsgBeingSent && isSending(m.getID())) {
 				// skip the message(s) that router is sending
@@ -325,30 +319,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		return null;
-	}
-
-	/**
-	 * Returns a list of those messages whose recipient is the
-	 * host reachable through the specified Connection.
-	 * @param con the Connection to some host.
-	 * @return a List of messages to be delivered to the host
-	 * reachable through the specified Connection.
-	 */
-	protected List<Message> getMessagesForConnection(Connection con) {
-		if (getNrofMessages() == 0) {
-			/* no messages -> empty list */
-			return new ArrayList<Message>(0); 
-		}
-
-		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageCollection()) {
-			DTNHost to = con.getOtherNode(getHost());
-			if (m.getTo() == to) {
-				messageList.add(m);
-			}
-		}
-		
-		return messageList;
 	}
 	
 	/**
@@ -456,7 +426,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	/**
 	 * Tries to send all messages that this router is carrying to all
 	 * connections this node has. Messages are ordered using the 
-	 * {@link MessageRouter#sortByQueueMode(List)}. See 
+	 * {@link MessageRouter#sortByPrioritizationMode(List)}. See 
 	 * {@link #tryMessagesToConnections(List, List)} for sending details.
 	 * @return The connections that started a transfer or null if no connection
 	 * accepted a message.
@@ -467,7 +437,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			return null;
 		}
 
-		List<Message> messages = sortListOfMessages(
+		List<Message> messages = sortListOfMessagesForForwarding(
 									new ArrayList<Message>(getMessageCollection()));
 		return tryMessagesToConnections(messages, connections);
 	}
@@ -490,7 +460,8 @@ public abstract class ActiveRouter extends MessageRouter {
 		Collections.shuffle(connections);
 		Tuple<Message, Connection> t = null;
 		for (Connection con : connections) {
-			t = tryMessagesForConnection(sortListOfMessages(getMessagesForConnection(con)), con);
+			t = tryMessagesForConnection(
+					sortListOfMessagesForForwarding(getMessagesForConnection(con)), con);
 			if (t != null) {
 				// started transfer
 				return t.getValue();
@@ -506,21 +477,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		return null;
 	}
-
-
-	
-	/**
-	 * Shuffles a messages list so the messages are in random order.
-	 * @param messages The list to sort and shuffle
-	 */
-	protected void shuffleMessages(List<Message> messages) {
-		if (messages.size() <= 1) {
-			return; // nothing to shuffle
-		}
-		
-		Random rng = new Random(SimClock.getIntTime());
-		Collections.shuffle(messages, rng);	
-	}
 	
 	/**
 	 * Adds a connections to sending connections which are monitored in
@@ -531,23 +487,23 @@ public abstract class ActiveRouter extends MessageRouter {
 	protected void addToSendingConnections(Connection con) {
 		this.sendingConnections.add(con);
 	}
-		
+	
 	/**
-	 * Returns true if this router is transferring something at the moment or
-	 * some transfer has not been finalized.
+	 * Returns true if this router is transferring something
+	 * at the moment or some transfer has not been finalized.
 	 * @return true if this router is transferring something
 	 */
 	public boolean isTransferring() {
-		if (this.sendingConnections.size() > 0) {
+		if (sendingConnections.size() > 0) {
 			return true; // sending something
 		}
 		
-		if (this.getHost().getConnections().size() == 0) {
+		if (getHost().getConnections().size() == 0) {
 			return false; // not connected
 		}
 		
 		List<Connection> connections = getConnections();
-		for (int i=0, n=connections.size(); i<n; i++) {
+		for (int i = 0, n = connections.size(); i < n; ++i) {
 			Connection con = connections.get(i);
 			if (!con.isReadyForTransfer()) {
 				return true;	// a connection isn't ready for new transfer

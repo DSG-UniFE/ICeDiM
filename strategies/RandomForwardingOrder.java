@@ -14,13 +14,13 @@ import core.SimClock;
  * @author Alex
  *
  */
-public class RandomForwardingOrder extends MessageOrderingStrategy {
+public class RandomForwardingOrder extends MessagePrioritizationStrategy {
 
 	static RandomForwardingOrder singletonInstance = null;
 	static Random randomGenerator = null;
 	
 	private RandomForwardingOrder() {
-		super(MessageOrderingStrategy.QueueForwardingOrderMode.Random);
+		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Random);
 	}
 	
 	/* (non-Javadoc)

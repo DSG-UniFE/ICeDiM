@@ -34,6 +34,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 	private int nrofAborted;
 	private int nrofInterfered;
 	private int nrofRelayed;
+	private int nrofDuplicated;
 	private int nrofCreated;
 	private int nrofResponseReqCreated;
 	private int nrofResponseDelivered;
@@ -49,50 +50,52 @@ public class MessageStatsReport extends Report implements MessageListener {
 	@Override
 	protected void init() {
 		super.init();
-		this.creationTimes = new HashMap<String, Double>();
-		this.latencies = new ArrayList<Double>();
-		this.msgBufferTime = new ArrayList<Double>();
-		this.hopCounts = new ArrayList<Integer>();
-		this.rtt = new ArrayList<Double>();
 		
-		this.nrofDropped = 0;
-		this.nrofRemoved = 0;
-		this.nrofStarted = 0;
-		this.nrofAborted = 0;
-		this.nrofInterfered = 0;
-		this.nrofRelayed = 0;
-		this.nrofCreated = 0;
-		this.nrofResponseReqCreated = 0;
-		this.nrofResponseDelivered = 0;
-		this.nrofDelivered = 0;
+		creationTimes = new HashMap<String, Double>();
+		latencies = new ArrayList<Double>();
+		msgBufferTime = new ArrayList<Double>();
+		hopCounts = new ArrayList<Integer>();
+		rtt = new ArrayList<Double>();
+		
+		nrofDropped = 0;
+		nrofRemoved = 0;
+		nrofStarted = 0;
+		nrofAborted = 0;
+		nrofInterfered = 0;
+		nrofRelayed = 0;
+		nrofDuplicated = 0;
+		nrofCreated = 0;
+		nrofResponseReqCreated = 0;
+		nrofResponseDelivered = 0;
+		nrofDelivered = 0;
 	}
 	
 	@Override
 	public void registerNode(DTNHost node) {}
-
 	
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
 		if (dropped) {
-			this.nrofDropped++;
+			nrofDropped++;
 		}
 		else {
-			this.nrofRemoved++;
+			nrofRemoved++;
 		}
 		
-		this.msgBufferTime.add(getSimTime() - m.getReceiveTime());
+		msgBufferTime.add(getSimTime() - m.getReceiveTime());
 	}
 
-	
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
-		this.nrofAborted++;
+		nrofAborted++;
 	}
 
 	@Override
@@ -101,96 +104,99 @@ public class MessageStatsReport extends Report implements MessageListener {
 			return;
 		}
 		
-		this.nrofInterfered++;
+		nrofInterfered++;
 	}
 
-	
+	@Override
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
-			boolean finalTarget) {
+									boolean firstDelivery, boolean finalTarget) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 
-		this.nrofRelayed++;
-		if (finalTarget) {
-			this.latencies.add(getSimTime() - 
-				this.creationTimes.get(m.getID()) );
-			this.nrofDelivered++;
-			this.hopCounts.add(m.getHops().size() - 1);
-			
-			if (m.isResponse()) {
-				this.rtt.add(getSimTime() -	m.getRequest().getCreationTime());
-				this.nrofResponseDelivered++;
+		if (firstDelivery) {
+			nrofRelayed++;
+			if (finalTarget) {
+				nrofDelivered++;
+				latencies.add(getSimTime() - creationTimes.get(m.getID()));
+				hopCounts.add(m.getHops().size() - 1);
+				
+				if (m.isResponse()) {
+					rtt.add(getSimTime() -	m.getRequest().getCreationTime());
+					nrofResponseDelivered++;
+				}
 			}
+		}
+		else {
+			nrofDuplicated++;
 		}
 	}
 
-
+	@Override
 	public void newMessage(Message m) {
 		if (isWarmup()) {
 			addWarmupID(m.getID());
 			return;
 		}
 		
-		this.creationTimes.put(m.getID(), getSimTime());
-		this.nrofCreated++;
+		creationTimes.put(m.getID(), getSimTime());
+		nrofCreated++;
 		if (m.getResponseSize() > 0) {
-			this.nrofResponseReqCreated++;
+			nrofResponseReqCreated++;
 		}
 	}
-	
-	
+
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 
-		this.nrofStarted++;
+		nrofStarted++;
 	}
-	
 
+	
 	@Override
 	public void done() {
-		write("Message stats for scenario " + getScenarioName() + 
-				"\nsim_time: " + format(getSimTime()));
 		double deliveryProb = 0; // delivery probability
 		double responseProb = 0; // request-response success probability
 		double overHead = Double.NaN;	// overhead ratio
 		
-		if (this.nrofCreated > 0) {
-			deliveryProb = (1.0 * this.nrofDelivered) / this.nrofCreated;
+		write("Message stats for scenario " + getScenarioName() + 
+				"\nsim_time: " + format(getSimTime()));
+		
+		if (nrofCreated > 0) {
+			deliveryProb = (1.0 * nrofDelivered) / nrofCreated;
 		}
-		if (this.nrofDelivered > 0) {
-			overHead = (1.0 * (this.nrofRelayed - this.nrofDelivered)) /
-				this.nrofDelivered;
+		if (nrofDelivered > 0) {
+			overHead = (1.0 * (nrofDuplicated + nrofRelayed - nrofDelivered)) / nrofDelivered;
 		}
-		if (this.nrofResponseReqCreated > 0) {
-			responseProb = (1.0* this.nrofResponseDelivered) / 
-				this.nrofResponseReqCreated;
+		if (nrofResponseReqCreated > 0) {
+			responseProb = (1.0* nrofResponseDelivered) / nrofResponseReqCreated;
 		}
 		
-		String statsText = "created: " + this.nrofCreated + 
-			"\nstarted: " + this.nrofStarted + 
-			"\nrelayed: " + this.nrofRelayed +
-			"\naborted: " + this.nrofAborted +
-			"\ninterfered: " + this.nrofInterfered +
-			"\ndropped: " + this.nrofDropped +
-			"\nremoved: " + this.nrofRemoved +
-			"\ndelivered: " + this.nrofDelivered +
-			"\ndelivery_prob: " + format(deliveryProb) +
-			"\nresponse_prob: " + format(responseProb) + 
-			"\noverhead_ratio: " + format(overHead) + 
-			"\nlatency_avg: " + getAverage(this.latencies) +
-			"\nlatency_med: " + getMedian(this.latencies) + 
-			"\nhopcount_avg: " + getIntAverage(this.hopCounts) +
-			"\nhopcount_med: " + getIntMedian(this.hopCounts) + 
-			"\nbuffertime_avg: " + getAverage(this.msgBufferTime) +
-			"\nbuffertime_med: " + getMedian(this.msgBufferTime) +
-			"\nrtt_avg: " + getAverage(this.rtt) +
-			"\nrtt_med: " + getMedian(this.rtt)
-			;
-		
+		String statsText = "created: " + nrofCreated + 
+							"\nstarted: " + nrofStarted + 
+							"\nrelayed: " + nrofRelayed + 
+							"\nduplicated: " + nrofRelayed +
+							"\naborted: " + nrofAborted +
+							"\ninterfered: " + nrofInterfered +
+							"\ndropped: " + nrofDropped +
+							"\nremoved: " + nrofRemoved +
+							"\ndelivered: " + nrofDelivered +
+							"\ndelivery_prob: " + format(deliveryProb) +
+							"\nresponse_prob: " + format(responseProb) + 
+							"\noverhead_ratio: " + format(overHead) + 
+							"\nlatency_avg: " + getAverage(latencies) +
+							"\nlatency_med: " + getMedian(latencies) + 
+							"\nhopcount_avg: " + getIntAverage(hopCounts) +
+							"\nhopcount_med: " + getIntMedian(hopCounts) + 
+							"\nbuffertime_avg: " + getAverage(msgBufferTime) +
+							"\nbuffertime_med: " + getMedian(msgBufferTime) +
+							"\nrtt_avg: " + getAverage(rtt) +
+							"\nrtt_med: " + getMedian(rtt);
 		write(statsText);
+		
 		super.done();
 	}
 	

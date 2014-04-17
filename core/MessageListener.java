@@ -54,10 +54,11 @@ public interface MessageListener {
 	 * @param m The message that was transferred
 	 * @param from Node where the message was transferred from
 	 * @param to Node where the message was transferred to
-	 * @param firstDelivery Was the target node final destination of the message
-	 * and received this message for the first time.
+	 * @param firstDelivery Was this the first time the node received the message?
+	 * @param finalTarget Was the target node the final recipient of the message?
 	 */
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery);
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget);
 
 	/**
 	 * Method is called when a message cannot be transferred successfully because

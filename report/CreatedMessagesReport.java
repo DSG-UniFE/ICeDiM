@@ -46,7 +46,8 @@ public class CreatedMessagesReport extends Report implements MessageListener {
 
 	@Override
 	public void registerNode(DTNHost node) {}
-	public void messageTransferred(Message m, DTNHost f, DTNHost t,boolean b) {}
+	public void messageTransferred(Message m, DTNHost f, DTNHost t,
+									boolean firstDelivery, boolean finalTarget) {}
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}

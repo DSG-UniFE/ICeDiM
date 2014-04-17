@@ -26,6 +26,7 @@ public class CSVPrioritizedMessageDeliveryReport extends Report implements Messa
 	@Override
 	public void init() {
 		super.init();
+		
 		write(HEADER);
 	}
 	
@@ -41,19 +42,24 @@ public class CSVPrioritizedMessageDeliveryReport extends Report implements Messa
 	}
 
 	@Override
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
 		if (isWarmupID(m.getID())) {
 			// Ignore messages created during warmup
 			return;
 		}
-		if (firstDelivery && to.equals(m.getTo())) {
+		
+		if (firstDelivery && finalTarget) {
 			reportValues(m, from, to, "first_delivery");
 		}
-		else if (to.equals(m.getTo())) {
+		else if (finalTarget) {
 			reportValues(m, from, to, "duplicate_delivery");
 		}
-		else {
+		else if (firstDelivery) {
 			reportValues(m, from, to, "relay");
+		}
+		else {
+			reportValues(m, from, to, "duplicate_relay");
 		}
 	}
 

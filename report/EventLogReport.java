@@ -22,10 +22,12 @@ public class EventLogReport extends Report
 
 	/** Extra info for message relayed event ("relayed"): {@value} */
 	public static final String MESSAGE_TRANS_RELAYED = "R";
+	/** Extra info for message relayed event ("relayed again"): {@value} */
+	public static final String MESSAGE_TRANS_RELAYED_AGAIN = "RA";
 	/** Extra info for message relayed event ("delivered"): {@value} */
 	public static final String MESSAGE_TRANS_DELIVERED = "D";
 	/** Extra info for message relayed event ("delivered again"): {@value} */
-	public static final String MESSAGE_TRANS_DELIVERED_AGAIN = "A";
+	public static final String MESSAGE_TRANS_DELIVERED_AGAIN = "DA";
 	
 	/**
 	 * Processes a log event by writing a line to the report file
@@ -68,16 +70,19 @@ public class EventLogReport extends Report
 
 	@Override
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
-			boolean firstDelivery) {
+									boolean firstDelivery, boolean finalTarget) {
 		String extra;
-		if (firstDelivery) {
+		if (firstDelivery && finalTarget) {
 			extra = MESSAGE_TRANS_DELIVERED;
 		}
-		else if (to == m.getTo()) {
+		else if (finalTarget) {
 			extra = MESSAGE_TRANS_DELIVERED_AGAIN;
 		}
-		else {
+		else if (firstDelivery) {
 			extra = MESSAGE_TRANS_RELAYED;
+		}
+		else {
+			extra = MESSAGE_TRANS_RELAYED_AGAIN;
 		}
 		
 		processEvent(StandardEventsReader.DELIVERED, from, to, m, extra);

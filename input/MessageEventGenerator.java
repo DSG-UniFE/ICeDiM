@@ -171,8 +171,8 @@ public class MessageEventGenerator implements EventQueue {
 	}
 	
 	/**
-	 * Draws a destination host address that is different from the "from"
-	 * address
+	 * Draws a destination host address that is different from
+	 * the "from" address
 	 * @param hostRange The range of hosts
 	 * @param from the "from" address
 	 * @return a destination address from the range, but different from "from"
@@ -180,8 +180,7 @@ public class MessageEventGenerator implements EventQueue {
 	protected int drawToAddress(int hostRange[], int from) {
 		int to;
 		do {
-			to = this.toHostRange != null ? drawHostAddress(this.toHostRange) :
-											drawHostAddress(this.hostRange);
+			to = toHostRange != null ? drawHostAddress(toHostRange) : drawHostAddress(this.hostRange);
 		} while (from == to);
 		
 		return to;

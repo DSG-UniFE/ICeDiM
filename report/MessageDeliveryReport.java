@@ -15,7 +15,10 @@ import core.MessageListener;
  * For output syntax, see {@link #HEADER}.
  */
 public class MessageDeliveryReport extends Report implements MessageListener {
+
+	/** Description of the format */
 	public static String HEADER="# time  created  delivered  delivered/created";
+	
 	private int created;
 	private int delivered;
 
@@ -37,21 +40,43 @@ public class MessageDeliveryReport extends Report implements MessageListener {
 	@Override
 	public void registerNode(DTNHost node) {}
 
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, 
-			boolean firstDelivery) {
-		if (firstDelivery && !isWarmup() && !isWarmupID(m.getID())) {
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+		
+		if (firstDelivery && finalTarget) {
 			delivered++;
 			reportValues();
 		}
 	}
 
+	@Override
 	public void newMessage(Message m) {
 		if (isWarmup()) {
 			addWarmupID(m.getID());
+			
 			return;
 		}
 		created++;
 		reportValues();
+	}
+
+	// nothing to implement for the rest
+	@Override
+	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	@Override
+	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
+	@Override
+	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
+
+	@Override
+	public void done() {
+		super.done();
 	}
 	
 	/**
@@ -59,20 +84,7 @@ public class MessageDeliveryReport extends Report implements MessageListener {
 	 */
 	private void reportValues() {
 		double prob = (1.0 * delivered) / created;
-		write(format(getSimTime()) + " " + created + " " + delivered + 
-				" " + format(prob));
-	}
-
-	// nothing to implement for the rest
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
-	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
-
-	@Override
-	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
-
-	@Override
-	public void done() {
-		super.done();
+		
+		write(format(getSimTime()) + " " + created + " " + delivered + " " + format(prob));
 	}
 }

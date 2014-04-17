@@ -31,10 +31,11 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	protected double lastPingSentTime[];
 	
 	protected ArrayList<String> receivedMsgIDs;
-	protected SubscriptionListManager nodeSubscriptions;
 	protected WorldState worldState;
 	
 	protected HelloMessageGen hmGenerator;
+	protected SubscriptionListManager nodeSubscriptions;
+	public final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
 
 	public DisServiceRouter(Settings s) {
 		super(s);
@@ -48,14 +49,23 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 		}
 		this.lastPingSentTime = null;	// It will be allocated in the init() method
 		
-		this.receivedMsgIDs = new ArrayList<String>();
+		this.receivedMsgIDs = new ArrayList<String>();		
+		this.worldState = new WorldState(this.getHost(), s);
+		
 		try {
 			this.nodeSubscriptions = new SubscriptionListManager(s);
 		} catch (ParseException e) {
 			throw new SimError("Error parsing configuration file");
 		}
+		int subpubDisMode = s.contains(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) ?
+							s.getInt(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) :
+							SubscriptionBasedDisseminationMode.FLEXIBLE.ordinal();
+		if ((subpubDisMode < 0) || (subpubDisMode > SubscriptionBasedDisseminationMode.values().length)) {
+			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S + " value " +
+								"in the settings file is out of range");
+		}
+		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
 		
-		this.worldState = new WorldState(this.getHost(), s);
 		this.hmGenerator = new HelloMessageGen(this.receivedMsgIDs, this.nodeSubscriptions);
 	}
 
@@ -71,6 +81,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 		
 		this.worldState = new WorldState(r.getHost(), r.worldState);
 		this.hmGenerator = new HelloMessageGen(this.receivedMsgIDs, this.nodeSubscriptions);
+		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
 	}
 	
 	@Override
@@ -110,8 +121,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			 * Check if we have some messages which should be transferred
 			 * Transfer most requested message or the one less forwarded
 			 */
-			List<Message> sortedMessageList = sortListOfMessages(
-												new ArrayList<Message>(getMessageCollection()));
+			List<Message> sortedMessageList = sortAllReceivedMessagesForForwarding();
 			List<NeighborInfo> nearbyNodes = worldState.getActiveNeighborInfosByNetworkInterface(ni);
 			
 			if ((nearbyNodes.size() == 0) || (sortedMessageList.size() == 0)) {
@@ -178,7 +188,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	/**
 	 * Tries to send all messages that this router is carrying to all
 	 * connections this node has. Messages are ordered using the 
-	 * {@link MessageRouter#sortByQueueMode(List)}. See 
+	 * {@link MessageRouter#sortByPrioritizationMode(List)}. See 
 	 * {@link #tryBroadcastOneMessage(List, List)} for sending details.
 	 * @return The connections that started a transfer or null if no connection
 	 * accepted a message.
@@ -282,7 +292,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			if (m.getTtl() <= 0) {
 				if (!receivedMsgIDs.remove(m.getID())) {
 					throw new SimError("Impossible to find message " +
-							m.getID() + " among receivedMsgIDs");
+										m.getID() + " among receivedMsgIDs");
 				}
 			}
 		}

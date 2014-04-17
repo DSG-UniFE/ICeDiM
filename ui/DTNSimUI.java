@@ -9,6 +9,7 @@ import java.util.Vector;
 import report.Report;
 import core.ApplicationListener;
 import core.ConnectionListener;
+import core.DTNHost;
 import core.MessageListener;
 import core.MovementListener;
 import core.Settings;
@@ -95,8 +96,7 @@ public abstract class DTNSimUI {
 			// add reports
 			for (int i=1, n = settings.getInt(NROF_REPORT_S); i<=n; i++){
 				String reportClass = settings.getSetting(REPORT_S + i);
-				addReport((Report)settings.createObject(REPORT_PAC + 
-						reportClass));	
+				addReport((Report) settings.createObject(REPORT_PAC + reportClass));
 			}
 
 			double warmupTime = 0;
@@ -139,6 +139,9 @@ public abstract class DTNSimUI {
 	protected void addReport(Report r) {
 		if (r instanceof MessageListener) {
 			scen.addMessageListener((MessageListener)r);
+			for (DTNHost host : scen.getHosts()) {
+				((MessageListener) r).registerNode(host);
+			}
 		}
 		if (r instanceof ConnectionListener) {
 			scen.addConnectionListener((ConnectionListener)r);

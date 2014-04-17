@@ -40,12 +40,14 @@ public class DistanceDelayReport extends Report implements MessageListener {
 	/**
 	 * This is called when a message is transferred between nodes
 	 */
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
-		if (isWarmupID(m.getID()) || !firstDelivery) {
-			return; // report is only interested of first deliveries  
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID()) || !(firstDelivery && finalTarget)) {
+			return; // report is only interested in first deliveries to target nodes  
 		}
 		
-		InfoTuple info = this.creationInfos.remove(m.getID());
+		InfoTuple info = creationInfos.remove(m.getID());
 		if (info == null) {
 			return; /* message was created before the warm up period */
 		}
@@ -63,9 +65,9 @@ public class DistanceDelayReport extends Report implements MessageListener {
 			return;
 		}
 		
-		this.creationInfos.put(m.getID(), new InfoTuple(getSimTime(), 
-								m.getFrom().getLocation().clone(),
-								m.getTo().getLocation().clone()));
+		creationInfos.put(m.getID(), new InfoTuple(getSimTime(),
+							m.getFrom().getLocation().clone(),
+							m.getTo().getLocation().clone()));
 	}
 
 	/**
@@ -91,13 +93,16 @@ public class DistanceDelayReport extends Report implements MessageListener {
 
 	@Override
 	public void registerNode(DTNHost node) {}
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
-
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 
+	@Override
 	public void done() {
 		// report rest of the messages as 'not delivered' (time == -1)
 		for (String id : creationInfos.keySet()) {

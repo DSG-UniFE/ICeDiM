@@ -10,13 +10,11 @@ import core.MessageListener;
 
 /**
  * Reports delivered messages
- * report: 
- *  message_id creation_time deliver_time (duplicate)
+ * report:
+ * 			message_id creation_time deliver_time (duplicate)
  */
 public class MessageReport extends Report implements MessageListener {
-	public static final String HEADER =
-	    "# messages: ID, start time, end time";
-	/** all message delays */
+	public static final String HEADER = "# messages: ID, start time, end time";
 	
 	/**
 	 * Constructor.
@@ -33,17 +31,19 @@ public class MessageReport extends Report implements MessageListener {
 	
 	@Override
 	public void registerNode(DTNHost node) {}
-	
+
+	@Override
 	public void newMessage(Message m) {}
-	
-	public void messageTransferred(Message m, DTNHost from, DTNHost to, boolean firstDelivery) {
-		if (firstDelivery) {
+
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (firstDelivery && finalTarget) {
 			write(m.getID() + " " + format(m.getCreationTime()) + " " + format(getSimTime()));
-		} else {
-			if (to.getAddress() == m.getTo().getAddress()) {
-				write(m.getID() + " " + format(m.getCreationTime()) + " " +
-				format(getSimTime()) + " duplicate");
-			}
+		}
+		else if (finalTarget) {
+			write(m.getID() + " " + format(m.getCreationTime()) +
+					" " + format(getSimTime()) + " duplicate");
 		}
 	}
 
@@ -53,10 +53,12 @@ public class MessageReport extends Report implements MessageListener {
 	}
 	
 	// nothing to implement for the rest
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
-
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 

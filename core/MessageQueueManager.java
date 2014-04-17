@@ -8,9 +8,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import messageForwardingManager.MessageForwardingManager;
+import messageForwardingOrderManager.MessageForwardingOrderManager;
 
-import strategies.MessageOrderingStrategy;
+import strategies.MessagePrioritizationStrategy;
 
 /**
  * This class models the queue of messages in memory.
@@ -27,9 +27,9 @@ public class MessageQueueManager {
 	/** Message buffer size -setting id ({@value}). Integer value in bytes.*/
 	public static final String B_SIZE_S = "bufferSize";
 	/** string that identifies the queueing mode in the settings file */
-	public static final String SEND_QUEUE_MODE_S = "sendQueueMode";
+	public static final String MESSAGE_PRIORITY_STRATEGY_S = "messagePriorityStrategy";
 	/** string that identifies the forwarding manager in the settings file */
-	public static final String MESSAGE_FORWARDING_MANAGER_S = "messageForwardingManager";
+	public static final String MESSAGE_FORWARDING_MANAGER_S = "messageForwardingOrderManager";
 
 	/** size of the buffer */
 	private final int bufferSize;
@@ -37,37 +37,37 @@ public class MessageQueueManager {
 	private HashMap<String, Message> messages;
 
 	/** The manager that implements the message forwarding policy */
-	MessageForwardingManager messageForwardingManager;
-	/** Strategy which implements the specified queueing mode */
-	public MessageOrderingStrategy messageOrderingStrategy;
+	private MessageForwardingOrderManager messageForwardingManager;
+	/** Strategy which implements the specified prioritization strategy */
+	public MessagePrioritizationStrategy messagePrioritizationStrategy;
 
 	public MessageQueueManager(Settings s) {
-		// Default buffer size is large (2GB)
+		// Default buffer size is large (~2GB)
 		this.bufferSize = s.contains(B_SIZE_S) ? s.getInt(B_SIZE_S) : Integer.MAX_VALUE;
 		this.messages = new HashMap<String, Message>();
 		
 		int sendQueueMode = 0;
-		if (s.contains(SEND_QUEUE_MODE_S)) {
-			sendQueueMode = s.getInt(SEND_QUEUE_MODE_S);
+		if (s.contains(MESSAGE_PRIORITY_STRATEGY_S)) {
+			sendQueueMode = s.getInt(MESSAGE_PRIORITY_STRATEGY_S);
 			if ((sendQueueMode < 0) || (sendQueueMode >=
-					MessageOrderingStrategy.QueueForwardingOrderMode.values().length)) {
-				throw new SettingsError("Invalid value for " + s.getFullPropertyName(SEND_QUEUE_MODE_S));
+					MessagePrioritizationStrategy.QueuePrioritizationMode.values().length)) {
+				throw new SettingsError("Invalid value for " + s.getFullPropertyName(MESSAGE_PRIORITY_STRATEGY_S));
 			}
 		}
-		this.messageOrderingStrategy = MessageOrderingStrategy.MessageForwardingStrategyFactory(
-				MessageOrderingStrategy.QueueForwardingOrderMode.values()[sendQueueMode]);
+		this.messagePrioritizationStrategy = MessagePrioritizationStrategy.MessageForwardingStrategyFactory(
+				MessagePrioritizationStrategy.QueuePrioritizationMode.values()[sendQueueMode]);
 
 		int messageForwarderType = 0;
 		if (s.contains(MESSAGE_FORWARDING_MANAGER_S)) {
 			messageForwarderType = s.getInt(MESSAGE_FORWARDING_MANAGER_S);
 			if ((messageForwarderType < 0) || (messageForwarderType >=
-					MessageForwardingManager.MessageForwardingManagerImplementation.values().length)) {
+					MessageForwardingOrderManager.MessageForwardingManagerImplementation.values().length)) {
 				throw new SettingsError("Invalid value for " + s.getFullPropertyName(MESSAGE_FORWARDING_MANAGER_S));
 			}
 		}
-		this.messageForwardingManager = MessageForwardingManager.messageForwardingManagerFactory(
-				MessageForwardingManager.MessageForwardingManagerImplementation.values()[messageForwarderType],
-				this, this.messageOrderingStrategy);
+		this.messageForwardingManager = MessageForwardingOrderManager.messageForwardingManagerFactory(s,
+			MessageForwardingOrderManager.MessageForwardingManagerImplementation.values()[messageForwarderType],
+			this, this.messagePrioritizationStrategy);
 	}
 
 	/** Copy constructor */
@@ -76,12 +76,17 @@ public class MessageQueueManager {
 		this.messages = new HashMap<String, Message>();
 		
 		// Create a new messageForwardingStrategy of the same type of the copied MessageQueueManager
-		this.messageOrderingStrategy = MessageOrderingStrategy.MessageForwardingStrategyFactory(
-											mqm.messageOrderingStrategy.getQueueForwardingMode());
+		this.messagePrioritizationStrategy = MessagePrioritizationStrategy.MessageForwardingStrategyFactory(
+										mqm.messagePrioritizationStrategy.getQueueForwardingMode());
+		this.messageForwardingManager = mqm.messageForwardingManager.replicate();
 	}
 	
 	public Message getMessage(String messageID) {
 		return messages.get(messageID);
+	}
+	
+	public Collection<Message> getMessageCollection() {
+		return messages.values();
 	}
 	
 	public boolean hasMessage(String messageID) {
@@ -96,7 +101,7 @@ public class MessageQueueManager {
 		return messages.size();
 	}
 	
-	public void addMessageToQueue(Message m) {		
+	public void addMessageToQueue(Message m) {
 		setForwardedTimesToMinAmongMessages(m);
 		messages.put(m.getID(), m);
 	}
@@ -105,12 +110,21 @@ public class MessageQueueManager {
 		return messages.remove(messageID);
 	}
 	
-	public Collection<Message> getMessageCollection() {
-		return messages.values();
+	public List<Message> sortBufferedMessagesForForwarding() {
+		List<Message> inputList = getMessageList();
+		// First, sort the list according to the configured priority strategy...
+		messagePrioritizationStrategy.sortList(inputList);
+		
+		// ...and second, return the list reordered according to the forwarding strategy.
+		return messageForwardingManager.orderMessageListForForwarding(inputList);
 	}
 	
-	public List<Message> getMessageList() {
-		return new ArrayList<Message>(messages.values());
+	public List<Message> sortMessageListForForwarding(List<Message> inputList) {
+		// First, sort the list according to the configured priority strategy...
+		messagePrioritizationStrategy.sortList(inputList);
+		
+		// ...and second, return the list reordered according to the forwarding strategy.
+		return messageForwardingManager.orderMessageListForForwarding(inputList);
 	}
 	
 	public int getBufferSize() {
@@ -126,18 +140,22 @@ public class MessageQueueManager {
 		return getBufferSize() - occupancy;
 	}
 
-	public void sortByQueueMode(List<Message> inputList) {
-		messageOrderingStrategy.sortList(inputList);
+	public void sortByPrioritizationMode(List<Message> inputList) {
+		messagePrioritizationStrategy.sortList(inputList);
 	}
 
-	public void reverseOrderByQueueMode(List<Message> inputList) {
-		messageOrderingStrategy.sortListInReverseOrder(inputList);
+	public void sortByReversedPrioritizationMode(List<Message> inputList) {
+		messagePrioritizationStrategy.sortListInReverseOrder(inputList);
 	}
 
-	public int compareByQueueMode(Message m1, Message m2) {
-		return messageOrderingStrategy.comparatorMethod(m1, m2);
+	public int compareByPrioritizationMode(Message m1, Message m2) {
+		return messagePrioritizationStrategy.comparatorMethod(m1, m2);
 	}
+
 	
+	private List<Message> getMessageList() {
+		return new ArrayList<Message>(messages.values());
+	}
 	
 	private void setForwardedTimesToMinAmongMessages(Message m) {
 		if (messages.size() > 0) {

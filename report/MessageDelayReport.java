@@ -17,8 +17,9 @@ import core.MessageListener;
  * Ignores the messages that were created during the warm up period.
  */
 public class MessageDelayReport extends Report implements MessageListener {
-	public static final String HEADER =
-	    "# messageDelay  cumulativeProbability";
+	/** Description of the format */
+	public static final String HEADER = "# messageDelay  cumulativeProbability";
+	
 	/** all message delays */
 	private List<Double> delays;
 	private int nrofCreated;
@@ -33,27 +34,35 @@ public class MessageDelayReport extends Report implements MessageListener {
 	@Override
 	public void init() {
 		super.init();
+		
+		delays = new ArrayList<Double>();
+		nrofCreated = 0;
+		
 		write(HEADER);
-		this.delays = new ArrayList<Double>();
-		this.nrofCreated = 0;
 	}
 	
 	@Override
 	public void registerNode(DTNHost node) {}
-	
+
+	@Override
 	public void newMessage(Message m) {
 		if (isWarmup()) {
 			addWarmupID(m.getID());
 		}
 		else {
-			this.nrofCreated++;
+			nrofCreated++;
 		}
 	}
-	
+
+	@Override
 	public void messageTransferred(Message m, DTNHost from, DTNHost to, 
-			boolean firstDelivery) {
-		if (firstDelivery && !isWarmupID(m.getID())) {
-			this.delays.add(getSimTime() - m.getCreationTime());
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+		
+		if (firstDelivery && finalTarget) {
+			delays.add(getSimTime() - m.getCreationTime());
 		}
 		
 	}
@@ -63,24 +72,27 @@ public class MessageDelayReport extends Report implements MessageListener {
 		if (delays.size() == 0) {
 			write("# no messages delivered in sim time "+format(getSimTime()));
 			super.done();
+			
 			return;
 		}
+		
 		double cumProb = 0; // cumulative probability
-		
 		java.util.Collections.sort(delays);
-		
 		for (int i=0; i < delays.size(); i++) {
 			cumProb += 1.0/nrofCreated;
 			write(format(delays.get(i)) + " " + format(cumProb));
 		}
+		
 		super.done();
 	}
 	
 	// nothing to implement for the rest
+	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
-	
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 

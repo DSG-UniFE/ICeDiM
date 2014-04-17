@@ -12,7 +12,7 @@ import core.SimError;
  * @author Alex
  *
  */
-public abstract class MessageOrderingStrategy {
+public abstract class MessagePrioritizationStrategy {
 	/**
 	 * Message/fragment sending queue type -setting id ({@value}). 
 	 * This setting affects the order the messages and fragments are sent if the
@@ -26,17 +26,17 @@ public abstract class MessageOrderingStrategy {
 	 * <LI/> 3 : Prioritized_LFF_FIFO (Prioritized_FIFO with least forwarded messages sent first - attempt to be fairer)
 	 * </UL>
 	 */ 
-	public static enum QueueForwardingOrderMode {Random, FIFO, Prioritized_FIFO, Prioritized_LFF_FIFO}
+	public static enum QueuePrioritizationMode {Random, FIFO, Prioritized_FIFO, Prioritized_LFF_FIFO}
 	
-	private final QueueForwardingOrderMode queueForwardingMode;
+	private final QueuePrioritizationMode queueForwardingMode;
 	
 	abstract public void sortList(List<Message> inputList);
 	abstract public void sortListInReverseOrder(List<Message> inputList);
 	abstract public int comparatorMethod(Message m1, Message m2);
 	
-	static public MessageOrderingStrategy MessageForwardingStrategyFactory
-									(QueueForwardingOrderMode qfom) {
-		switch (qfom) {
+	static public MessagePrioritizationStrategy MessageForwardingStrategyFactory
+													(QueuePrioritizationMode qpm) {
+		switch (qpm) {
 		case Random:
 			return RandomForwardingOrder.getForwardingOrderInstance();
 		case FIFO:
@@ -51,11 +51,11 @@ public abstract class MessageOrderingStrategy {
 		}
 	}
 	
-	protected MessageOrderingStrategy (QueueForwardingOrderMode qfom) {
+	protected MessagePrioritizationStrategy (QueuePrioritizationMode qfom) {
 		this.queueForwardingMode = qfom;
 	}
 	
-	public QueueForwardingOrderMode getQueueForwardingMode() {
+	public QueuePrioritizationMode getQueueForwardingMode() {
 		return queueForwardingMode;
 	}
 
