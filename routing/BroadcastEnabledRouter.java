@@ -271,7 +271,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		}
 		
 		// Check if at least one interface can do a broadcast
-		for (NetworkInterface ni : this.getHost().getInterfaces()) {
+		for (NetworkInterface ni : getHost().getInterfaces()) {
 			if (ni.isReadyToBeginTransfer()) {
 				return true;
 			}
@@ -421,6 +421,10 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		Collections.shuffle(networkInterfaces);
 		
 		for (NetworkInterface ni : networkInterfaces) {
+			if (!ni.isReadyToBeginTransfer()) {
+				// Skip busy interfaces
+				continue;
+			}
 			List<Message> deliverableMessages = sortListOfMessagesForForwarding(
 												getDeliverableMessagesForNetworkInterface(ni));
 			for (Message m : deliverableMessages) {
