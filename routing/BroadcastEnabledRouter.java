@@ -417,14 +417,10 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * one was started, or {@code null} otherwise.
 	 */
 	protected NetworkInterface exchangeDeliverableMessages() {
-		List<NetworkInterface> networkInterfaces = getHost().getInterfaces();
+		List<NetworkInterface> networkInterfaces = getHost().getIdleInterfaces();
 		Collections.shuffle(networkInterfaces);
 		
 		for (NetworkInterface ni : networkInterfaces) {
-			if (!ni.isReadyToBeginTransfer()) {
-				// Skip busy interfaces
-				continue;
-			}
 			List<Message> deliverableMessages = sortListOfMessagesForForwarding(
 												getDeliverableMessagesForNetworkInterface(ni));
 			for (Message m : deliverableMessages) {
