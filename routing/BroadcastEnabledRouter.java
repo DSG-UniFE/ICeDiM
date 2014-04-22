@@ -258,29 +258,6 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	}
 	
 	/**
-	 * Makes rudimentary checks (that we have at least one message and one
-	 * connection) about can this router start transfer.
-	 * @return True if router can start transfer, false if not
-	 */
-	protected boolean canStartTransfer() {
-		if (getNrofMessages() == 0) {
-			return false;
-		}
-		if (getConnections().size() == 0) {
-			return false;
-		}
-		
-		// Check if at least one interface can do a broadcast
-		for (NetworkInterface ni : getHost().getInterfaces()) {
-			if (ni.isReadyToBeginTransfer()) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	/**
 	 * Returns a list of those messages whose recipient 
 	 * is among the neighboring nodes.
 	 * @return a List of messages to be delivered to the
@@ -417,7 +394,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * one was started, or {@code null} otherwise.
 	 */
 	protected NetworkInterface exchangeDeliverableMessages() {
-		List<NetworkInterface> networkInterfaces = getHost().getIdleInterfaces();
+		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
 		Collections.shuffle(networkInterfaces);
 		
 		for (NetworkInterface ni : networkInterfaces) {

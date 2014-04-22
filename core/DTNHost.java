@@ -279,20 +279,6 @@ public class DTNHost implements Comparable<DTNHost> {
 	}
 
 	/**
-	 * Returns all the idle {@link NetworkInterface} of the node
-	 */
-	public List<NetworkInterface> getIdleInterfaces() {
-		ArrayList<NetworkInterface> availableInterfaces = new ArrayList<NetworkInterface>();
-		for (NetworkInterface ni : net) {
-			if (ni.isReadyToBeginTransfer()) {
-				availableInterfaces.add(ni);
-			}
-		}
-		
-		return availableInterfaces;
-	}
-
-	/**
 	 * Force a connection event
 	 */
 	public void forceConnection(DTNHost anotherHost, String interfaceId, 
