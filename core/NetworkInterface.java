@@ -143,7 +143,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		comBus.subscribe(SPEED_ID, this);
 		
 		optimizer = ConnectivityGrid.ConnectivityGridFactory(
-				this.interfacetype.hashCode(), transmitRange);
+					interfacetype.hashCode(), transmitRange);
 		optimizer.addInterface(this);
 	}
 
@@ -167,7 +167,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param iModel InterferenceModel instance
 	 */
 	public void setInterferenceModel(InterferenceModel iModel) {
-		this.interferenceModel = iModel;
+		interferenceModel = iModel;
 	}
 
 	/**
@@ -184,7 +184,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return The address (integer)
 	 */
 	public int getAddress() {
-		return this.address;
+		return address;
 	}
 
 	/**
@@ -192,7 +192,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return the transmit range
 	 */
 	public double getTransmitRange() {
-		return this.transmitRange;
+		return transmitRange;
 	}
 
 	/**
@@ -200,7 +200,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return the transmit speed
 	 */
 	public int getTransmitSpeed() {
-		return this.transmitSpeed;
+		return transmitSpeed;
 	}
 
 	/**
@@ -208,7 +208,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return a list of currently connected connections
 	 */
 	public List<Connection> getConnections() {
-		return this.connections;
+		return connections;
 	}
 	
 	public boolean isConnectedTo(NetworkInterface ni) {
@@ -329,14 +329,14 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	protected void connect(Connection con, NetworkInterface anotherInterface) {
 
-		this.connections.add(con);
+		connections.add(con);
 		notifyConnectionListeners(CON_UP, anotherInterface.getHost());
 
 		// set up bidirectional connection
 		anotherInterface.getConnections().add(con);
 
 		// inform routers about the connection
-		this.host.connectionUp(con);
+		host.connectionUp(con);
 		anotherInterface.getHost().connectionUp(con);
 	}
 
@@ -357,7 +357,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		}
 
 		// Notify the hosts that the connection is down
-		this.host.connectionDown(con);
+		host.connectionDown(con);
 		anotherInterface.getHost().connectionDown(con);
 	}
 
@@ -374,8 +374,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 			smallerRange = myRange;
 		}
 
-		return host.getLocation().distance(
-				anotherInterface.getHost().getLocation()) <= smallerRange;
+		return host.getLocation().distance(anotherInterface.getHost().getLocation()) <= smallerRange;
 	}
 	
 	/**
@@ -384,8 +383,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return True if the two hosts are connected
 	 */
 	protected boolean isConnected(NetworkInterface netInterface) {
-		for (int i = 0; i < this.connections.size(); i++) {
-			if (this.connections.get(i).getOtherInterface(this) == netInterface) {
+		for (int i = 0; i < connections.size(); i++) {
+			if (connections.get(i).getOtherInterface(this) == netInterface) {
 				return true;
 			}
 		}
@@ -400,8 +399,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	protected void ensurePositiveValue(double value, String settingName) {
 		if (value < 0) {
-			throw new SettingsError("Negative value (" + value + 
-					") not accepted for setting " + settingName);
+			throw new SettingsError("Negative value (" + value +
+									") not accepted for setting " + settingName);
 		}
 	}
 	
@@ -487,7 +486,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		}
 		
 		// We need at least one connection up & idle
-		for (Connection con : this.connections) {
+		for (Connection con : connections) {
 			if (con.isUp() && con.isIdle()) {
 				return true;
 			}
@@ -619,16 +618,16 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param otherHost The other host on the other end of the connection
 	 */
 	private void notifyConnectionListeners(int type, DTNHost otherHost) {
-		if (this.cListeners == null) {
+		if (cListeners == null) {
 			return;
 		}
-		for (ConnectionListener cl : this.cListeners) {
+		for (ConnectionListener cl : cListeners) {
 			switch (type) {
 			case CON_UP:
-				cl.hostsConnected(this.host, otherHost);
+				cl.hostsConnected(host, otherHost);
 				break;
 			case CON_DOWN:
-				cl.hostsDisconnected(this.host, otherHost);
+				cl.hostsDisconnected(host, otherHost);
 				break;
 			default:
 				assert false : type;	// invalid type code
@@ -644,13 +643,13 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public void moduleValueChanged(String key, Object newValue) {
 		if (key.equals(SCAN_INTERVAL_ID)) {
-			this.scanInterval = (Double)newValue;	
+			scanInterval = (Double)newValue;	
 		}
 		else if (key.equals(SPEED_ID)) {
-			this.transmitSpeed = (Integer)newValue;	
+			transmitSpeed = (Integer)newValue;	
 		}
 		else if (key.equals(RANGE_ID)) {
-			this.transmitRange = (Double)newValue;	
+			transmitRange = (Double)newValue;	
 		}
 		else {
 			throw new SimError("Unexpected combus ID " + key);
@@ -673,8 +672,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public void destroyConnection(NetworkInterface anotherInterface) {
 		DTNHost anotherHost = anotherInterface.getHost();
-		for (int i=0; i < this.connections.size(); i++) {
-			if (this.connections.get(i).getOtherNode(this.host) == anotherHost){
+		for (int i=0; i < connections.size(); i++) {
+			if (connections.get(i).getOtherNode(host) == anotherHost){
 				removeConnectionByIndex(i, anotherInterface);
 			}
 		}
@@ -688,7 +687,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param anotherInterface The interface of the other host
 	 */
 	private void removeConnectionByIndex(int index, NetworkInterface anotherInterface) {
-		Connection con = this.connections.get(index);
+		Connection con = connections.get(index);
 		DTNHost anotherNode = anotherInterface.getHost();
 		con.setUpState(false);
 		notifyConnectionListeners(CON_DOWN, anotherNode);
@@ -700,7 +699,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 					anotherNode);   
 		}
 
-		this.host.connectionDown(con);
+		host.connectionDown(con);
 		anotherNode.connectionDown(con);
 
 		connections.remove(index);
@@ -762,8 +761,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return a string representation of the object.
 	 */
 	public String toString() {
-		return "net interface " + this.address + " of " + this.host + 
-			". Connections: " +	this.connections;
+		return "Network interface " + address + " of " + host +
+				". Connections: " + connections;
 	}
 
 }
