@@ -435,8 +435,27 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @return true if the interface is busy, false otherwise
 	 */
 	public boolean isSendingData() {
-		for (Connection con : this.connections) {
+		for (Connection con : connections) {
 			if (con.isSenderInterface(this)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Informs the client wheter this interface is sending
+	 * the {@link Message} with the specified ID onto
+	 * any of its connections.
+	 * @param msgID A {@link String} specifying the ID
+	 * of the {@link Message} to check.
+	 * @return {@code true} if the {@link Message} with the ID
+	 * passed as parameter is being sent, {@code false} otherwise.
+	 */
+	public boolean isSendingMessage(String msgID) {
+		for (Connection con : connections) {
+			if (con.isSendingMessage(getHost(), msgID)) {
 				return true;
 			}
 		}
@@ -451,7 +470,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * false otherwise
 	 */
 	public boolean isReceivingData() {
-		for (Connection con : this.connections) {
+		for (Connection con : connections) {
 			if (con.isReceiverInterface(this)) {
 				return true;
 			}
@@ -467,8 +486,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * message, false otherwise
 	 */
 	public boolean isReceivingMessage(String msgID) {
-		for (Message mex : interferenceModel.getListOfMessagesInTransfer()) {
-			if (mex.getID().equals(msgID)) {
+		for (Message msg : interferenceModel.getListOfMessagesInTransfer()) {
+			if (msg.getID().equals(msgID)) {
 				return true;
 			}
 		}

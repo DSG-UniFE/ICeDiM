@@ -5,7 +5,6 @@
 package core;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import movement.MovementModel;
@@ -130,14 +129,14 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @return the router of this host
 	 */
 	public MessageRouter getRouter() {
-		return this.router;
+		return router;
 	}
 
 	/**
 	 * Returns the network-layer address of this host.
 	 */
 	public int getAddress() {
-		return this.address;
+		return address;
 	}
 	
 	/**
@@ -207,22 +206,6 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	/**
-	 * Returns the messages in a collection.
-	 * @return Messages in a collection
-	 */
-	public Collection<Message> getMessageCollection() {
-		return router.getMessageCollection();
-	}
-
-	/**
-	 * Returns the number of messages this node is carrying.
-	 * @return How many messages the node is carrying currently.
-	 */
-	public int getNrofMessages() {
-		return router.getNrofMessages();
 	}
 
 	/**
@@ -447,10 +430,11 @@ public class DTNHost implements Comparable<DTNHost> {
 	/**
 	 * Requests for deliverable message from this host to be
 	 * sent through a connection.
-	 * @param con The connection to send the messages through
-	 * @return True if this host started a transfer, false if not
+	 * @param con The connection to send the messages through.
+	 * @return The {@link Message} being trasferred, if the
+	 * request is successful, or {@code false} otherwise.
 	 */
-	public boolean requestDeliverableMessages(Connection con) {
+	public Message requestDeliverableMessages(Connection con) {
 		return router.requestDeliverableMessages(con);
 	}
 
