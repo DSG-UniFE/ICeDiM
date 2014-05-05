@@ -5,7 +5,6 @@
 package routing;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -419,10 +418,8 @@ public class ProphetRouterWithEstimation extends ActiveRouter {
 	 * @return The return value of {@link #tryMessagesForConnected(List)}
 	 */
 	private Tuple<Message, Connection> tryOtherMessages() {
-		List<Tuple<Message, Connection>> messages = 
-			new ArrayList<Tuple<Message, Connection>>(); 
-
-		Collection<Message> msgCollection = getMessageCollection();
+		List<Tuple<Message, Connection>> messages = new ArrayList<Tuple<Message, Connection>>();
+		List<Message> msgList = getMessageList();
 
 		/* for all connected hosts collect all messages that have a higher
 		   probability of delivery by the other host */
@@ -437,7 +434,7 @@ public class ProphetRouterWithEstimation extends ActiveRouter {
 				continue; // skip hosts that are transferring
 			}
 
-			for (Message m : msgCollection) {
+			for (Message m : msgList) {
 				if (othRouter.hasMessage(m.getID())) {
 					continue; // skip messages that the other one has
 				}

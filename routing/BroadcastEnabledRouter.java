@@ -75,25 +75,29 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * @return True if this host started a transfer, false if not
 	 */
 	@Override
-	public boolean requestDeliverableMessages(Connection con) {
+	public Message requestDeliverableMessages(Connection con) {
+		// Get a reference to the local NetworkInterface and check if it is busy
 		NetworkInterface requestingInterface = con.getInterfaceForNode(getHost());
 		if (requestingInterface == null) {
 			throw new SimError("Connection " + con + " does not involve local host " + getHost());
 		}
 		if (!requestingInterface.isReadyToBeginTransfer()) {
-			return false;
+			return null;
 		}
 
-		/* getDeliverableMessages() returns a copy of only those messages
-		 * deliverable to their final recipient */
-		List<Message> sortedMessageList = sortListOfMessagesForForwarding(getDeliverableMessages());
+		/* getDeliverableMessagesForNetworkInterface() returns a copy of all
+		 * and only those messages which can be delivered to their final
+		 * recipients through the specified NetworkInterface */
+		List<Message> sortedMessageList = sortListOfMessagesForForwarding(
+				getDeliverableMessagesForNetworkInterface(requestingInterface));
 		for (Message m : sortedMessageList) {
-			if (tryBroadcastOneMessage(m, requestingInterface) == RCV_OK) {
-				return true;
+			if (shouldDeliverMessageToNeighbours(m, requestingInterface) &&
+				tryBroadcastOneMessage(m, requestingInterface) == BROADCAST_OK) {
+				return m;
 			}
 		}
 		
-		return false;
+		return null;
 	}
 	
 	public boolean createNewMessage(Message m) {
@@ -210,8 +214,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 * exludeMsgBeingSent is true)
 	 */
 	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
-		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(
-									new ArrayList<Message>(getMessageCollection()));
+		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(getMessageList());
 		
 		// Traverse the list in order and return the first available message
 		for (Message m : sortedList) {
@@ -270,7 +273,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		}
 
 		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			if (isNeighbouringHost(m.getTo())) {
 				messageList.add(m);
 			}
@@ -292,7 +295,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		}
 
 		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			if (isNeighbouringHost(ni, m.getTo())) {
 				messageList.add(m);
 			}
@@ -401,7 +404,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			List<Message> deliverableMessages = sortListOfMessagesForForwarding(
 												getDeliverableMessagesForNetworkInterface(ni));
 			for (Message m : deliverableMessages) {
-				if (tryBroadcastOneMessage(m, ni) == BROADCAST_OK) {
+				if (shouldDeliverMessageToNeighbours(m, ni) &&
+					tryBroadcastOneMessage(m, ni) == BROADCAST_OK) {
 					// Transfer using broadcast started
 					return ni;
 				}
@@ -413,15 +417,62 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			List<Connection> connections = ni.getConnections();
 			Collections.shuffle(connections);
 			for (Connection con : connections) {
-				if (con.getOtherNode(getHost()).requestDeliverableMessages(con)) {
+				if (con.getOtherNode(getHost()).requestDeliverableMessages(con) != null) {
 					return ni;
 				}
 			}
 		}
 		
 		return null;
+	}	
+
+	/**
+	 * Tries to deliver any buffered message to any hosts currently
+	 * connected to this host. If a transfer starts, the search ends.
+	 * @return the {@link NetworkInterface} that started the transfer,
+	 * if one was started, or {@code null} otherwise.
+	 */
+	protected NetworkInterface tryAllMessagesToAllConnections() {
+		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
+		Collections.shuffle(networkInterfaces);
+		
+		List<Message> messageList = sortListOfMessagesForForwarding(getMessageList());
+		for (NetworkInterface ni : networkInterfaces) {
+			for (Message m : messageList) {
+				if (shouldDeliverMessageToNeighbours(m, ni) &&
+					(tryBroadcastOneMessage(m, ni) == BROADCAST_OK)) {
+					// Transfer using broadcast started
+					return ni;
+				}
+			}
+		}
+		
+		// No transfer could start
+		return null;
 	}
-	
+
+	/**
+	 * Returns whether the specified {@link Message} needs to be
+	 * delivered to at least one node in the neighbours reachable
+	 * through the selected {@link NetworkInterface}. Subclasses
+	 * can overwrite this method, if necessary.
+	 * @param m The {@link Message} that might need to be delivered.
+	 * @param to The {@link NetworkInterface} that identifies the set
+	 * of neighbours to which the specified Message might be delivered.
+	 * @return {@code true} if at least one among the neighbours
+	 * reachable through the specified {@link NetworkInterface}
+	 * need the {@link Message}, or {@code false} otherwise.
+	 */
+	protected boolean shouldDeliverMessageToNeighbours(Message m, NetworkInterface ni) {
+		for (Connection con : ni.getConnections()) {
+			if (shouldDeliverMessageToHost(m, con.getOtherNode(getHost()))) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 	/**
 	 * Checks out all sending connections to finalize the ready ones 
 	 * and abort those whose connection went down. Also drops messages
@@ -442,7 +493,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		 * message has been forwarded is incremented.
 		 */
 		boolean freeBuffer = true;
-		for (NetworkInterface ni : this.getHost().getInterfaces()) {
+		for (NetworkInterface ni : getHost().getInterfaces()) {
 			for (int i=0; i < ni.getConnections().size(); ++i) {
 				Connection con = ni.getConnections().get(i);
 				if (con.isIdle()) {

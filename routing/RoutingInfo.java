@@ -20,7 +20,7 @@ public class RoutingInfo {
 	 * @param infoText The text of the info
 	 */
 	public RoutingInfo(String infoText) {
-		this.text = infoText;
+		text = infoText;
 	}
 	
 	/**
@@ -29,7 +29,7 @@ public class RoutingInfo {
 	 * @param o The object this info is based on
 	 */
 	public RoutingInfo(Object o) {
-		this.text = o.toString();
+		text = o.toString();
 	}
 	
 	/**
@@ -37,10 +37,10 @@ public class RoutingInfo {
 	 * @param info The info object to add.
 	 */
 	public void addMoreInfo(RoutingInfo info) {
-		if (this.moreInfo == null) { // lazy creation
-			this.moreInfo = new ArrayList<RoutingInfo>();
+		if (moreInfo == null) { // lazy creation
+			moreInfo = new ArrayList<RoutingInfo>();
 		}
-		this.moreInfo.add(info);
+		moreInfo.add(info);
 	}
 	
 	/**
@@ -49,10 +49,10 @@ public class RoutingInfo {
 	 * doesn't have any children.
 	 */
 	public List<RoutingInfo> getMoreInfo() {
-		if (this.moreInfo == null) {
+		if (moreInfo == null) {
 			return new ArrayList<RoutingInfo>(0);
 		}
-		return this.moreInfo;
+		return moreInfo;
 	}
 	
 	/**
@@ -60,7 +60,7 @@ public class RoutingInfo {
 	 * @return The info text
 	 */
 	public String toString() {
-		return this.text;
+		return text;
 	}
 	
 }

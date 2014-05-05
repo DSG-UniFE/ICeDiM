@@ -135,6 +135,15 @@ public abstract class MessageRouter {
 	}
 	
 	/**
+	 * Checks if this router has a message with certain id buffered.
+	 * @param id Identifier of the message
+	 * @return True if the router has message with this id, false if not
+	 */
+	protected boolean hasMessage(String msgID) {
+		return messageQueueManager.hasMessage(msgID);
+	}
+	
+	/**
 	 * Checks if this router has received a {@link Message}
 	 * with the specified identifier in the past.
 	 * @param msgID Identifier of the message.
@@ -143,15 +152,6 @@ public abstract class MessageRouter {
 	 */
 	protected boolean hasReceivedMessage(String msgID) {
 		return receivedMessages.containsKey(msgID);
-	}
-	
-	/**
-	 * Checks if this router has a message with certain id buffered.
-	 * @param id Identifier of the message
-	 * @return True if the router has message with this id, false if not
-	 */
-	protected boolean hasMessage(String msgID) {
-		return messageQueueManager.hasMessage(msgID);
 	}
 	
 	/**
@@ -226,7 +226,7 @@ public abstract class MessageRouter {
 
 		final DTNHost to = con.getOtherNode(getHost());
 		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			if (isMessageDestination(m, to)) {
 				messageList.add(m);
 			}
@@ -325,7 +325,7 @@ public abstract class MessageRouter {
 	 * Drops messages whose TTL is less than zero.
 	 */
 	protected void dropExpiredMessages() {
-		for (Message m : new ArrayList<Message>(getMessageCollection())) { 
+		for (Message m : getMessageList()) { 
 			if (m.getTtl() <= 0) {
 				deleteMessage(m.getID(), true, "TTL expired");
 			}
@@ -340,8 +340,8 @@ public abstract class MessageRouter {
 	 * exceptions. 
 	 * @return a reference to the messages of this router in collection
 	 */
-	public Collection<Message> getMessageCollection() {
-		return messageQueueManager.getMessageCollection();
+	public List<Message> getMessageList() {
+		return new ArrayList<Message>(messageQueueManager.getMessageCollection());
 	}
 	
 	/**
@@ -430,6 +430,20 @@ public abstract class MessageRouter {
 		
 		return false;
 	}
+
+	/**
+	 * Returns whether the specified {@link Message} needs to be
+	 * delivered to the selected {@link DTNHost}. This method is
+	 * a hook that returns {@code true} by default as a default
+	 * behaviour. Subclasses should overwrite it.
+	 * @param m The Message that might need to be delivered.
+	 * @param to The host that might need the Message.
+	 * @return {@code true} if the specified host needs the
+	 * Message, {@code false} otherwise.
+	 */
+	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+		return true;
+	}
 	
 	/**
 	 * Returns a {@link List} of all {@link NetworkInterface}
@@ -445,6 +459,21 @@ public abstract class MessageRouter {
 		}
 		
 		return idleInterfaces;
+	}
+	
+	/**
+	 * Returns {@code true} if the router has any free
+	 * {@link NetworkInterface}, or {@code false} otherwise.
+	 * @return a boolean value to determine if any
+	 * {@link NetworkInterface} is available to
+	 * start a new transfer.
+	 */
+	protected boolean canBeginNewTransfer() {
+		if (getNrofMessages() == 0) {
+			return false;
+		}
+		
+		return getIdleNetworkInterfaces().size() > 0;
 	}
 	
 	/**
@@ -475,8 +504,8 @@ public abstract class MessageRouter {
 	 * @return True if this router started a transfer,
 	 * false otherwise.
 	 */
-	public boolean requestDeliverableMessages(Connection con) {
-		return false; // default behavior is to not start -- subclasses override
+	public Message requestDeliverableMessages(Connection con) {
+		return null; // default behavior is to not start -- subclasses override
 	}
 	
 	/**

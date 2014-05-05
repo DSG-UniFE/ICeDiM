@@ -113,6 +113,45 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		return super.receiveMessage(m, con);
 	}
 	
+	@Override 
+	public boolean createNewMessage(Message m) {
+		makeRoomForNewMessage(m.getSize(), m.getPriority());
+		
+		m.setTtl(msgTTL);
+		m.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
+		addToMessages(m, true);
+		
+		return true;
+	}
+	
+	@Override
+	public void update() {
+		super.update();
+		
+		/* try messages that could be delivered to final recipient */
+		while (canBeginNewTransfer() && (exchangeDeliverableMessages() != null)) { }
+		
+		/* If the node is still able to transfer messages, it considers the
+		 * list of SAWMessages that have copies left to distribute and tries
+		 * to send them over all idle network interfaces. */
+		List<Message> copiesLeft = sortListOfMessagesForForwarding(getMessagesWithCopiesLeft());
+		if (canBeginNewTransfer() && (copiesLeft.size() > 0)) {
+			List<NetworkInterface> idleInterfaces = getIdleNetworkInterfaces();
+			Collections.shuffle(idleInterfaces);
+			/* try to send those messages over all idle interfaces */
+			for (NetworkInterface idleInterface : idleInterfaces) {
+				for (Message m : copiesLeft) {
+					if (BROADCAST_OK == tryBroadcastOneMessage(m, idleInterface)) {
+						/* Removes transferring message from the list and moves
+						 * on to the remaining idle network interfaces */
+						copiesLeft.remove(m);
+						break;
+					}
+				}
+			}
+		}
+	}
+	
 	@Override
 	public Message messageTransferred(String id, Connection con) {
 		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
@@ -163,45 +202,6 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		return msg;
 	}
 	
-	@Override 
-	public boolean createNewMessage(Message m) {
-		makeRoomForNewMessage(m.getSize(), m.getPriority());
-		
-		m.setTtl(msgTTL);
-		m.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
-		addToMessages(m, true);
-		
-		return true;
-	}
-	
-	@Override
-	public void update() {
-		super.update();
-		
-		/* try messages that could be delivered to final recipient */
-		while (canStartTransfer() && (exchangeDeliverableMessages() != null)) { }
-		
-		/* If the node is still able to transfer messages, it considers the
-		 * list of SAWMessages that have copies left to distribute and tries
-		 * to send them over all idle network interfaces. */
-		List<Message> copiesLeft = sortListOfMessagesForForwarding(getMessagesWithCopiesLeft());
-		if (canStartTransfer() && (copiesLeft.size() > 0)) {
-			List<NetworkInterface> idleInterfaces = getIdleNetworkInterfaces();
-			Collections.shuffle(idleInterfaces);
-			/* try to send those messages over all idle interfaces */
-			for (NetworkInterface idleInterface : idleInterfaces) {
-				for (Message m : copiesLeft) {
-					if (BROADCAST_OK == tryBroadcastOneMessage(m, idleInterface)) {
-						/* Removes transferring message from the list and moves
-						 * on to the remaining idle network interfaces */
-						copiesLeft.remove(m);
-						break;
-					}
-				}
-			}
-		}
-	}
-	
 	/**
 	 * Creates and returns a list of messages this router is currently
 	 * carrying and still has copies left to distribute (nrof copies > 1).
@@ -210,7 +210,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	protected List<Message> getMessagesWithCopiesLeft() {
 		List<Message> list = new ArrayList<Message>();
 
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			Integer nrofCopies = (Integer)m.getProperty(MSG_COUNT_PROPERTY);
 			if (nrofCopies == null) {
 				throw new SimError("SnW message " + m + " didn't have the nrofcopies property!");
@@ -222,6 +222,35 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		}
 		
 		return list;
+	}
+
+	/**
+	 * Called just before a transfer is finalized (by 
+	 * {@link ActiveRouter#update()}).
+	 * Reduces the number of copies we have left for a message. 
+	 * In binary Spray and Wait, sending host is left with floor(n/2) copies,
+	 * but in standard mode, nrof copies left is reduced by one. 
+	 */
+	@Override
+	protected void transferDone(Connection con) {
+		Integer nrofCopies;
+		String msgId = con.getMessage().getID();
+		/* get this router's copy of the message */
+		Message msg = getMessage(msgId);
+
+		if (msg == null) { // message has been dropped from the buffer after..
+			return; // ..start of transfer -> no need to reduce amount of copies
+		}
+		
+		/* reduce the amount of copies left */
+		nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
+		if (isBinary) { 
+			nrofCopies /= 2;
+		}
+		else {
+			nrofCopies--;
+		}
+		msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
 	}
 	
 	/**
@@ -254,7 +283,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		}
 		
 		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 			if (neighboursSubscriptionIDs.contains(subID)) {
 				// add all messages belonging to the subscriptions of a neighbour
@@ -272,35 +301,6 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		}
 		
 		return messageList;
-	}
-
-	/**
-	 * Called just before a transfer is finalized (by 
-	 * {@link ActiveRouter#update()}).
-	 * Reduces the number of copies we have left for a message. 
-	 * In binary Spray and Wait, sending host is left with floor(n/2) copies,
-	 * but in standard mode, nrof copies left is reduced by one. 
-	 */
-	@Override
-	protected void transferDone(Connection con) {
-		Integer nrofCopies;
-		String msgId = con.getMessage().getID();
-		/* get this router's copy of the message */
-		Message msg = getMessage(msgId);
-
-		if (msg == null) { // message has been dropped from the buffer after..
-			return; // ..start of transfer -> no need to reduce amount of copies
-		}
-		
-		/* reduce the amount of copies left */
-		nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
-		if (isBinary) { 
-			nrofCopies /= 2;
-		}
-		else {
-			nrofCopies--;
-		}
-		msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
 	}
 	
 	@Override
@@ -321,10 +321,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	@Override
 	protected boolean isMessageDestination(Message aMessage) {
 		Integer messageSubID = (Integer) aMessage.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-		if (getSubscriptionList().containsSubscriptionID(messageSubID)) {
-			return true;
-		}
 		
-		return false;
+		return getSubscriptionList().containsSubscriptionID(messageSubID);
 	}
 }

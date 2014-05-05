@@ -62,7 +62,7 @@ public class FirstContactRouter extends ActiveRouter {
 	@Override
 	protected void transferDone(Connection con) {
 		/* don't leave a copy for the sender */
-		this.deleteMessage(con.getMessage().getID(), false, "message transferred successfully");
+		deleteMessage(con.getMessage().getID(), false, "message transferred successfully");
 	}
 		
 	@Override

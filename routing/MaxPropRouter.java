@@ -5,7 +5,6 @@
 package routing;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -253,7 +252,7 @@ public class MaxPropRouter extends ActiveRouter {
 	 */
     @Override
     protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {
-		Collection<Message> messages = getMessageCollection();
+		List<Message> messages = getMessageList();
 		List<Message> validMessages = new ArrayList<Message>();
 
 		for (Message m : messages) {
@@ -303,7 +302,7 @@ public class MaxPropRouter extends ActiveRouter {
 			/* calculate paths only to nodes we have messages to 
 			 * (optimization) */
 			Set<Integer> toSet = new HashSet<Integer>();
-			for (Message m : getMessageCollection()) {
+			for (Message m : getMessageList()) {
 				toSet.add(m.getTo().getAddress());
 			}
 			
@@ -329,7 +328,7 @@ public class MaxPropRouter extends ActiveRouter {
 		List<Tuple<Message, Connection>> messages = 
 			new ArrayList<Tuple<Message, Connection>>(); 
 	
-		Collection<Message> msgCollection = getMessageCollection();
+		List<Message> msgList = getMessageList();
 		
 		/* for all connected hosts that are not transferring at the moment,
 		 * collect all the messages that could be sent */
@@ -344,7 +343,7 @@ public class MaxPropRouter extends ActiveRouter {
 				continue; // skip hosts that are transferring
 			}
 			
-			for (Message m : msgCollection) {
+			for (Message m : msgList) {
 				/* skip messages that the other host has or that have
 				 * passed the other host */
 				if (othRouter.hasMessage(m.getID()) || m.getHops().contains(other)) {
@@ -395,7 +394,7 @@ public class MaxPropRouter extends ActiveRouter {
 		
 		/* creates a copy of the messages list, sorted by hop count */
 		ArrayList<Message> msgs = new ArrayList<Message>();
-		msgs.addAll(getMessageCollection());
+		msgs.addAll(getMessageList());
 		if (msgs.size() == 0) {
 			return 0; // no messages -> no need for threshold
 		}

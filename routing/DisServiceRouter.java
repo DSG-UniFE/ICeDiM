@@ -288,7 +288,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	 */
 	@Override
 	protected void dropExpiredMessages() {
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			if (m.getTtl() <= 0) {
 				if (!receivedMsgIDs.remove(m.getID())) {
 					throw new SimError("Impossible to find message " +

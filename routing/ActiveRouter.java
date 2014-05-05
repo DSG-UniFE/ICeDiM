@@ -83,29 +83,31 @@ public abstract class ActiveRouter extends MessageRouter {
 	public void changedConnection(Connection con) { }
 	
 	@Override
-	public boolean requestDeliverableMessages(Connection con) {
+	public Message requestDeliverableMessages(Connection con) {
+		// Get a reference to the local NetworkInterface and check if it is busy
 		NetworkInterface transferringInterface = con.getInterfaceForNode(getHost());
 		if (transferringInterface == null) {
 			throw new SimError("Connection " + con + " does not involve local host " + getHost());
 		}
 		if (!transferringInterface.isReadyToBeginTransfer()) {
-			return false;
+			return null;
 		}
 		
-		DTNHost other = con.getOtherNode(getHost());
+		DTNHost otherNode = con.getOtherNode(getHost());
 		/* The call sortAllReceivedMessagesForForwarding returns a copy of
 		 * received messages, in order to avoid concurrent modification
-		 * exceptions (startTransfer may remove messages) */
+		 * exceptions (startTransfer may remove messages). */
 		List<Message> temp = sortAllReceivedMessagesForForwarding();
 		for (Message m : temp) {
-			if (isMessageDestination(m, other)) {
+			if (shouldDeliverMessageToHost(m, otherNode) &&
+				isMessageDestination(m, otherNode)) {
 				if (startTransfer(m, con) == RCV_OK) {
-					return true;
+					return m;
 				}
 			}
 		}
 		
-		return false;
+		return null;
 	}
 	
 	@Override 
@@ -306,8 +308,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * exludeMsgBeingSent is true)
 	 */
 	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
-		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(
-									new ArrayList<Message>(getMessageCollection()));
+		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(getMessageList());
 		
 		// Traverse the list in order and return the first available message
 		for (Message m : sortedList) {
@@ -339,7 +340,9 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		for (Message m : messageList) {
-			if (startTransfer(m, con) == RCV_OK) {
+			DTNHost destinationNode = con.getOtherNode(getHost());
+			if (shouldDeliverMessageToHost(m, destinationNode) &&
+				(startTransfer(m, con) == RCV_OK)) {
 				return new Tuple<Message, Connection>(m, con);
 			}
 		}
@@ -363,7 +366,9 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		for (Tuple<Message, Connection> tuple : messageConnectionList) {
-			if (startTransfer(tuple.getKey(), tuple.getValue()) == RCV_OK) {
+			DTNHost destinationNode = tuple.getValue().getOtherNode(getHost());
+			if (shouldDeliverMessageToHost(tuple.getKey(), destinationNode) &&
+				(startTransfer(tuple.getKey(), tuple.getValue()) == RCV_OK)) {
 				return tuple;
 			}
 		}
@@ -381,8 +386,10 @@ public abstract class ActiveRouter extends MessageRouter {
 	  * transfer was started. 
 	  */
 	protected Message tryAllMessages(Connection con, List<Message> messages) {
+		DTNHost destinationNode = con.getOtherNode(getHost());
 		for (Message m : messages) {
-			if (m.getSenderNode() == con.getOtherNode(getHost())) {
+			if ((m.getSenderNode() == destinationNode) ||
+				!shouldDeliverMessageToHost(m, destinationNode)) {
 				// Avoid to send a message right back to the sender
 				continue;
 			}
@@ -405,15 +412,14 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * connection, the messages are tried in the order they are in the list.
 	 * Once an accepting connection is found, no other connections or messages
 	 * are tried.
-	 * @param messages The list of Messages to try
-	 * @param connections The list of Connections to try
-	 * @return The connections that started a transfer or null if no connection
-	 * accepted a message.
+	 * @param messages The list of Messages to try.
+	 * @param connections The list of Connections to try.
+	 * @return The connections that started a transfer or {@code null}
+	 * if no connection accepted a message.
 	 */
 	protected Connection tryMessagesToConnections(List<Message> messages,
 													List<Connection> connections) {
-		for (int i = 0, n = connections.size(); i < n; i++) {
-			Connection con = connections.get(i);
+		for (Connection con : connections) {
 			Message started = tryAllMessages(con, messages); 
 			if (started != null) { 
 				return con;
@@ -431,14 +437,13 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * @return The connections that started a transfer or null if no connection
 	 * accepted a message.
 	 */
-	protected Connection tryAllMessagesToAllConnections(){
+	protected Connection tryAllMessagesToAllConnections() {
 		List<Connection> connections = getConnections();
-		if ((connections.size() == 0) || (this.getNrofMessages() == 0)) {
+		if ((connections.size() == 0) || (getNrofMessages() == 0)) {
 			return null;
 		}
 
-		List<Message> messages = sortListOfMessagesForForwarding(
-									new ArrayList<Message>(getMessageCollection()));
+		List<Message> messages = sortListOfMessagesForForwarding(getMessageList());
 		return tryMessagesToConnections(messages, connections);
 	}
 		
@@ -470,7 +475,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		// didn't start transfer to any node -> ask messages from connected
 		for (Connection con : connections) {
-			if (con.getOtherNode(getHost()).requestDeliverableMessages(con)) {
+			if (con.getOtherNode(getHost()).requestDeliverableMessages(con) != null) {
 				return con;
 			}
 		}

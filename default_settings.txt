@@ -87,8 +87,9 @@ Scenario.nrofHostGroups = 6
 # Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
 #Group.router = EpidemicRouter
+Group.router = EpidemicBroadcastRouterWithSubscriptions
 #Group.router = SprayAndWaitRouter
-Group.router = SprayAndWaitRouterWithSubscriptions
+#Group.router = SprayAndWaitRouterWithSubscriptions
 #Group.router = ProphetRouterWithEstimation
 #Group.router = DirectDeliveryRouter
 Group.bufferSize = 5M
@@ -222,8 +223,8 @@ Report.reportDir = reports/
 # Report classes to load
 # PrioritizedMessageStatsReport reports stats for priority-based routers
 Report.report1 = PrioritizedMessageStatsReport
-Report.report2 = CSVPrioritizedMessageDeliveryReport
-Report.report3 = CSVPrioritizedMessageDropReport
+Report.report2 = CSVMessageWithSubscriptionsDeliveryReport
+Report.report3 = CSVMessageWithSubscriptionsDropReport
 Report.report4 = MessagesWithSubscriptionsStatsReport
 
 ## Default settings for some routers settings

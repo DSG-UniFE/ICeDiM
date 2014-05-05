@@ -117,7 +117,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	protected List<Message> getMessagesWithCopiesLeft() {
 		List<Message> list = new ArrayList<Message>();
 
-		for (Message m : getMessageCollection()) {
+		for (Message m : getMessageList()) {
 			Integer nrofCopies = (Integer)m.getProperty(MSG_COUNT_PROPERTY);
 			if (nrofCopies == null) {
 				throw new SimError("SnW message " + m + " didn't have the nrofcopies property!");

@@ -51,8 +51,8 @@ public class EpidemicOracleRouter extends ActiveRouter {
 			DTNHost peer = con.getOtherNode(getHost());
 			List<Message> newMessages = new ArrayList<Message>();
 			
-			for (Message m : peer.getMessageCollection()) {
-				if (!this.hasMessage(m.getID())) {
+			for (Message m : peer.getRouter().getMessageList()) {
+				if (!hasMessage(m.getID())) {
 					newMessages.add(m);
 				}
 			}
