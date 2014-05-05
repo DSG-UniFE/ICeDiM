@@ -76,7 +76,7 @@ public class MessageLocationReport extends Report implements UpdateListener {
 		for (DTNHost host : hosts) {
 			isFirstMessage = true;
 			reportLine = "";
-			for (Message m : host.getMessageCollection()) {
+			for (Message m : host.getRouter().getMessageList()) {
 				if (this.reportedMessages.contains(m.getID())) {
 					if (isFirstMessage) {
 						reportLine = host.getLocation().toString();

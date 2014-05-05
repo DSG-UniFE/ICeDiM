@@ -140,6 +140,26 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			this.msgBufferTimePerSubscription.put(i, new ArrayList<Double>());
 			this.msgRTTPerSubscription.put(i, new ArrayList<Double>());
 		}
+		
+		if (subscriptionsArraySize <= 1) {
+			this.nodesPerSubscription.put(0, 0);
+			this.messageCreatedPerSubscription.put(0, 0);
+			this.messageResponseCreatedPerSubscription.put(0, 0);
+			this.messageStartedPerSubscription.put(0, 0);
+			this.messageRelayedPerSubscription.put(0, 0);
+			this.messageDuplicatesPerSubscription.put(0, 0);
+			this.messageDeliveredPerSubscription.put(0, 0);
+			this.messageResponseDeliveredPerSubscription.put(0, 0);
+			this.messageAbortedPerSubscription.put(0, 0);
+			this.messageDroppedPerSubscription.put(0, 0);
+			this.messageRemovedPerSubscription.put(0, 0);
+			this.messageInterferedPerSubscription.put(0, 0);
+			
+			this.latenciesPerSubscription.put(0, new ArrayList<Double>());
+			this.hopCountsPerSubscription.put(0, new ArrayList<Integer>());
+			this.msgBufferTimePerSubscription.put(0, new ArrayList<Double>());
+			this.msgRTTPerSubscription.put(0, new ArrayList<Double>());
+		}
 	}
 
 	

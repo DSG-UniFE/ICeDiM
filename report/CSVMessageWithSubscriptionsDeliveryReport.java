@@ -7,6 +7,7 @@ package report;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
+import core.disService.PublisherSubscriber;
 
 /**
  * Reports transferred messages. A new report line is created with
@@ -14,12 +15,12 @@ import core.MessageListener;
  * Messages created during the warm up period are ignored.
  * For output syntax, see {@link #HEADER}.
  */
-public class CSVPrioritizedMessageDeliveryReport extends Report implements MessageListener {
+public class CSVMessageWithSubscriptionsDeliveryReport extends Report implements MessageListener {
 	/** CSV file header */
 	public final static String HEADER="message_id,from,to,source,destination,priority," +
-										"created_at,transferred_at,delivery_type";
+										"subscription_id,created_at,transferred_at,delivery_type";
 
-	public CSVPrioritizedMessageDeliveryReport() {
+	public CSVMessageWithSubscriptionsDeliveryReport() {
 		init();
 	}
 	
@@ -78,8 +79,8 @@ public class CSVPrioritizedMessageDeliveryReport extends Report implements Messa
 
 	private void reportValues(Message m, DTNHost from, DTNHost to, String deliveryType) {
 		write(m.getID() + "," + from + "," + to + "," + m.getFrom() + "," + m.getTo() + "," +
-				m.getPriority() + "," + format(m.getCreationTime()) + "," +
-				format(getSimTime()) + "," + deliveryType);
+				m.getPriority() + "," + m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY) +
+				"," + format(m.getCreationTime()) + "," + format(getSimTime()) + "," + deliveryType);
 	}
 	
 }

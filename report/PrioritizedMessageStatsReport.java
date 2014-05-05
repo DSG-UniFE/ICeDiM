@@ -188,6 +188,21 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			this.messageRemovedPerSubscription.put(i, 0);
 			this.messageInterferedPerSubscription.put(i, 0);
 		}
+
+		if (subscriptionsArraySize <= 1) {
+			this.nodesPerSubscription.put(0, 0);
+			this.messageCreatedPerSubscription.put(0, 0);
+			this.messageResponseCreatedPerSubscription.put(0, 0);
+			this.messageStartedPerSubscription.put(0, 0);
+			this.messageRelayedPerSubscription.put(0, 0);
+			this.messageDuplicatesPerSubscription.put(0, 0);
+			this.messageDeliveredPerSubscription.put(0, 0);
+			this.messageResponseDeliveredPerSubscription.put(0, 0);
+			this.messageAbortedPerSubscription.put(0, 0);
+			this.messageDroppedPerSubscription.put(0, 0);
+			this.messageRemovedPerSubscription.put(0, 0);
+			this.messageInterferedPerSubscription.put(0, 0);
+		}
 	}
 
 	

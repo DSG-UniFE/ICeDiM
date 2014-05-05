@@ -11,34 +11,35 @@ import java.util.Map.Entry;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
+import core.disService.PublisherSubscriber;
 
 /**
  * Reports dropped messages. A new report entry is saved in a table
  * every time a message is dropped. Once the simulation is done,
- * a report line for every drop event is written to file in the
+ * the report writes to file a line for every drop event in the
  * CSV format. The line contains a field to discern delivered messages
  * from those which never reached their destination.
  * Messages created during the warm up period are ignored.
  * For output syntax, see {@link #HEADER}.
  */
-public class CSVPrioritizedMessageDropReport extends Report implements MessageListener {
+public class CSVMessageWithSubscriptionsDropReport extends Report implements MessageListener {
 	/** CSV file header */
 	public final static String HEADER = "message_id,source,destination,dropping_node,priority," +
-										"created_at,dropped_at,drop/delete,cause,delivered";
+										"subscription_id,created_at,dropped_at,drop/delete," +
+										"cause,delivered";
 	/** Expected number of messages*/
 	public final static int START_SIZE = 2000;
 
 	private HashMap<String, ArrayList<String>> abortEventsMap;
 	private ArrayList<String> deliveredMessages;
 	
-	public CSVPrioritizedMessageDropReport() {
+	public CSVMessageWithSubscriptionsDropReport() {
 		init();
 	}
 	
 	@Override
 	public void init() {
 		super.init();
-		
 		write(HEADER);
 		abortEventsMap = new HashMap<String, ArrayList<String>>();
 		deliveredMessages = new ArrayList<String>();
@@ -65,7 +66,9 @@ public class CSVPrioritizedMessageDropReport extends Report implements MessageLi
 		}
 		
 		if (firstDelivery && finalTarget) {
-			deliveredMessages.add(m.getID());
+			if (!deliveredMessages.contains(m.getID())) {
+				deliveredMessages.add(m.getID());
+			}
 		}
 	}
 	
@@ -107,8 +110,9 @@ public class CSVPrioritizedMessageDropReport extends Report implements MessageLi
 
 	private String makeDropEventString (Message m, DTNHost droppingNode, boolean dropped, String cause) {
 		return m.getID() + "," + m.getFrom() + "," + m.getTo() + "," + droppingNode + "," +
-				m.getPriority() + "," + format(m.getCreationTime()) + "," + format(getSimTime()) +
-				"," + (dropped ? "DROP" : "DELETE") + "," + cause;
+				m.getPriority() + "," + m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY) +
+				"," + format(m.getCreationTime()) + "," + format(getSimTime()) + "," +
+				(dropped ? "DROP" : "DELETE") + "," + cause;
 	}
 	
 }
