@@ -121,7 +121,7 @@ public class NodeGraphic extends PlayFieldGraphic {
 	 * @param g2 The graphic context to draw to
 	 */
 	private void drawMessages(Graphics2D g2) {
-		int nrofMessages = node.getNrofMessages();
+		int nrofMessages = node.getRouter().getNrofMessages();
 		Coord loc = node.getLocation();
 
 		drawBar(g2,loc, nrofMessages % 10, 1);

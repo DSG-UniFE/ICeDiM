@@ -328,11 +328,11 @@ public class EpidemicRouterTest extends AbstractRouterTest {
 	public void testQueueManagement() {
 		Message m1 = new Message(h1,h3, "dummy", BUFFER_SIZE-1);
 		h1.createNewMessage(m1);
-		assertEquals(1, h1.getNrofMessages());
+		assertEquals(1, h1.getRouter().getNrofMessages());
 		Message m2 = new Message(h1,h3, msgId1, BUFFER_SIZE/3);
 		h1.createNewMessage(m2);
-		assertEquals(1, h1.getNrofMessages()); // message should replace dummy
-		assertEquals(msgId1, h1.getMessageCollection().iterator().next().getID());
+		assertEquals(1, h1.getRouter().getNrofMessages()); // message should replace dummy
+		assertEquals(msgId1, h1.getRouter().getMessageList().iterator().next().getID());
 		
 		mc.reset();
 		
@@ -361,7 +361,7 @@ public class EpidemicRouterTest extends AbstractRouterTest {
 		assertEquals(mc.TYPE_DELETE, mc.getLastType());
 		assertEquals(msgId2, mc.getLastMsg().getID());
 
-		assertEquals(1, h1.getNrofMessages());
+		assertEquals(1, h1.getRouter().getNrofMessages());
 		
 		assertTrue(mc.next());
 		assertEquals(mc.TYPE_START, mc.getLastType()); // h2 should start
