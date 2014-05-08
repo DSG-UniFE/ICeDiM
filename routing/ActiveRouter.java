@@ -26,8 +26,8 @@ import core.Tuple;
  */
 public abstract class ActiveRouter extends MessageRouter {
 	/** Delete delivered messages -setting id ({@value}). Boolean valued.
-	 * If set to true and final recipient of a message rejects it because it
-	 * already has it, the message is deleted from buffer. Default=false. */
+	 * If set to true and the final recipient of a message rejects it because
+	 * it already has it, the message is deleted from buffer. Default=false. */
 	public static final String DELETE_DELIVERED_S = "deleteDelivered";
 	/** should messages that final recipient marks as delivered be deleted
 	 * from message buffer */
@@ -44,8 +44,8 @@ public abstract class ActiveRouter extends MessageRouter {
 
 
 	/**
-	 * Constructor. Creates a new message router based on the settings in
-	 * the given Settings object.
+	 * Constructor. Creates a new message router based on
+	 * the settings in the given Settings object.
 	 * @param s The settings object
 	 */
 	public ActiveRouter(Settings s) {
@@ -188,7 +188,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		else if (deleteDelivered && (retVal == DENIED_OLD) &&
 			(m.getTo() == con.getOtherNode(this.getHost()))) {
 			/* final recipient has already received the msg -> delete it */
-			this.deleteMessage(m.getID(), false, "message already delivered");
+			deleteMessage(m.getID(), false, "message already delivered");
 		}
 		
 		return retVal;
