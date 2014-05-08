@@ -52,6 +52,8 @@ Scenario.nrofHostGroups = 6
 # router: router used to route messages (valid class name from routing package)
 # activeTimes: Time intervals when the nodes in the group are active (start1, end1, start2, end2, ...)
 # msgTtl: TTL (minutes) of the messages created by this host group, default=infinite
+# deleteDelivered: if true and the final recipient of a message rejects it because the node had
+#                  already received the message, that message gets deleted from the buffer; default=false
 #messagePriorityStrategy: accepatble values range from 0 to 3:
 #               0 - random queue - default
 #               1 - FIFO queue
