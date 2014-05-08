@@ -27,7 +27,7 @@ btInterface.interferenceModel = NaiveInterferenceModel
 btInterface.transmitSpeed = 280k
 btInterface.transmitRange = 100
 
-# High speed, long range, interface for group 4
+# High speed, longer range, interface for buses
 highspeedInterface.type = SimpleBroadcastInterface
 # The Interference model of the communication
 # is chosen for each interface
@@ -62,7 +62,6 @@ Scenario.nrofHostGroups = 6
 #messageForwardingOrderManager: accepatble values range from 0 to 1:
 #               0 - FIFO Forwarding Manager - default
 #               1 - Exponentially Decaying Probability (EDP) Forwarding Manager
-#
 #subDisMode: defines how subscriptions affect the dissemination strategy:
 #               0 - strict (non-porous channels)
 #               1 - semiPorous (semi-porous channels)
@@ -73,7 +72,6 @@ Scenario.nrofHostGroups = 6
 #         if subIDs is specified, any entry for maxSize is ignored (in every group if subIDs is specified
 #         at the global level); a value of "-1" resets the global defaults specified for subIDs and reads
 #         the value of maxSize.
-#
 #msgDissProbability: message dissemination probability - the probability of forwarding a message even if no
 #                    neighbours belong to the same subscription of the message.
 #msgAcceptProbability: message acceptance probability - the probability of storing a received message even if
@@ -89,7 +87,7 @@ Scenario.nrofHostGroups = 6
 # routeType: route's type - for MapRouteMovement
 
 
-# Common settings for all groups
+## Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
 #Group.router = EpidemicRouter
 Group.router = EpidemicBroadcastRouterWithSubscriptions
@@ -118,27 +116,27 @@ Group.nrofHosts = 40
 Group.msgDissProbability = 0.3
 Group.msgAcceptProbability = 0.5
 
-# Settings for Spray n Wait router
+## Settings specific for Spray n Wait routers
 SprayAndWaitRouterWithSubscriptions.nrofCopies = 10
 SprayAndWaitRouterWithSubscriptions.binaryMode = true
 
-# Settings for PROPHET router
+## Settings specific for PROPHET router
 ProphetRouterWithEstimation.timeScale = 60
 
-# group1 (pedestrians) specific settings
+## group1 (pedestrians) specific settings
 Group1.groupID = p
 
-# group2 specific settings
+## group2 specific settings
 Group2.groupID = c
 # cars can drive only on roads
 Group2.okMaps = 1
 # 10-50 km/h
 Group2.speed = 2.7, 13.9
 
-# another group of pedestrians
+## another group of pedestrians
 Group3.groupID = w
 
-# The Tram groups
+## The Tram groups
 Group4.groupID = t
 Group4.bufferSize = 50M
 Group4.movementModel = MapRouteMovement
@@ -198,7 +196,7 @@ Events1.interval = 25,30
 # Message sizes (500kB - 1MB)
 Events1.size = 500k,1M
 # range of message source/destination addresses
-Events1.hosts = 0,125
+Events1.hosts = 0,119
 # Message ID prefix
 Events1.prefix = M
 # Message priorities range; allowed values are in the range (0.0, 1). Do not
@@ -250,7 +248,6 @@ Optimization.randomizeUpdateOrder = true
 
 
 ## GUI settings
-
 # GUI underlay image settings
 GUI.UnderlayImage.fileName = data/helsinki_underlay.png
 # Image offset in pixels (x, y)
@@ -259,7 +256,6 @@ GUI.UnderlayImage.offset = 64, 20
 GUI.UnderlayImage.scale = 4.75
 # Image rotation (radians)
 GUI.UnderlayImage.rotate = -0.015
-
 # how many events to show in the log panel (default = 30)
 GUI.EventLogPanel.nrofEvents = 100
 # Regular Expression log filter (see Pattern-class from the Java API for RE-matching details)
