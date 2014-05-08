@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = default_scenario_epidemic
+Scenario.name = epidemic_unicast_subscription
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 43200s == 12h

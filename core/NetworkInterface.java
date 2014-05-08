@@ -429,7 +429,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 
 	/**
-	 * Informs the client wheter this interface is sending data onto
+	 * Informs the client whether this interface is sending data onto
 	 * any connections. If so, the interface is busy and no other activity
 	 * should be performed on any connection of this interface.
 	 * @return true if the interface is busy, false otherwise
