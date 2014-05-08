@@ -91,7 +91,7 @@ public abstract class DTNSimUI {
 				
 		try {
 			settings = new Settings();
-			this.scen = SimScenario.getInstance();
+			scen = SimScenario.getInstance();
 
 			// add reports
 			for (int i=1, n = settings.getInt(NROF_REPORT_S); i<=n; i++){
@@ -108,7 +108,7 @@ public abstract class DTNSimUI {
 				}
 			}
 
-			this.world = this.scen.getWorld();
+			world = scen.getWorld();
 			world.warmupMovementModel(warmupTime);
 		}
 		catch (SettingsError se) {
@@ -127,7 +127,7 @@ public abstract class DTNSimUI {
 	 * Runs maintenance jobs that are needed before exiting.
 	 */
 	public void done() {
-		for (Report r : this.reports) {
+		for (Report r : reports) {
 			r.done();
 		}
 	}
@@ -156,6 +156,6 @@ public abstract class DTNSimUI {
 			scen.addApplicationListener((ApplicationListener)r);
 		}
 
-		this.reports.add(r);
+		reports.add(r);
 	}
 }

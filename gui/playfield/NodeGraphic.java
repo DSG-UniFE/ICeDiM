@@ -57,8 +57,8 @@ public class NodeGraphic extends PlayFieldGraphic {
 				double range = ni.getTransmitRange();
 				Ellipse2D.Double coverage;
 
-				coverage = new Ellipse2D.Double(scale(loc.getX()-range),
-						scale(loc.getY()-range), scale(range * 2), scale(range * 2)); 
+				coverage = new Ellipse2D.Double(scale(loc.getX() - range), scale(loc.getY() - range),
+												scale(range * 2), scale(range * 2)); 
 
 				// draw the "range" circle
 				g2.setColor(rangeColor);
@@ -124,8 +124,8 @@ public class NodeGraphic extends PlayFieldGraphic {
 		int nrofMessages = node.getRouter().getNrofMessages();
 		Coord loc = node.getLocation();
 
-		drawBar(g2,loc, nrofMessages % 10, 1);
-		drawBar(g2,loc, nrofMessages / 10, 2);
+		drawBar(g2, loc, nrofMessages % 10, 1);
+		drawBar(g2, loc, nrofMessages / 10, 2);
 	}
 
 	/**
@@ -141,8 +141,8 @@ public class NodeGraphic extends PlayFieldGraphic {
 		final int BAR_DISPLACEMENT = 2;
 
 		// draws a stack of squares next loc
-		for (int i=1; i <= nrof; i++) {
-			if (i%2 == 0) { // use different color for every other msg
+		for (int i = 1; i <= nrof; i++) {
+			if ((i % 2) == 0) { // use different color for every other msg
 				g2.setColor(msgColor1);
 			}
 			else {
@@ -154,9 +154,9 @@ public class NodeGraphic extends PlayFieldGraphic {
 				}
 			}
 
-			g2.fillRect(scale(loc.getX()-BAR_DISPLACEMENT-(BAR_WIDTH*col)),
-					scale(loc.getY()- BAR_DISPLACEMENT- i* BAR_HEIGHT),
-					scale(BAR_WIDTH), scale(BAR_HEIGHT));
+			g2.fillRect(scale(loc.getX() - BAR_DISPLACEMENT - (BAR_WIDTH * col)),
+						scale(loc.getY() - BAR_DISPLACEMENT- (i * BAR_HEIGHT)),
+						scale(BAR_WIDTH), scale(BAR_HEIGHT));
 		}
 
 	}

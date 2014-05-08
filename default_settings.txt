@@ -23,18 +23,21 @@ btInterface.type = SimpleBroadcastInterface
 # The Interference model of the communication
 # is chosen for each interface
 btInterface.interferenceModel = NaiveInterferenceModel
-# Transmit speed of 2.1 Mbps = 280KBps
+# Transmit speed of 2.1Mbps (280KBps) for Bluetooth 2.0/2.1 + EDR (nominal rate is 3.0Mbps)
 btInterface.transmitSpeed = 280k
-btInterface.transmitRange = 10
+btInterface.transmitRange = 100
 
 # High speed, long range, interface for group 4
 highspeedInterface.type = SimpleBroadcastInterface
 # The Interference model of the communication
 # is chosen for each interface
 highspeedInterface.interferenceModel = NaiveInterferenceModel
-# Transmit speed of 54 Mbps = 6.75MBps
-highspeedInterface.transmitSpeed = 6.75M
-highspeedInterface.transmitRange = 1000
+# Transmit speed of 54 Mbps (equivalent to a net throughput of 31.4Mbps with CSMA/CA enabled) for 802.11g
+# Theoretical throughput of 6.75MBps (with a net throughput of 3.925MBps) for 802.11g
+# Theoretical approximate outdoor range of 140m (38m indoor) for 802.11g
+# Theoretical approximate outdoor range of 250m (70m indoor) for 802.11n
+highspeedInterface.transmitSpeed = 3.925M
+highspeedInterface.transmitRange = 150
 
 # Define 6 different node groups
 Scenario.nrofHostGroups = 6
@@ -157,6 +160,9 @@ Group5.routeType = 2
 Group5.waitTime = 10, 30
 Group5.speed = 7, 10
 Group5.nrofHosts = 2
+Group5.nrofInterfaces = 2
+Group5.interface1 = btInterface
+Group5.interface2 = highspeedInterface
 # subIDs = -1 resets the global defaults and read the value of maxSize; maxSize = 0 implies no subscriptions
 #Group5.maxSize = 0
 #Group5.subIDs = -1
@@ -169,6 +175,9 @@ Group6.routeType = 2
 Group6.waitTime = 10, 30
 Group6.speed = 7, 10
 Group6.nrofHosts = 2
+Group6.nrofInterfaces = 2
+Group6.interface1 = btInterface
+Group6.interface2 = highspeedInterface
 # subIDs = -1 resets the global defaults and read the value of maxSize; maxSize = 0 implies no subscriptions
 #Group6.maxSize = 0
 #Group6.subIDs = -1

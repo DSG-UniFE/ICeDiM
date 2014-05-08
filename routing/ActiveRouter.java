@@ -2,6 +2,7 @@
  * Copyright 2010 Aalto University, ComNet
  * Released under GPLv3. See LICENSE.txt for details. 
  */
+
 package routing;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	public static int TTL_CHECK_INTERVAL = 60;
 	/** connection(s) that are currently used for sending */
 	protected ArrayList<Connection> sendingConnections;
-	/** sim time when the last TTL check was done */
+	/** simulation time when the last TTL check was done */
 	private double lastTtlCheck;
 
 
@@ -64,14 +65,16 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	protected ActiveRouter(ActiveRouter r) {
 		super(r);
+		
 		this.deleteDelivered = r.deleteDelivered;
 	}
 	
 	@Override
 	public void init(DTNHost host, List<MessageListener> mListeners) {
 		super.init(host, mListeners);
-		this.sendingConnections = new ArrayList<Connection>(1);
-		this.lastTtlCheck = 0;
+		
+		sendingConnections = new ArrayList<Connection>(1);
+		lastTtlCheck = 0;
 	}
 	
 	
@@ -146,8 +149,8 @@ public abstract class ActiveRouter extends MessageRouter {
 			Message res = new Message(this.getHost(),m.getFrom(), RESPONSE_PREFIX+m.getID(),
 										m.getResponseSize(), m.getPriority());
 			res.copyPropertiesFrom(m);
-			this.createNewMessage(res);
-			this.getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
+			createNewMessage(res);
+			getMessage(RESPONSE_PREFIX + m.getID()).setRequest(m);
 		}
 		
 		return m;
@@ -197,10 +200,10 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * @return True if router can start transfer, false if not
 	 */
 	protected boolean canStartTransfer() {
-		if (this.getNrofMessages() == 0) {
+		if (getNrofMessages() == 0) {
 			return false;
 		}
-		if (this.getConnections().size() == 0) {
+		if (getConnections().size() == 0) {
 			return false;
 		}
 		
@@ -490,7 +493,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * @param con The connection to add
 	 */
 	protected void addToSendingConnections(Connection con) {
-		this.sendingConnections.add(con);
+		sendingConnections.add(con);
 	}
 	
 	/**
@@ -525,7 +528,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * @return True if the message is being sent false if not
 	 */
 	public boolean isSending(String msgId) {
-		for (Connection con : this.sendingConnections) {
+		for (Connection con : sendingConnections) {
 			if (con.getMessage() == null) {
 				continue; // transmission is finalized
 			}
@@ -544,12 +547,11 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	@Override
 	public void update() {
-		
 		super.update();
 		
 		/* in theory we can have multiple sending connections even though
 		  currently all routers allow only one concurrent sending connection */
-		for (int i = 0; i < this.sendingConnections.size();) {
+		for (int i = 0; i < sendingConnections.size();) {
 			boolean removeCurrent = false;
 			Connection con = sendingConnections.get(i);
 			
@@ -572,8 +574,8 @@ public abstract class ActiveRouter extends MessageRouter {
 			
 			if (removeCurrent) {
 				// if the message being sent was holding excess buffer, free it
-				if (this.getFreeBufferSize() < 0) {
-					this.makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
+				if (getFreeBufferSize() < 0) {
+					makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
 				}
 				sendingConnections.remove(i);
 			}
@@ -584,8 +586,8 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		/* time to do a TTL check and drop old messages? Only if not sending */
-		if (SimClock.getTime() - lastTtlCheck >= TTL_CHECK_INTERVAL && 
-				sendingConnections.size() == 0) {
+		if ((SimClock.getTime() - lastTtlCheck >= TTL_CHECK_INTERVAL) &&
+			(sendingConnections.size() == 0)) {
 			dropExpiredMessages();
 			lastTtlCheck = SimClock.getTime();
 		}

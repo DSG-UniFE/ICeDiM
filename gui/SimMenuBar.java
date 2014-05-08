@@ -80,24 +80,26 @@ public class SimMenuBar extends JMenuBar implements ActionListener {
 		autoClearOverlay = createCheckItem(pfMenu, "Autoclear overlay",true);
 		clearOverlay = createMenuItem(pfMenu,"Clear overlays now");
 		about = createMenuItem(help,"about");
-		this.add(pfMenu);
-		this.add(Box.createHorizontalGlue());
-		this.add(help);
+		
+		add(pfMenu);
+		add(Box.createHorizontalGlue());
+		add(help);
 	}
 	
 	private JMenuItem createMenuItem(Container c, String txt) {
 		JMenuItem i = new JMenuItem(txt);
 		i.addActionListener(this);
 		c.add(i);
+		
 		return i;
 	}
 	
-	private JCheckBoxMenuItem createCheckItem(Container c,String txt, 
-			boolean selected) {
+	private JCheckBoxMenuItem createCheckItem(Container c, String txt, boolean selected) {
 		JCheckBoxMenuItem i = new JCheckBoxMenuItem(txt);
 		i.setSelected(selected);
 		i.addActionListener(this);
 		c.add(i);
+		
 		return i;
 	}
 
@@ -106,28 +108,28 @@ public class SimMenuBar extends JMenuBar implements ActionListener {
 		if (source == enableBgImage) {
 			toggleUnderlayImage();
 		}
-		else if (source == this.enableNodeName) {
+		else if (source == enableNodeName) {
 			gui.playfield.NodeGraphic.setDrawNodeName(
 					enableNodeName.isSelected());
 		}
-		else if (source == this.enableNodeCoverage) {
+		else if (source == enableNodeCoverage) {
 			gui.playfield.NodeGraphic.setDrawCoverage(
 					enableNodeCoverage.isSelected());
 		}
-		else if (source == this.enableNodeConnections) {
+		else if (source == enableNodeConnections) {
 			gui.playfield.NodeGraphic.setDrawConnections(
 					enableNodeConnections.isSelected());
 		}
-		else if (source == this.enableMapGraphic) {
+		else if (source == enableMapGraphic) {
 			field.setShowMapGraphic(enableMapGraphic.isSelected());
 		}
-		else if (source == this.autoClearOverlay) {
+		else if (source == autoClearOverlay) {
 			field.setAutoClearOverlay(autoClearOverlay.isSelected());
 		}
-		else if (source == this.clearOverlay) {
+		else if (source == clearOverlay) {
 			field.clearOverlays();
 		}
-		else if (source == this.about) {
+		else if (source == about) {
 			JOptionPane.showMessageDialog(this, ABOUT_TEXT, ABOUT_TITLE, 
 					JOptionPane.INFORMATION_MESSAGE);
 		}
