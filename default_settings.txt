@@ -4,11 +4,11 @@
 #
 
 ## Scenario settings
-Scenario.name = epidemic_unicast_subscription
+Scenario.name = %%Group.router%%_DissMode%%Group.subDisMode%%
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
-# 43200s == 12h
-Scenario.endTime = 43200
+# 46800s == 13h
+Scenario.endTime = 46800
 
 
 ## Interface-specific settings:
@@ -66,11 +66,13 @@ Scenario.nrofHostGroups = 6
 #               0 - strict (non-porous channels)
 #               1 - semiPorous (semi-porous channels)
 #               2 - flexible (subscriptions do not affect the dissemination strategy) - default
-# maxSize: maximum number of subscriptions for which a node randomly sign up
+# subIDRndSeed: the seed for the random number generator that generates subscriptions for each node.
+# minNrofSubscriptions: minimum number of subscriptions for which a node randomly signs up
+# maxNrofSubscriptions: maximum number of subscriptions for which a node randomly signs up
 # maxSubID: the highest ID allowed for a subscription
 # subIDs: it specifies a comma-separated list of the subscription IDs the nodes of a group will subscribe to;
 #         if subIDs is specified, any entry for maxSize is ignored (in every group if subIDs is specified
-#         at the global level); a value of "-1" resets the global defaults specified for subIDs and reads
+#         at the global level); a value of "-1" resets the global defaults specified for subIDs to read
 #         the value of maxSize.
 #msgDissProbability: message dissemination probability - the probability of forwarding a message even if no
 #                    neighbours belong to the same subscription of the message.
@@ -85,33 +87,32 @@ Scenario.nrofHostGroups = 6
 #          for all MapBasedMovent models
 # routeFile: route's file path - for MapRouteMovement
 # routeType: route's type - for MapRouteMovement
+#            1 - circular (the next point of the route after the last one is the first point)
+#            2 - ping-pong (after the last point is reached, the route is traversed in the opposite direction)
 
 
 ## Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
-#Group.router = EpidemicRouter
-Group.router = EpidemicBroadcastRouterWithSubscriptions
-#Group.router = SprayAndWaitRouter
-#Group.router = SprayAndWaitRouterWithSubscriptions
-#Group.router = ProphetRouterWithEstimation
-#Group.router = DirectDeliveryRouter
+Group.router = [EpidemicBroadcastRouterWithSubscriptions; SprayAndWaitRouterWithSubscriptions]
 Group.bufferSize = 5M
 Group.waitTime = 0, 120
 # All nodes have the bluetooth interface
 Group.nrofInterfaces = 1
 Group.interface1 = btInterface
-# Walking speeds
+# Walking speed as default
 Group.speed = 0.5, 1.5
 # Message TTL of 300 minutes (5 hours)
 Group.msgTtl = 300
-Group.messagePriorityStrategy = 2
+Group.messagePriorityStrategy = 1
 Group.messageForwardingOrderManager = 1
-Group.subDisMode = 1
+Group.subDisMode = [0; 1; 2]
 # Common subscriptions for all groups
 # If subIDs is specified, maxSize is ignored (maxSize used only for the random generation of subscriptions)
-#Group.maxSize = 5
-#Group.maxSubID = 10
-Group.subIDs = 1,2,3,4,5
+Group.subIDRndSeed = 10
+Group.minNrofSubscriptions = 1
+Group.maxNrofSubscriptions = 5
+Group.maxSubID = 5
+#Group.subIDs = 1,2,3,4,5
 Group.nrofHosts = 40
 Group.msgDissProbability = 0.3
 Group.msgAcceptProbability = 0.5
@@ -130,8 +131,8 @@ Group1.groupID = p
 Group2.groupID = c
 # cars can drive only on roads
 Group2.okMaps = 1
-# 10-50 km/h
-Group2.speed = 2.7, 13.9
+# 10-55 km/h
+Group2.speed = 2.7, 15.3
 
 ## another group of pedestrians
 Group3.groupID = w
@@ -148,9 +149,10 @@ Group4.nrofHosts = 2
 Group4.nrofInterfaces = 2
 Group4.interface1 = btInterface
 Group4.interface2 = highspeedInterface
-# subIDs = -1 resets the global defaults and read the value of maxSize; maxSize = 0 implies no subscriptions 
-#Group4.maxSize = 0
-#Group4.subIDs = -1
+# subIDs = -1 resets the global defaults and read the value of maxSize; maxSize = 0 implies no subscriptions
+Group4.minNrofSubscriptions = 0
+Group4.maxNrofSubscriptions = 0
+Group4.subIDs = -1
 
 Group5.groupID = t
 Group5.bufferSize = 50M
@@ -164,8 +166,9 @@ Group5.nrofInterfaces = 2
 Group5.interface1 = btInterface
 Group5.interface2 = highspeedInterface
 # subIDs = -1 resets the global defaults and read the value of maxSize; maxSize = 0 implies no subscriptions
-#Group5.maxSize = 0
-#Group5.subIDs = -1
+Group5.minNrofSubscriptions = 0
+Group5.maxNrofSubscriptions = 0
+Group5.subIDs = -1
 
 Group6.groupID = t
 Group6.bufferSize = 50M
@@ -179,8 +182,9 @@ Group6.nrofInterfaces = 2
 Group6.interface1 = btInterface
 Group6.interface2 = highspeedInterface
 # subIDs = -1 resets the global defaults and read the value of maxSize; maxSize = 0 implies no subscriptions
-#Group6.maxSize = 0
-#Group6.subIDs = -1
+Group6.minNrofSubscriptions = 0
+Group6.maxNrofSubscriptions = 0
+Group6.subIDs = -1
 
 
 ## Message creation parameters 
@@ -196,12 +200,14 @@ Events1.interval = 25,30
 # Message sizes (500kB - 1MB)
 Events1.size = 500k,1M
 # range of message source/destination addresses
+# trams should not be neither sources nor destinations
 Events1.hosts = 0,119
 # Message ID prefix
 Events1.prefix = M
-# Message priorities range; allowed values are in the range (0.0, 1). Do not
-# use 0.0 and 1.0, as those values are automatically added to the list
-# (first and last element). N specified values produce N+1 priority slots
+# Message priorities range; allowed values are in the range (0.0, 1).
+# Do not use 0.0 and 1.0, as those values are automatically added to
+# the list (first and last element). Therefore, N specified values
+# will produce N+1 priority slots.
 #Events1.prioritySlots = 0.65, 0.9
 
 
@@ -210,8 +216,8 @@ Events1.prefix = M
 MovementModel.rngSeed = 1
 # World's size for Movement Models without implicit size (width, height; meters)
 MovementModel.worldSize = 4500, 3400
-# How long time to move hosts in the world before real simulation
-MovementModel.warmup = 1000
+# How many seconds to move hosts in the world before real simulation
+MovementModel.warmup = 3600
 
 ## Map based movement -movement model specific settings
 MapBasedMovement.nrofMapFiles = 4
@@ -226,7 +232,7 @@ MapBasedMovement.mapFile4 = data/shops.wkt
 # how many reports to load
 Report.nrofReports = 4
 # length of the warm up period (simulated seconds)
-Report.warmup = 0
+Report.warmup = 3600
 # default directory of reports (can be overridden per Report with output setting)
 Report.reportDir = reports/
 # Report classes to load

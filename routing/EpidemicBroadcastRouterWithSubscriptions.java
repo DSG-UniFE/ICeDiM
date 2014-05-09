@@ -62,14 +62,14 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S +
 								" value " + "in the settings file is out of range");
 		}
+		
+		if (EpidemicBroadcastRouterWithSubscriptions.randomGenerator == null) {
+			EpidemicBroadcastRouterWithSubscriptions.randomGenerator = new MersenneTwisterRNG();
+			EpidemicBroadcastRouterWithSubscriptions.randomGenerator.setSeed(SEED);
+		}
+		
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) { 
-			if (randomGenerator == null) {
-				// Singleton is instanciated only if needed
-				randomGenerator = new MersenneTwisterRNG();
-				randomGenerator.setSeed(SEED);
-			}
-			
+		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}

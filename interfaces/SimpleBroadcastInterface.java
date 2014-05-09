@@ -148,7 +148,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 		}
 
 		int retVal;
-		for (Connection con : this.connections) {
+		for (Connection con : connections) {
 			retVal = con.startTransfer(getHost(), m);
 			if ((retVal != MessageRouter.RCV_OK) && (retVal != MessageRouter.DENIED_INTERFERENCE)) {
 				throw new SimError("Error on a connection which resulted ready for transferring");
@@ -165,8 +165,8 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	public void update() {
 		// First break the old ones
 		optimizer.updateLocation(this);
-		for (int i = 0; i < this.connections.size();) {
-			Connection con = this.connections.get(i);
+		for (int i = 0; i < connections.size();) {
+			Connection con = connections.get(i);
 			NetworkInterface anotherInterface = con.getOtherInterface(this);
 
 			// all connections should be up at this stage
@@ -194,7 +194,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 		}
 		
 		// Finally check if new connections could result in interferences
-		if (this.isSendingData()) {
+		if (isSendingData()) {
 			// transmit remaining data also onto new connections
 			for (Connection con : newConnections) {
 				duplicateTransfer(con);

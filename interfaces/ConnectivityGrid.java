@@ -202,15 +202,13 @@ public class ConnectivityGrid extends ConnectivityOptimizer {
 	 * Returns all interfaces using the same technology and channel that are in
 	 * neighboring cells
 	 */
-	public Collection<NetworkInterface> getNearInterfaces(
-			NetworkInterface netinterf) {
+	public Collection<NetworkInterface> getNearInterfaces(NetworkInterface netinterf) {
 		ArrayList<NetworkInterface> ni = new ArrayList<NetworkInterface>();
 		ni.clear();
 
 		GridCell loc = (GridCell)ginterfaces.get(netinterf);
-		if (loc != null) {	
-			GridCell[] neighbors = 
-				getNeighborCellsByCoord(netinterf.getLocation());
+		if (loc != null) {
+			GridCell[] neighbors = getNeighborCellsByCoord(netinterf.getLocation());
 			for (int i=0; i < neighbors.length; i++) {
 				ni.addAll(neighbors[i].getInterfaces());
 			}

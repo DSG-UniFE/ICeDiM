@@ -116,22 +116,21 @@ public class MessageEventGenerator implements EventQueue {
 				throw new SettingsError("Host range must contain at least two " 
 						+ "nodes unless toHostRange is defined");
 			}
-			else if (toHostRange[0] == this.hostRange[0] && 
-					toHostRange[1] == this.hostRange[1]) {
-				// XXX: teemuk: Since (X,X) == (X,X+1) in drawHostAddress()
-				// there's still a boundary condition that can cause an
-				// infinite loop.
-				throw new SettingsError("If to and from host ranges contain" + 
-						" only one host, they can't be the equal");
+			else if ((toHostRange[0] == this.hostRange[0]) &&
+					(toHostRange[1] == this.hostRange[1])) {
+				// XXX: teemuk: Since (X,X) == (X,X+1) in drawHostAddress() there's
+				// still a boundary condition that can cause an infinite loop.
+				throw new SettingsError("If to and from host ranges contain " + 
+										"only one host, they can't be the equal");
 			}
 		}
 		
 		messagePriorityGenerator = new MessagePriorityGenerator(s);
 		
 		/* calculate the first event's time */
-		this.nextEventsTime = (this.msgTime != null ? this.msgTime[0] : 0) 
-			+ msgInterval[0] + (msgInterval[0] == msgInterval[1] ? 0 : 
-			rng.nextInt(msgInterval[1] - msgInterval[0]));
+		this.nextEventsTime = ((this.msgTime != null) ? this.msgTime[0] : 0) +
+				this.msgInterval[0] + (this.msgInterval[0] == this.msgInterval[1] ?
+					0 : this.rng.nextInt(this.msgInterval[1] - this.msgInterval[0]));
 	}
 	
 	
@@ -155,8 +154,8 @@ public class MessageEventGenerator implements EventQueue {
 	 * @return message size
 	 */
 	protected int drawMessageSize() {
-		int sizeDiff = sizeRange[0] == sizeRange[1] ? 0 : 
-			rng.nextInt(sizeRange[1] - sizeRange[0]);
+		int sizeDiff = (sizeRange[0] == sizeRange[1]) ? 
+						0 : rng.nextInt(sizeRange[1] - sizeRange[0]);
 		return sizeRange[0] + sizeDiff;
 	}
 	
@@ -165,8 +164,8 @@ public class MessageEventGenerator implements EventQueue {
 	 * @return the time difference
 	 */
 	protected int drawNextEventTimeDiff() {
-		int timeDiff = msgInterval[0] == msgInterval[1] ? 0 : 
-			rng.nextInt(msgInterval[1] - msgInterval[0]);
+		int timeDiff = (msgInterval[0] == msgInterval[1]) ?
+						0 : rng.nextInt(msgInterval[1] - msgInterval[0]);
 		return msgInterval[0] + timeDiff;
 	}
 	
@@ -180,7 +179,7 @@ public class MessageEventGenerator implements EventQueue {
 	protected int drawToAddress(int hostRange[], int from) {
 		int to;
 		do {
-			to = toHostRange != null ? drawHostAddress(toHostRange) : drawHostAddress(this.hostRange);
+			to = (toHostRange != null) ? drawHostAddress(toHostRange) : drawHostAddress(hostRange);
 		} while (from == to);
 		
 		return to;
@@ -198,21 +197,21 @@ public class MessageEventGenerator implements EventQueue {
 		int to;
 		
 		/* Get two *different* nodes randomly from the host ranges */
-		from = drawHostAddress(this.hostRange);	
+		from = drawHostAddress(hostRange);	
 		to = drawToAddress(hostRange, from);
 		
 		msgSize = drawMessageSize();
 		interval = drawNextEventTimeDiff();
 		
 		/* Create event and advance to next event */
-		MessageCreateEvent mce = new MessageCreateEvent(from, to, this.getID(),
+		MessageCreateEvent mce = new MessageCreateEvent(from, to, getID(),
 				messagePriorityGenerator.randomlyGenerateNextPriority(), msgSize,
-				responseSize, this.nextEventsTime);
-		this.nextEventsTime += interval;
+				responseSize, nextEventsTime);
+		nextEventsTime += interval;
 		
-		if (this.msgTime != null && this.nextEventsTime > this.msgTime[1]) {
+		if ((msgTime != null) && (nextEventsTime > msgTime[1])) {
 			/* next event would be later than the end time */
-			this.nextEventsTime = Double.MAX_VALUE;
+			nextEventsTime = Double.MAX_VALUE;
 		}
 		
 		return mce;
@@ -223,15 +222,15 @@ public class MessageEventGenerator implements EventQueue {
 	 * @see input.EventQueue#nextEventsTime()
 	 */
 	public double nextEventsTime() {
-		return this.nextEventsTime;
+		return nextEventsTime;
 	}
 	
 	/**
 	 * Returns a next free message ID
 	 * @return next globally unique message ID
 	 */
-	protected String getID(){
-		this.id++;
-		return idPrefix + this.id;
+	protected String getID() {
+		id++;
+		return idPrefix + id;
 	}
 }

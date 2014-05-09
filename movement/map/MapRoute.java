@@ -123,8 +123,7 @@ public class MapRoute {
 	 * @param map SimMap where corresponding map nodes are found
 	 * @return A list of MapRoutes that were read
 	 */
-	public static List<MapRoute> readRoutes(String fileName, int type, 
-			SimMap map) {
+	public static List<MapRoute> readRoutes(String fileName, int type, SimMap map) {
 		List<MapRoute> routes = new ArrayList<MapRoute>();
 		WKTReader reader = new WKTReader();
 		List<List<Coord>> coords;
