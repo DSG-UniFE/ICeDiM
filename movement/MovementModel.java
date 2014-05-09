@@ -70,15 +70,14 @@ public abstract class MovementModel {
 	 * @param min The minimum setting
 	 * @param max The maximum setting
 	 */
-	private static void checkMinAndMaxSetting(String name,
-		double min, double max) {
-		if (min < 0 || max < 0) {
+	private static void checkMinAndMaxSetting(String name, double min, double max) {
+		if ((min < 0) || (max < 0)) {
 			throw new SimError("MovementModel." + name + " (in Settings)" + 
-					" has a value less than zero ("+min+", "+max+")");
+								" has a value less than zero (" + min + ", " + max + ")");
 		}
 		if (min > max) {
 			throw new SimError("MovementModel." + name + " (in Settings)" + 
-					" min is bigger than max ("+min+", "+max+")");
+								" min is bigger than max (" + min + ", " + max + ")");
 		}
 	}
 	
@@ -119,7 +118,7 @@ public abstract class MovementModel {
 		
 		minWaitTime = times[0];
 		maxWaitTime = times[1];
-		checkMinAndMaxSetting(WAIT_TIME,minWaitTime,maxWaitTime);
+		checkMinAndMaxSetting(WAIT_TIME, minWaitTime, maxWaitTime);
 		
 		settings.setNameSpace(MOVEMENT_MODEL_NS);
 		int [] worldSize = settings.getCsvInts(WORLD_SIZE,2);
@@ -184,8 +183,8 @@ public abstract class MovementModel {
 		if (rng == null) {
 			return 0;
 		}
-		return (maxWaitTime - minWaitTime) * rng.nextDouble() + 
-			minWaitTime;
+		
+		return (maxWaitTime - minWaitTime) * rng.nextDouble() + minWaitTime;
 	}
 
 	/**

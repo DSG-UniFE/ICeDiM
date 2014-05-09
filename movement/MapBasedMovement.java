@@ -47,8 +47,8 @@ public class MapBasedMovement extends MovementModel implements SwitchableMovemen
 	public static final String FILE_S = "mapFile";
 	
 	/** 
-	 * Per node group setting for selecting map node types that are OK for
-	 * this node group to traverse trough. Value must be a comma separated list
+	 * Per node group setting for selecting map node types that are OK for this
+	 * node group to traverse through. Value must be a comma separated list
 	 * of integers in range of [1,31]. Values reference to map file indexes
 	 * (see {@link #FILE_S}). If setting is not defined, all map nodes are 
 	 * considered OK.
