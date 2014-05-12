@@ -196,13 +196,14 @@ Group6.subIDs = -1
 ## Message creation parameters
 # How many event generators
 Events.nrof = 1
-# Class of the first event generator
+## Class of the first event generator
 # PrioritizedMessageEventGenerator generates messages with a random priority
 Events1.class = MessageEventGenerator
+## Settings specific for the MessageEventGenerator class
+# rndSeed is the seed value to generate messages
 Events1.rndSeed = 1
-# (following settings are specific for the MessageEventGenerator class)
-# Creation interval in seconds (one new message every 45 to 60 seconds)
-Events1.interval = 25,30
+# Creation interval in seconds (one new message every 20 to 40 seconds)
+Events1.interval = 20,40
 # Message sizes (500kB - 1MB)
 Events1.size = 500k,1M
 # range of message source/destination addresses
@@ -210,6 +211,9 @@ Events1.size = 500k,1M
 Events1.hosts = 0,119
 # Message ID prefix
 Events1.prefix = M
+## Settings specific for the MessagePriorityGenerator class
+# rndPrioritySeed is the seed value to generate message priorities
+#Events1.rndPrioritySeed = 1
 # Message priorities range; allowed values are in the range (0.0, 1).
 # Do not use 0.0 and 1.0, as those values are automatically added to
 # the list (first and last element). Therefore, N values will produce

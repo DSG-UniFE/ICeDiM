@@ -21,24 +21,22 @@ public class MessagePriorityGenerator {
 	public static final String MESSAGE_PRIORITY_SLOT_S = "prioritySlots";
 	
 	/** Seed for the random generation of priority levels */
-	public static final String RANDOMIZER_SEED_S = "rndSeed";
+	public static final String PRIORITY_RANDOMIZER_SEED_S = "rndPrioritySeed";
 	
-	private static MersenneTwisterRNG randomGenerator = null;
-	private static final long SEED = 1;
+	private MersenneTwisterRNG randomPriorityGenerator = null;
+	private static final long DEF_RANDOM_PRIORITY_GENERATOR_SEED = 1;
 	private static final double DEFAULT_PRIORITY_SLOT_RANGES[] = {0.0, 1.0};
 	
 	private final double prioritySlotRanges[];
 	
 	public MessagePriorityGenerator(Settings s) {
-		if (randomGenerator == null) {
-			// Singleton
-			randomGenerator = new MersenneTwisterRNG();
-			long seed = s.contains(RANDOMIZER_SEED_S) ? s.getInt(RANDOMIZER_SEED_S) : SEED;
-			randomGenerator.setSeed(seed);
-		}
+		this.randomPriorityGenerator = new MersenneTwisterRNG();
+		long seed = s.contains(PRIORITY_RANDOMIZER_SEED_S) ?
+						s.getInt(PRIORITY_RANDOMIZER_SEED_S) : DEF_RANDOM_PRIORITY_GENERATOR_SEED;
+		this.randomPriorityGenerator.setSeed(seed);
 		
 		if (!s.contains(MESSAGE_PRIORITY_SLOT_S)) {
-			prioritySlotRanges = new double[DEFAULT_PRIORITY_SLOT_RANGES.length];
+			this.prioritySlotRanges = new double[DEFAULT_PRIORITY_SLOT_RANGES.length];
 			System.arraycopy(DEFAULT_PRIORITY_SLOT_RANGES, 0, prioritySlotRanges, 0,
 								DEFAULT_PRIORITY_SLOT_RANGES.length);
 		}
@@ -57,18 +55,18 @@ public class MessagePriorityGenerator {
 			}
 			
 			// OK! Proceed with copying it
-			prioritySlotRanges = new double[tempVals.length + 2];
-			prioritySlotRanges[0] = 0.0;
-			prioritySlotRanges[prioritySlotRanges.length - 1] = 1.0;
-			System.arraycopy(tempVals, 0, prioritySlotRanges, 1, tempVals.length);
+			this.prioritySlotRanges = new double[tempVals.length + 2];
+			this.prioritySlotRanges[0] = 0.0;
+			this.prioritySlotRanges[prioritySlotRanges.length - 1] = 1.0;
+			System.arraycopy(tempVals, 0, this.prioritySlotRanges, 1, tempVals.length);
 			
 			Message.MAX_PRIORITY_LEVEL = Math.max(Message.MAX_PRIORITY_LEVEL,
-													prioritySlotRanges.length - 2);
+													this.prioritySlotRanges.length - 2);
 		}
 	}
 	
 	public int randomlyGenerateNextPriority() {
-		double randD = randomGenerator.nextDouble();
+		double randD = randomPriorityGenerator.nextDouble();
 		for (int i = 1; i < prioritySlotRanges.length; i++) {
 			if (randD < prioritySlotRanges[i]) {
 				return i-1;

@@ -10,11 +10,16 @@ import core.Settings;
 import core.SettingsError;
 
 /**
- * Message creation -external events generator. Creates uniformly distributed
- * message creation patterns whose message size and inter-message intervals can
- * be configured.
+ * Message creation -external events generator.
+ * Creates uniformly distributed message creation
+ * patterns whose message size and inter-message
+ * intervals can be configured.
  */
 public class MessageEventGenerator implements EventQueue {
+	/** Message event generator's randomizer seed value. {@code long} variable.
+	 * Used to generate pseudo-random values to determine messages size,
+	 * events time, and messages' destination. */
+	public static final String MESSAGE_GENERATOR_RANDOMIZER_SEED_S = "rndSeed";
 	/** Message size range -setting id ({@value}). Can be either a single
 	 * value or a range (min, max) of uniformly distributed random values.
 	 * Defines the message size (bytes). */
@@ -64,6 +69,8 @@ public class MessageEventGenerator implements EventQueue {
 
 	/** Random number generator for this Class */
 	protected Random rng;
+	/** Random number generator's seed for this Class */
+	private long randomSeed = 50;
 	/** Random message priority generator for this Class */
 	protected MessagePriorityGenerator messagePriorityGenerator;
 	
@@ -94,7 +101,11 @@ public class MessageEventGenerator implements EventQueue {
 		
 		/* if prefix is unique, so will be the rng's sequence */
 		//this.rng = new Random(idPrefix.hashCode());
-		this.rng = new Random(System.currentTimeMillis());
+		//this.rng = new Random(System.currentTimeMillis());
+		if (s.contains(MESSAGE_GENERATOR_RANDOMIZER_SEED_S)) {
+			randomSeed = s.getInt(MESSAGE_GENERATOR_RANDOMIZER_SEED_S);
+		}
+		this.rng = new Random(randomSeed);
 		
 		if (this.sizeRange.length == 1) {
 			/* convert single value to range with 0 length */
@@ -116,8 +127,8 @@ public class MessageEventGenerator implements EventQueue {
 				throw new SettingsError("Host range must contain at least two " 
 						+ "nodes unless toHostRange is defined");
 			}
-			else if ((toHostRange[0] == this.hostRange[0]) &&
-					(toHostRange[1] == this.hostRange[1])) {
+			else if ((this.toHostRange[0] == this.hostRange[0]) &&
+					(this.toHostRange[1] == this.hostRange[1])) {
 				// XXX: teemuk: Since (X,X) == (X,X+1) in drawHostAddress() there's
 				// still a boundary condition that can cause an infinite loop.
 				throw new SettingsError("If to and from host ranges contain " + 
@@ -170,8 +181,7 @@ public class MessageEventGenerator implements EventQueue {
 	}
 	
 	/**
-	 * Draws a destination host address that is different from
-	 * the "from" address
+	 * Draws a destination host address that is different from the "from" address
 	 * @param hostRange The range of hosts
 	 * @param from the "from" address
 	 * @return a destination address from the range, but different from "from"
