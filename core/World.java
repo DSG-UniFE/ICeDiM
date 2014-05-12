@@ -37,11 +37,20 @@ public class World {
 	 * Default is @link {@link #DEF_RANDOMIZE_UPDATES}.
 	 */
 	public static final String RANDOMIZE_UPDATES_S = "randomizeUpdateOrder";
+	/**
+	 * The seed value for the randomizer of the update order -setting id
+	 * ({@value}). Integer variable. Default is @link {@link #RANDOM_UPDATE_ORDER_SEED}.
+	 */
+	public static final String RANDOMIZE_UPDATES_SEED_S = "randomizeUpdateOrderSeed";
 	/** default value for cell size multiplier ({@value}) */
 	public static final int DEF_CON_CELL_SIZE_MULT = 5;
 	/** should the update order of nodes be randomized -setting's default value
 	 * ({@value}) */
 	public static final boolean DEF_RANDOMIZE_UPDATES = true;
+	/** the seed value for the update order randomizer -setting's default value
+	 * ({@value}) */
+	public static long RANDOM_UPDATE_ORDER_SEED = 1;
+	public static Random UPDATE_ORDER_RANDOMIZER = null;
 
 	private int sizeX;
 	private int sizeY;
@@ -68,9 +77,9 @@ public class World {
 	/**
 	 * Constructor.
 	 */
-	public World(List<DTNHost> hosts, int sizeX, int sizeY, 
-			double updateInterval, List<UpdateListener> updateListeners,
-			boolean simulateConnections, List<EventQueue> eventQueues) {
+	public World(List<DTNHost> hosts, int sizeX, int sizeY, double updateInterval,
+			List<UpdateListener> updateListeners, boolean simulateConnections,
+			List<EventQueue> eventQueues) {
 		this.hosts = hosts;
 		this.sizeX = sizeX;
 		this.sizeY = sizeY;
@@ -99,10 +108,14 @@ public class World {
 		}
 		if (randomizeUpdates) {
 			// creates the update order array that can be shuffled
-			this.updateOrder = new ArrayList<DTNHost>(this.hosts);
+			updateOrder = new ArrayList<DTNHost>(hosts);
+			if (s.contains(RANDOMIZE_UPDATES_SEED_S)) {
+				RANDOM_UPDATE_ORDER_SEED = s.getInt(RANDOMIZE_UPDATES_SEED_S);
+			}
+			UPDATE_ORDER_RANDOMIZER = new Random(RANDOM_UPDATE_ORDER_SEED);
 		}
 		else { // null pointer means "don't randomize"
-			this.updateOrder = null;
+			updateOrder = null;
 		}
 
 		if (s.contains(CELL_SIZE_MULT_S)) {
@@ -115,14 +128,14 @@ public class World {
 		// check that values are within limits
 		if (conCellSizeMult < 2) {
 			throw new SettingsError("Too small value (" + conCellSizeMult +
-					") for " + SETTINGS_NS + "." + CELL_SIZE_MULT_S);
+									") for " + SETTINGS_NS + "." + CELL_SIZE_MULT_S);
 		}
 	}
 
 	/**
 	 * Moves hosts in the world for the time given time initialize host 
-	 * positions properly. SimClock must be set to <CODE>-time</CODE> before
-	 * calling this method.
+	 * positions properly. SimClock must be set to <CODE>-time</CODE>
+	 * before calling this method.
 	 * @param time The total time (seconds) to move
 	 */
 	public void warmupMovementModel(double time) {
@@ -138,7 +151,7 @@ public class World {
 		double finalStep = -SimClock.getTime();
 
 		moveHosts(finalStep);
-		simClock.setTime(0);	
+		simClock.setTime(0);
 	}
 
 	/**
@@ -157,8 +170,8 @@ public class World {
 			}
 		}
 
-		this.nextEventQueue = nextQueue;
-		this.nextQueueEventTime = earliest;
+		nextEventQueue = nextQueue;
+		nextQueueEventTime = earliest;
 	}
 
 	/** 
@@ -166,28 +179,28 @@ public class World {
 	 * Runs all external events that are due between the time when
 	 * this method is called and after one update interval.
 	 */
-	public void update () {
-		double runUntil = SimClock.getTime() + this.updateInterval;
+	public void update() {
+		double runUntil = SimClock.getTime() + updateInterval;
 
 		setNextEventQueue();
 
 		/* process all events that are due until next interval update */
-		while (this.nextQueueEventTime <= runUntil) {
-			simClock.setTime(this.nextQueueEventTime);
-			ExternalEvent ee = this.nextEventQueue.nextEvent();
+		while (nextQueueEventTime <= runUntil) {
+			simClock.setTime(nextQueueEventTime);
+			ExternalEvent ee = nextEventQueue.nextEvent();
 			ee.processEvent(this);
 			updateHosts(); // update all hosts after every event
 			setNextEventQueue();
 		}
 
-		moveHosts(this.updateInterval);
+		moveHosts(updateInterval);
 		simClock.setTime(runUntil);
 
 		updateHosts();
 
 		/* inform all update listeners */
-		for (UpdateListener ul : this.updateListeners) {
-			ul.updated(this.hosts);
+		for (UpdateListener ul : updateListeners) {
+			ul.updated(hosts);
 		}
 	}
 
@@ -197,25 +210,23 @@ public class World {
 	 * are made in random order.
 	 */
 	private void updateHosts() {
-		if (this.updateOrder == null) { // randomizing is off
-			for (int i=0, n = hosts.size();i < n; i++) {
-				if (this.isCancelled) {
+		if (updateOrder == null) { // randomizing is off
+			for (int i = 0, n = hosts.size(); i < n; i++) {
+				if (isCancelled) {
 					break;
 				}
 				hosts.get(i).update(simulateConnections);
 			}
 		}
 		else { // update order randomizing is on
-			assert this.updateOrder.size() == this.hosts.size() : 
-				"Nrof hosts has changed unexpectedly";
-			Random rng = new Random(SimClock.getIntTime());
-			Collections.shuffle(this.updateOrder, rng); 
-			for (int i=0, n = hosts.size();i < n; i++) {
-				if (this.isCancelled) {
+			assert updateOrder.size() == hosts.size() : "Nrof hosts has changed unexpectedly";
+			Collections.shuffle(updateOrder, UPDATE_ORDER_RANDOMIZER);
+			for (int i = 0, n = updateOrder.size(); i < n; i++) {
+				if (isCancelled) {
 					break;
 				}
-				this.updateOrder.get(i).update(simulateConnections);
-			}			
+				updateOrder.get(i).update(simulateConnections);
+			}
 		}
 	}
 
@@ -224,17 +235,17 @@ public class World {
 	 * @param timeIncrement The time how long all nodes should move
 	 */
 	private void moveHosts(double timeIncrement) {
-		for (int i=0,n = hosts.size(); i<n; i++) {
+		for (int i = 0, n = hosts.size(); i < n; i++) {
 			DTNHost host = hosts.get(i);
 			host.move(timeIncrement);			
-		}		
+		}
 	}
 
 	/**
 	 * Asynchronously cancels the currently running simulation
 	 */
 	public void cancelSim() {
-		this.isCancelled = true;
+		isCancelled = true;
 	}
 
 	/**
@@ -242,7 +253,7 @@ public class World {
 	 * @return the hosts in a list
 	 */
 	public List<DTNHost> getHosts() {
-		return this.hosts;
+		return hosts;
 	}
 
 	/**
@@ -250,7 +261,7 @@ public class World {
 	 * @return the x-size (width) of the world 
 	 */
 	public int getSizeX() {
-		return this.sizeX;
+		return sizeX;
 	}
 
 	/**
@@ -258,7 +269,7 @@ public class World {
 	 * @return the y-size (height) of the world 
 	 */
 	public int getSizeY() {
-		return this.sizeY;
+		return sizeY;
 	}
 
 	/**
@@ -269,14 +280,14 @@ public class World {
 	public DTNHost getNodeByAddress(int address) {
 		if (address < 0 || address >= hosts.size()) {
 			throw new SimError("No host for address " + address + ". Address " +
-					"range of 0-" + (hosts.size()-1) + " is valid");
+								"range of 0-" + (hosts.size()-1) + " is valid");
 		}
 
 		DTNHost node = this.hosts.get(address);
-		assert node.getAddress() == address : "Node indexing failed. " + 
-			"Node " + node + " in index " + address;
+		assert node.getAddress() == address : "Node indexing failed. " + "Node " +
+												node + " in index " + address;
 
-		return node; 
+		return node;
 	}
 
 	/**
@@ -287,4 +298,5 @@ public class World {
 	public void scheduleUpdate(double simTime) {
 		scheduledUpdates.addUpdate(simTime);
 	}
+	
 }

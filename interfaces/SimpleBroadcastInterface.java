@@ -159,8 +159,8 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	}
 
 	/**
-	 * Updates the state of current connections (ie tears down connections
-	 * that are out of range).
+	 * Updates the state of current connections (i.e. tears
+	 * down connections that are out of range).
 	 */
 	public void update() {
 		// First break the old ones
