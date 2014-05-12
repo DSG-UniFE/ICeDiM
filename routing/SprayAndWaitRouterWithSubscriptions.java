@@ -23,7 +23,7 @@ import core.disService.PublisherSubscriber;
 import core.disService.SubscriptionListManager;
 
 /**
- * Implementation of Spray and wait router as depicted in 
+ * Implementation of Spray and Wait Router as depicted in 
  * <I>Spray and Wait: An Efficient Routing Scheme for Intermittently
  * Connected Mobile Networks</I> by Thrasyvoulos Spyropoulus et al.
  *
@@ -115,13 +115,9 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	
 	@Override 
 	public boolean createNewMessage(Message m) {
-		makeRoomForNewMessage(m.getSize(), m.getPriority());
-		
-		m.setTtl(msgTTL);
 		m.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
-		addToMessages(m, true);
 		
-		return true;
+		return super.createNewMessage(m);
 	}
 	
 	@Override
@@ -137,7 +133,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		List<Message> copiesLeft = sortListOfMessagesForForwarding(getMessagesWithCopiesLeft());
 		if (canBeginNewTransfer() && (copiesLeft.size() > 0)) {
 			List<NetworkInterface> idleInterfaces = getIdleNetworkInterfaces();
-			Collections.shuffle(idleInterfaces);
+			Collections.shuffle(idleInterfaces, RANDOM_GENERATOR);
 			/* try to send those messages over all idle interfaces */
 			for (NetworkInterface idleInterface : idleInterfaces) {
 				for (Message m : copiesLeft) {
@@ -204,7 +200,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	
 	/**
 	 * Creates and returns a list of messages this router is currently
-	 * carrying and still has copies left to distribute (nrof copies > 1).
+	 * carrying and still has copies left to distribute (nrofCopies > 1).
 	 * @return A list of messages that have copies left
 	 */
 	protected List<Message> getMessagesWithCopiesLeft() {
@@ -229,7 +225,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	 * {@link ActiveRouter#update()}).
 	 * Reduces the number of copies we have left for a message. 
 	 * In binary Spray and Wait, sending host is left with floor(n/2) copies,
-	 * but in standard mode, nrof copies left is reduced by one. 
+	 * but in standard mode, nrofCopies left is reduced by one. 
 	 */
 	@Override
 	protected void transferDone(Connection con) {

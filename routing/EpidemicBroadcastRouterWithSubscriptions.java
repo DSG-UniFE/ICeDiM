@@ -116,7 +116,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		 * policy will affect the set of messages that can be sent this way. */
 		if (canBeginNewTransfer()) {
 			List<NetworkInterface> idleInterfaces = getIdleNetworkInterfaces();
-			Collections.shuffle(idleInterfaces);
+			Collections.shuffle(idleInterfaces, RANDOM_GENERATOR);
 			/* try to send those messages over all idle interfaces */
 			for (NetworkInterface idleInterface : idleInterfaces) {
 				List<Message> availableMessages = sortListOfMessagesForForwarding(

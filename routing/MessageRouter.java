@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.uncommons.maths.random.MersenneTwisterRNG;
+
 import core.Application;
 import core.Connection;
 import core.DTNHost;
@@ -26,9 +28,6 @@ import core.SimError;
  * Superclass for message routers.
  */
 public abstract class MessageRouter {
-	/** Message TTL -setting id ({@value}). Integer expressed in minutes */
-	public static final String MSG_TTL_S = "msgTtl";
-	
 	/** Receive return value for a successful broadcast */
 	public static final int BROADCAST_OK = 0;
 	/** Receive return value for an unsuccessful broadcast */
@@ -47,6 +46,16 @@ public abstract class MessageRouter {
 	public static final int DENIED_INTERFERENCE = 5;
 	/** Receive return value for unspecified reason */
 	public static final int DENIED_UNSPECIFIED = 99;
+	
+	/** Message TTL -setting id ({@value}). Integer expressed in minutes */
+	public static final String MSG_TTL_S = "msgTtl";
+	/** Random generator seed value -setting id ({@value}). Integer */
+	public static final String ROUTER_RANDOM_SEED_S = "routerRndSeed";
+
+	/** Random number generator for the purposes of routing */
+	protected static MersenneTwisterRNG RANDOM_GENERATOR = null;
+	/** Random number generator's seed value */
+	protected static long RANDOM_GENERATOR_SEED = 13;
 
 	
 	/** Message queueing manager */
@@ -75,6 +84,15 @@ public abstract class MessageRouter {
 		this.msgTTL = s.contains(MSG_TTL_S) ? s.getInt(MSG_TTL_S) : Message.INFINITE_TTL;
 		this.messageQueueManager = new MessageQueueManager(s);
 		this.applications = new HashMap<String, Collection<Application>>();
+		
+		if (RANDOM_GENERATOR == null) {
+			// Singleton
+			RANDOM_GENERATOR = new MersenneTwisterRNG();
+			if (s.contains(ROUTER_RANDOM_SEED_S)) {
+				RANDOM_GENERATOR_SEED = s.getInt(ROUTER_RANDOM_SEED_S);
+			}
+			RANDOM_GENERATOR.setSeed(RANDOM_GENERATOR_SEED);
+		}
 	}
 	
 	/**

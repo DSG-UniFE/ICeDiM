@@ -422,6 +422,8 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	protected Connection tryMessagesToConnections(List<Message> messages,
 													List<Connection> connections) {
+		// Randomize order to improve fairness
+		Collections.shuffle(connections, RANDOM_GENERATOR);
 		for (Connection con : connections) {
 			Message started = tryAllMessages(con, messages); 
 			if (started != null) { 
@@ -441,13 +443,26 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * accepted a message.
 	 */
 	protected Connection tryAllMessagesToAllConnections() {
-		List<Connection> connections = getConnections();
-		if ((connections.size() == 0) || (getNrofMessages() == 0)) {
+		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
+		if ((networkInterfaces.size() == 0) || (getNrofMessages() == 0)) {
 			return null;
 		}
+		// Randomize order to improve fairness
+		Collections.shuffle(networkInterfaces, RANDOM_GENERATOR);
 
 		List<Message> messages = sortListOfMessagesForForwarding(getMessageList());
-		return tryMessagesToConnections(messages, connections);
+		for (NetworkInterface ni : networkInterfaces) {
+			// Randomize order to improve fairness
+			List<Connection> connections = ni.getConnections();
+			Collections.shuffle(connections, RANDOM_GENERATOR);
+			
+			Connection con = tryMessagesToConnections(messages, connections);
+			if (con != null) {
+				return con;
+			}
+		}
+		
+		return null;
 	}
 		
 	/**
@@ -459,27 +474,33 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * was started
 	 */
 	protected Connection exchangeDeliverableMessages() {
-		List<Connection> connections = getConnections();
-		if (connections.size() == 0) {
+		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
+		if (networkInterfaces.size() == 0) {
 			return null;
 		}
-		
 		// Randomize order to improve fairness
-		Collections.shuffle(connections);
-		Tuple<Message, Connection> t = null;
-		for (Connection con : connections) {
-			t = tryMessagesForConnection(
-					sortListOfMessagesForForwarding(getMessagesForConnection(con)), con);
-			if (t != null) {
-				// started transfer
-				return t.getValue();
-			}
-		}
+		Collections.shuffle(networkInterfaces, RANDOM_GENERATOR);
 		
-		// didn't start transfer to any node -> ask messages from connected
-		for (Connection con : connections) {
-			if (con.getOtherNode(getHost()).requestDeliverableMessages(con) != null) {
-				return con;
+		for (NetworkInterface ni : networkInterfaces) {
+			// Randomize order to improve fairness
+			List<Connection> connections = ni.getConnections();
+			Collections.shuffle(connections, RANDOM_GENERATOR);
+			
+			Tuple<Message, Connection> t = null;
+			for (Connection con : connections) {
+				t = tryMessagesForConnection(
+						sortListOfMessagesForForwarding(getMessagesForConnection(con)), con);
+				if (t != null) {
+					// started transfer
+					return t.getValue();
+				}
+			}
+			
+			// didn't start transfer to any node -> ask messages from connected
+			for (Connection con : connections) {
+				if (con.getOtherNode(getHost()).requestDeliverableMessages(con) != null) {
+					return con;
+				}
 			}
 		}
 		

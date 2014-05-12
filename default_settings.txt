@@ -94,8 +94,10 @@ Scenario.nrofHostGroups = 6
 ## Common settings for all groups
 Group.movementModel = ShortestPathMapBasedMovement
 Group.router = [EpidemicBroadcastRouterWithSubscriptions; SprayAndWaitRouterWithSubscriptions]
+Group.nrofHosts = 40
 Group.bufferSize = 5M
 Group.waitTime = 0, 120
+Group.routerRndSeed = 99
 # All nodes have the bluetooth interface
 Group.nrofInterfaces = 1
 Group.interface1 = btInterface
@@ -105,15 +107,15 @@ Group.speed = 0.5, 1.5
 Group.msgTtl = 300
 Group.messagePriorityStrategy = 1
 Group.messageForwardingOrderManager = 1
+## Subscription-related settings
 Group.subDisMode = [0; 1; 2]
-# Common subscriptions for all groups
-# If subIDs is specified, maxSize is ignored (maxSize used only for the random generation of subscriptions)
+# If subIDs is specified, other settings are ignored
+# (min/maxNrofSubscriptions and maxSubID are only used for the random generation of subscriptions)
+#Group.subIDs = 1,2,3,4,5
 Group.subIDRndSeed = 10
 Group.minNrofSubscriptions = 1
 Group.maxNrofSubscriptions = 5
 Group.maxSubID = 5
-#Group.subIDs = 1,2,3,4,5
-Group.nrofHosts = 40
 Group.msgDissProbability = 0.3
 Group.msgAcceptProbability = 0.5
 

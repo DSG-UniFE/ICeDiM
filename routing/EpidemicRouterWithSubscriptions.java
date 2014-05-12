@@ -116,11 +116,11 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 		 * policy will affect the set of messages that can be sent this way. */
 		if (canBeginNewTransfer()) {
 			List<NetworkInterface> idleInterfaces = getIdleNetworkInterfaces();
-			Collections.shuffle(idleInterfaces);
+			Collections.shuffle(idleInterfaces, RANDOM_GENERATOR);
 			
 			for (NetworkInterface ni : idleInterfaces) {
 				List<Connection> connections = ni.getConnections();
-				Collections.shuffle(connections);
+				Collections.shuffle(connections, RANDOM_GENERATOR);
 				
 				for (Connection con : connections) {
 					DTNHost otherNode = con.getOtherNode(getHost());

@@ -104,9 +104,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		if (makeRoomForNewMessage(m.getSize(), m.getPriority())) {
 			return super.createNewMessage(m);
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 	
 	/**
@@ -398,7 +397,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 */
 	protected NetworkInterface exchangeDeliverableMessages() {
 		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
-		Collections.shuffle(networkInterfaces);
+		Collections.shuffle(networkInterfaces, RANDOM_GENERATOR);
 		
 		for (NetworkInterface ni : networkInterfaces) {
 			List<Message> deliverableMessages = sortListOfMessagesForForwarding(
@@ -415,7 +414,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		// Didn't start transfer to any node -> ask for messages to connected peers
 		for (NetworkInterface ni : networkInterfaces) {
 			List<Connection> connections = ni.getConnections();
-			Collections.shuffle(connections);
+			Collections.shuffle(connections, RANDOM_GENERATOR);
 			for (Connection con : connections) {
 				if (con.getOtherNode(getHost()).requestDeliverableMessages(con) != null) {
 					return ni;
@@ -434,7 +433,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	 */
 	protected NetworkInterface tryAllMessagesToAllConnections() {
 		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
-		Collections.shuffle(networkInterfaces);
+		Collections.shuffle(networkInterfaces, RANDOM_GENERATOR);
 		
 		List<Message> messageList = sortListOfMessagesForForwarding(getMessageList());
 		for (NetworkInterface ni : networkInterfaces) {
