@@ -33,8 +33,8 @@ public class SprayAndWaitRouter extends ActiveRouter {
 
 	public SprayAndWaitRouter(Settings s) {
 		super(s);
-		Settings snwSettings = new Settings(SPRAYANDWAIT_NS);
 		
+		Settings snwSettings = new Settings(SPRAYANDWAIT_NS);
 		initialNrofCopies = snwSettings.getInt(NROF_COPIES);
 		isBinary = snwSettings.getBoolean(BINARY_MODE);
 	}
@@ -45,6 +45,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	 */
 	protected SprayAndWaitRouter(SprayAndWaitRouter r) {
 		super(r);
+		
 		this.initialNrofCopies = r.initialNrofCopies;
 		this.isBinary = r.isBinary;
 	}
@@ -80,12 +81,9 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	
 	@Override 
 	public boolean createNewMessage(Message m) {
-		makeRoomForNewMessage(m.getSize(), m.getPriority());
-
-		m.setTtl(this.msgTTL);
 		m.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
-		addToMessages(m, true);
-		return true;
+		
+		return super.createNewMessage(m);
 	}
 	
 	@Override
