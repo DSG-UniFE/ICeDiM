@@ -132,17 +132,21 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	}
 
 	/**
-	 * Returns a list of those messages whose destination is among the
-	 * neighboring nodes and it has not received the message, yet.
-	 * @return the List of messages yet to be delivered to the neighbors.
+	 * Returns whether a message can be delivered to the specified host
+	 * or not, according to the EpidemicRouter policy. Said policy requires
+	 * that Epidemic Routers keep a list of messages recently sent to each
+	 * neighbor, and that they exchange the list of the messages they have
+	 * with other nodes before they proceed with the dissemination phase.
+	 * This phase is called Anti-entropy session in the literature.
+	 * The algorithm hereby written is a simplification, as it does not
+	 * require hosts to exchange the lists described above.
+	 * @param m the {@link Message} to deliver.
+	 * @param to the {@link DTNHost} to which deliver the Message m.
+	 * @return {@code true} if the message can be delivered to the
+	 * specified host, or {@code false} otherwise.
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		/* TODO: Epidemic Routers keep a list of messages recently sent to
-		 * each neighbor, and hosts also exchange a list of the messages
-		 * they have and that can transfer to others. This is a simplification,
-		 * as it does not require hosts to exchange said lists.
-		 */
 		return !to.getRouter().hasReceivedMessage(m.getID());
 	}
 	
@@ -156,8 +160,13 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
 			if (randomGenerator.nextDouble() > receiveProbability) {
 				// remove message from receiving interface and refuse message
-				Message incoming = con.getReceiverInterface().retrieveTransferredMessage(id, con);
-				String message = null; 
+				Message incoming = retrieveTransferredMessageFromInterface(id, con);
+				if (incoming == null) {
+					// reception was interfered --> no need to apply dissemination mode
+					return null;
+				}
+				
+				String message = null;
 				switch (pubSubDisseminationMode) {
 				case FLEXIBLE:
 					throw new SimError("message refuse despite FLEXIBLE strategy was set");
@@ -165,7 +174,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 					message = "strict dissemination mode";
 					break;
 				case SEMI_POROUS:
-					message = "message discaded due to a semi-porous strategy";
+					message = "message discaded due to a semi-porous strategy. The probability" +
+							  " of discarding messages is " + (1 - receiveProbability);
 					break;
 				}
 				for (MessageListener ml : mListeners) {
@@ -193,7 +203,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			/* If no interface is sending the message and the dissemination
 			 * policy chosen allows it, we add it to the list of messages
 			 * available for sending. */
-			if (!isBeingSent && shouldDeliverMessageToneighbors(msg, idleInterface) &&
+			if (!isBeingSent && shouldDeliverMessageToNeighbors(msg, idleInterface) &&
 				(randomGenerator.nextDouble() <= sendProbability)) {
 				availableMessages.add(msg);
 			}
@@ -217,5 +227,10 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		Integer messageSubID = (Integer) aMessage.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		
 		return getSubscriptionList().containsSubscriptionID(messageSubID);
+	}
+
+	@Override
+	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
+		return dest.getRouter().isMessageDestination(aMessage);
 	}
 }

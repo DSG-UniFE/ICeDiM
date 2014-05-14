@@ -12,7 +12,8 @@ import interfaces.ConnectivityGrid;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
+
+import org.uncommons.maths.random.MersenneTwisterRNG;
 
 /**
  * World contains all the nodes and is responsible for updating their
@@ -50,7 +51,7 @@ public class World {
 	/** the seed value for the update order randomizer -setting's default value
 	 * ({@value}) */
 	public static long RANDOM_UPDATE_ORDER_SEED = 1;
-	public static Random UPDATE_ORDER_RANDOMIZER = null;
+	public static MersenneTwisterRNG UPDATE_ORDER_RANDOMIZER = null;
 
 	private int sizeX;
 	private int sizeY;
@@ -112,7 +113,8 @@ public class World {
 			if (s.contains(RANDOMIZE_UPDATES_SEED_S)) {
 				RANDOM_UPDATE_ORDER_SEED = s.getInt(RANDOMIZE_UPDATES_SEED_S);
 			}
-			UPDATE_ORDER_RANDOMIZER = new Random(RANDOM_UPDATE_ORDER_SEED);
+			UPDATE_ORDER_RANDOMIZER = new MersenneTwisterRNG();
+			UPDATE_ORDER_RANDOMIZER.setSeed(RANDOM_UPDATE_ORDER_SEED);
 		}
 		else { // null pointer means "don't randomize"
 			updateOrder = null;

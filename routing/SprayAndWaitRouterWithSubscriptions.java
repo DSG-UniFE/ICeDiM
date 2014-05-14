@@ -147,6 +147,25 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 			}
 		}
 	}
+
+	/**
+	 * Returns whether a message can be delivered to the specified host
+	 * or not, according to the Spray and Wait (SnW) policy. Said policy
+	 * requires that SnW Routers, in the spray phase, perform a message
+	 * dissemination in a way similar to Epidemic Routers, thereby also
+	 * carrying out the Anti-entropy session before proceeding with
+	 * message spraying. The algorithm hereby written is a simplification,
+	 * as it does not require hosts to exchange the lists produced for
+	 * the Anti-entropy session.
+	 * @param m the {@link Message} to deliver.
+	 * @param to the {@link DTNHost} to which deliver the Message m.
+	 * @return {@code true} if the message can be delivered to the
+	 * specified host, or {@code false} otherwise.
+	 */
+	@Override
+	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+		return !to.getRouter().hasReceivedMessage(m.getID());
+	}
 	
 	@Override
 	public Message messageTransferred(String id, Connection con) {
@@ -154,7 +173,11 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
 			if (randomGenerator.nextDouble() > receiveProbability) {
 				// remove message from receiving interface and refuse message
-				Message incoming = con.getReceiverInterface().retrieveTransferredMessage(id, con);
+				Message incoming = retrieveTransferredMessageFromInterface(id, con);
+				if (incoming == null) {
+					// reception was interfered --> no need to apply dissemination mode
+					return null;
+				}
 				String message = null; 
 				switch (pubSubDisseminationMode) {
 				case FLEXIBLE:
@@ -163,7 +186,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 					message = "strict dissemination mode";
 					break;
 				case SEMI_POROUS:
-					message = "message discaded due to a semi-porous strategy";
+					message = "message discaded due to a semi-porous strategy. The probability" +
+							  " of discarding messages is " + (1 - receiveProbability);
 					break;
 				}
 				for (MessageListener ml : mListeners) {
@@ -319,5 +343,10 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		Integer messageSubID = (Integer) aMessage.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		
 		return getSubscriptionList().containsSubscriptionID(messageSubID);
+	}
+
+	@Override
+	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
+		return dest.getRouter().isMessageDestination(aMessage);
 	}
 }

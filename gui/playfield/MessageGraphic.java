@@ -35,8 +35,7 @@ public class MessageGraphic extends PlayFieldGraphic {
 		int toY = scale(to.getLocation().getY());
 
 		// line from "from host" to "to host"
-		Polygon p = new Polygon(new int[] {fromX, toX}, 
-				new int[] {fromY,toY}, 2);
+		Polygon p = new Polygon(new int[] {fromX, toX}, new int[] {fromY,toY}, 2);
 		
 		g2.draw(p);
 	}

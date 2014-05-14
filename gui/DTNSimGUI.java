@@ -114,7 +114,7 @@ public class DTNSimGUI extends DTNSimUI {
 			JOptionPane.showMessageDialog(getParentFrame(), e1.getStackTrace());
 		}
 		
-		while (simTime < endTime && !simCancelled) {
+		while ((simTime < endTime) && !simCancelled) {
 			if (guiControls.isPaused()) {
 				wait(10); // release CPU resources when paused
 			}
@@ -197,7 +197,7 @@ public class DTNSimGUI extends DTNSimUI {
     	double guiUpdateInterval = guiControls.getUpdateInterval(); 		
     	
     	// update only if long enough simTime has passed (and not forced)
-		if (!forcedUpdate && guiUpdateInterval > (SimClock.getTime() - lastUpdate)) {
+		if (!forcedUpdate && (guiUpdateInterval > (SimClock.getTime() - lastUpdate))) {
 			return;
 		}
     	

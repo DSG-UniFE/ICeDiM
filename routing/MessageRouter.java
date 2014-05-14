@@ -4,6 +4,7 @@
  */
 package routing;
 
+import java.nio.channels.ConnectionPendingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -606,50 +607,14 @@ public abstract class MessageRouter {
 	 * @param from Host the message was from (previous hop)
 	 * @return The message that this host received
 	 */
-	public Message messageTransferred(String msgID, Connection con) {
+	public Message messageTransferred(String msgID, Connection con) throws SimError {
 		boolean isFinalRecipient;
 		boolean isFirstDelivery;	// is this the first delivered instance of the msg?
 		
-		NetworkInterface receivingInterface = con.getReceiverInterface();
-		if (!getHost().getInterfaces().contains(receivingInterface)) {
-			throw new SimError("messageTransferred() method called on the wrong host");
-		}
-		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
-		
-		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
-			throw new SimError("Message with messageID " + msgID + " could not" +
-								" be found within the interference model");
-		}
-		else if (receiveResult == InterferenceModel.RECEPTION_INCOMPLETE) {
-			throw new SimError("messageTransferred method invoked when message with ID " +
-								msgID + " was not completely transferred yet");
-		}
-		else if (receiveResult == InterferenceModel.RECEPTION_INTERFERENCE) {
-			if (receivingInterface.retrieveTransferredMessage(msgID, con) != null) {
-				throw new SimError("A message was returned by NetworkInterface.retrieveTransferredMessage() " + 
-									"method even if an interference was detected");
-			}
-			
-			for (MessageListener ml : mListeners) {
-				ml.messageTransmissionInterfered(con.getMessage(), con.getSenderNode(), con.getReceiverNode());
-			}
-			return null;
-		}
-		else if (receiveResult == InterferenceModel.RECEPTION_OUT_OF_SYNCH) {
-			if (receivingInterface.retrieveTransferredMessage(msgID, con) != null) {
-				throw new SimError("A message was returned by NetworkInterface.retrieveTransferredMessage() " + 
-									"method even if an interference was detected");
-			}
-			
-			// No need to notify listeners; only remove transfer from the InterferenceModel 
-			return null;
-		}
-
-		// receiveResult == InterferenceModel.RECEPTION_COMPLETED_CORRECTLY
-		Message incoming = receivingInterface.retrieveTransferredMessage(msgID, con);
+		Message incoming = retrieveTransferredMessageFromInterface(msgID, con);
 		if (incoming == null) {
-			throw new SimError("Impossible to retrieve message with ID " + msgID + 
-								" from the Interference Model");
+			// Message interfered or reception out-of-synch --> nothing to do
+			return null;
 		}
 		incoming.setReceiveTime(SimClock.getTime());
 		incoming.addNodeOnPath(getHost());
@@ -689,6 +654,66 @@ public abstract class MessageRouter {
 		}
 		
 		return aMessage;
+	}
+
+	/**
+	 * The method checks that the receiving interface of the specified
+	 * {@link Connection} belongs to this node and it verifies that the
+	 * code returned by the {@link InterferenceModel} is consistent with
+	 * the status of the Router and with the availability of the transferred
+	 * {@link Message}. In addition, it performs the actual message reception. 
+	 * @param msgID the ID of the {@link Message} being received. 
+	 * @param con the {@link Connection} transferring the Message. 
+	 * @return The received Message in case of successful reception, or
+	 * {@code null} if the message could not be received due to interferences.
+	 * @throws SimError An error signaling any detected inconsistency.
+	 */
+	protected Message retrieveTransferredMessageFromInterface(String msgID, Connection con)
+																throws SimError {
+		NetworkInterface receivingInterface = con.getReceiverInterface();
+		if (!getHost().getInterfaces().contains(receivingInterface)) {
+			throw new SimError("messageTransferred() method called on the wrong host");
+		}
+		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
+		
+		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
+			throw new SimError("Message with messageID " + msgID + " could not" +
+								" be found within the interference model");
+		}
+		else if (receiveResult == InterferenceModel.RECEPTION_INCOMPLETE) {
+			throw new SimError("messageTransferred method invoked when message with ID " +
+								msgID + " was not completely transferred yet");
+		}
+		else if (receiveResult == InterferenceModel.RECEPTION_INTERFERENCE) {
+			if (receivingInterface.retrieveTransferredMessage(msgID, con) != null) {
+				throw new SimError("NetworkInterface.retrieveTransferredMessage() method " +
+									"returned a message even if an interference was detected");
+			}
+			
+			for (MessageListener ml : mListeners) {
+				ml.messageTransmissionInterfered(con.getMessage(), con.getSenderNode(),
+													con.getReceiverNode());
+			}
+			return null;
+		}
+		else if (receiveResult == InterferenceModel.RECEPTION_OUT_OF_SYNCH) {
+			if (receivingInterface.retrieveTransferredMessage(msgID, con) != null) {
+				throw new SimError("NetworkInterface.retrieveTransferredMessage() method " +
+									"returned a message even if reception was out-of-synch");
+			}
+			
+			// No need to notify listeners: removing transfer from the InterferenceModel is enough
+			return null;
+		}
+
+		// receiveResult == InterferenceModel.RECEPTION_COMPLETED_CORRECTLY
+		Message incoming = receivingInterface.retrieveTransferredMessage(msgID, con);
+		if (incoming == null) {
+			throw new SimError("Impossible to retrieve message with ID " + msgID + 
+								" from the InterferenceModel");
+		}
+		
+		return incoming;
 	}
 	
 	/**
@@ -730,9 +755,9 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Check if the node {@link DTNHost} of this router is the final
-	 * destination for the received {@link Message}. Subclasses can
-	 * redefine the method to change its logic; e.g.: to use subscriptions. 
+	 * Check if this {@link DTNHost} is the final destination of the
+	 * specified {@link Message}. Subclasses can redefine the method
+	 * to change its logic; e.g., to use subscriptions. 
 	 * @param aMessage The received {@link Message}.
 	 * @return {@code true} if this {@link MessageRouter} is the final
 	 * destination (or one of them) of the received {@link Message},
@@ -744,8 +769,8 @@ public abstract class MessageRouter {
 
 	/**
 	 * Check if the specified {@link DTNHost} is the final destination
-	 * for the received {@link Message}. Subclasses can redefine the
-	 * method to change its logic; e.g.: to use subscriptions. 
+	 * of the specified {@link Message}. Subclasses can redefine the
+	 * method to change its logic; e.g., to use subscriptions. 
 	 * @param aMessage The received {@link Message}. 
 	 * @param dest The host we want to check if it's the message destination.
 	 * @return {@code true} if this {@link MessageRouter} is the final

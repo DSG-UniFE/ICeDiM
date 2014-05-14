@@ -20,6 +20,7 @@ import movement.Path;
 import movement.map.SimMap;
 import core.Coord;
 import core.DTNHost;
+import core.Message;
 import core.World;
 
 /**
@@ -179,9 +180,9 @@ public class PlayField extends JPanel {
 	}
 	
 	/**
-	 * Adds graphics for message transfer
-	 * @param from Who the message was from
-	 * @param to Who the message was to
+	 * Adds graphics for {@link Message} transfer.
+	 * @param from The {@link DTNHost} that started the transfer.
+	 * @param to The {@link DTNHost} that received the Message.
 	 */
 	public void addMessageTransfer(DTNHost from, DTNHost to) {
 		autoClear();
@@ -189,8 +190,8 @@ public class PlayField extends JPanel {
 	}
 	
 	/**
-	 * Adds a path to the overlay graphics
-	 * @param path Path to add
+	 * Adds a path to the overlay graphics.
+	 * @param path The {@link Path} to add.
 	 */
 	public void addPath(Path path) {
 		autoClear();

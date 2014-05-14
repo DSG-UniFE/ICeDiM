@@ -91,7 +91,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		List<Message> sortedMessageList = sortListOfMessagesForForwarding(
 				getDeliverableMessagesForNetworkInterface(requestingInterface));
 		for (Message m : sortedMessageList) {
-			if (shouldDeliverMessageToneighbors(m, requestingInterface) &&
+			if (shouldDeliverMessageToNeighbors(m, requestingInterface) &&
 				tryBroadcastOneMessage(m, requestingInterface) == BROADCAST_OK) {
 				return m;
 			}
@@ -260,8 +260,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	}
 	
 	/**
-	 * Returns a list of those messages whose recipient 
-	 * is among the neighboring nodes.
+	 * Returns a list of those messages whose recipient(s)
+	 * is/are among the neighboring nodes.
 	 * @return a List of messages to be delivered to the
 	 * nodes under connection range.
 	 */
@@ -273,17 +273,17 @@ public class BroadcastEnabledRouter extends MessageRouter {
 
 		List<Message> messageList = new ArrayList<Message>();
 		for (Message m : getMessageList()) {
-			if (isNeighboringHost(m.getTo())) {
+			if (isMessageDestinationReachable(m)) {
 				messageList.add(m);
 			}
 		}
 		
 		return messageList;
 	}
-	
+
 	/**
-	 * Returns a list of those messages whose recipient 
-	 * is among the neighboring nodes.
+	 * Returns a list of those messages whose recipient(s)
+	 * is/are among the neighboring nodes.
 	 * @return a List of messages to be delivered to the
 	 * nodes under connection range.
 	 */
@@ -295,12 +295,52 @@ public class BroadcastEnabledRouter extends MessageRouter {
 
 		List<Message> messageList = new ArrayList<Message>();
 		for (Message m : getMessageList()) {
-			if (isNeighboringHost(ni, m.getTo())) {
+			if (isMessageDestinationReachableThroughInterface(m, ni)) {
 				messageList.add(m);
 			}
 		}
 		
 		return messageList;
+	}
+
+	/**
+	 * Checks if the destination of the specified {@link Message}
+	 * is among this node's neighbors.
+	 * @param m the {@link Message} to check.
+	 * @return {@code true} if the destination belongs to the set
+	 * of this node's neighbors, or {@code false} otherwise.
+	 */
+	protected boolean isMessageDestinationReachable(Message m) {
+		for (NetworkInterface ni : getHost().getInterfaces()) {
+			if (isMessageDestinationReachableThroughInterface(m, ni)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+
+	/**
+	 * Checks if the destination of the specified {@link Message}
+	 * is among the neighbors reachable through the specified
+	 * {@link NetworkInterface}.
+	 * @param m the {@link Message} to check.
+	 * @param ni the {@link NetworkInterface} that determines the
+	 * neighbors to consider as possible message destinations.
+	 * @return {@code true} if the destination belongs to the set
+	 * of neighbors reachable through the specified
+	 * {@link NetworkInterface}, or {@code false} otherwise.
+	 */
+	protected boolean isMessageDestinationReachableThroughInterface(Message m,
+																	NetworkInterface ni) {
+		for (Connection con : ni.getConnections()) {
+			if (isMessageDestination(m, con.getOtherNode(getHost()))) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	/**
@@ -403,7 +443,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			List<Message> deliverableMessages = sortListOfMessagesForForwarding(
 												getDeliverableMessagesForNetworkInterface(ni));
 			for (Message m : deliverableMessages) {
-				if (shouldDeliverMessageToneighbors(m, ni) &&
+				if (shouldDeliverMessageToNeighbors(m, ni) &&
 					tryBroadcastOneMessage(m, ni) == BROADCAST_OK) {
 					// Transfer using broadcast started
 					return ni;
@@ -438,7 +478,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		List<Message> messageList = sortListOfMessagesForForwarding(getMessageList());
 		for (NetworkInterface ni : networkInterfaces) {
 			for (Message m : messageList) {
-				if (shouldDeliverMessageToneighbors(m, ni) &&
+				if (shouldDeliverMessageToNeighbors(m, ni) &&
 					(tryBroadcastOneMessage(m, ni) == BROADCAST_OK)) {
 					// Transfer using broadcast started
 					return ni;
@@ -451,20 +491,39 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	}
 
 	/**
+	 * Returns whether the specified {@link Message} needs to be delivered
+	 * to at least one node in the set of neighbors of this {@link DTNHost}.
+	 * Subclasses can overwrite this method, if necessary.
+	 * @param m The {@link Message} that needs to be delivered.
+	 * @return {@code true} if at least one node among the neighbors
+	 * needs the {@link Message}, or {@code false} otherwise.
+	 */
+	protected boolean shouldDeliverMessageToNeighbors(Message m) {
+		for (NetworkInterface ni : getHost().getInterfaces()) {
+			if (shouldDeliverMessageToNeighbors(m, ni)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
 	 * Returns whether the specified {@link Message} needs to be
 	 * delivered to at least one node in the neighbors reachable
 	 * through the selected {@link NetworkInterface}. Subclasses
 	 * can overwrite this method, if necessary.
-	 * @param m The {@link Message} that might need to be delivered.
+	 * @param m The {@link Message} that needs to be delivered.
 	 * @param to The {@link NetworkInterface} that identifies the set
 	 * of neighbors to which the specified Message might be delivered.
-	 * @return {@code true} if at least one among the neighbors
+	 * @return {@code true} if at least one node among the neighbors
 	 * reachable through the specified {@link NetworkInterface}
-	 * need the {@link Message}, or {@code false} otherwise.
+	 * needs the {@link Message}, or {@code false} otherwise.
 	 */
-	protected boolean shouldDeliverMessageToneighbors(Message m, NetworkInterface ni) {
+	protected boolean shouldDeliverMessageToNeighbors(Message m, NetworkInterface ni) {
+		DTNHost thisHost = getHost();
 		for (Connection con : ni.getConnections()) {
-			if (shouldDeliverMessageToHost(m, con.getOtherNode(getHost()))) {
+			if (shouldDeliverMessageToHost(m, con.getOtherNode(thisHost))) {
 				return true;
 			}
 		}
