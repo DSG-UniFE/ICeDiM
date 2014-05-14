@@ -133,7 +133,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 
 	/**
 	 * Returns a list of those messages whose destination is among the
-	 * neighbouring nodes and it has not received the message, yet.
+	 * neighboring nodes and it has not received the message, yet.
 	 * @return the List of messages yet to be delivered to the neighbours.
 	 */
 	@Override
