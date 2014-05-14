@@ -63,9 +63,9 @@ public class EpidemicBroadcastRouterWithSubscriptions
 								" value " + "in the settings file is out of range");
 		}
 		
-		if (EpidemicBroadcastRouterWithSubscriptions.randomGenerator == null) {
-			EpidemicBroadcastRouterWithSubscriptions.randomGenerator = new MersenneTwisterRNG();
-			EpidemicBroadcastRouterWithSubscriptions.randomGenerator.setSeed(SEED);
+		if (randomGenerator == null) {
+			randomGenerator = new MersenneTwisterRNG();
+			randomGenerator.setSeed(SEED);
 		}
 		
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];

@@ -48,7 +48,7 @@ public class SubscriptionListManager {
 	public static final String MIN_NROF_SUBSCRIPTIONS = "minNrofSubscriptions";
 	/** If not specified, the value is computed from the number of subIDs specified. */
 	public static final String MAX_NROF_SUBSCRIPTIONS = "maxNrofSubscriptions";
-	/** Highes valid ID for a subscription -setting id ({@value}). int.
+	/** Highest valid ID for a subscription -setting id ({@value}). int.
 	 * If not specified, the value is computed from the highest ID specified. */
 	public static final String MAX_SUB_ID = "maxSubID";
 	/** List of subscriptions the node performed -setting id ({@value}). Array of int.
