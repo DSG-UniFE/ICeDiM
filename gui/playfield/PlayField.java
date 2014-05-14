@@ -72,7 +72,7 @@ public class PlayField extends JPanel {
 	 * @param dx X offset of the image
 	 * @param dy Y offset of the image
 	 * @param scale Image scaling factor
-	 * @param rotation Rotatation angle of the image (radians)
+	 * @param rotation Rotation angle of the image (radians)
 	 */
 	public void setUnderlayImage(BufferedImage image, double dx, double dy,
 									double scale, double rotation) {
