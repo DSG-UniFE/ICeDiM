@@ -123,8 +123,8 @@ public class WorldState {
 	 * interval to update the status of transfer(s). 
 	 */
 	public void update() {
-		Collection<NeighborInfo> neighboursInfoCollection = neighborsInfo.values();
-		for (NeighborInfo ni : neighboursInfoCollection) {
+		Collection<NeighborInfo> neighborsInfoCollection = neighborsInfo.values();
+		for (NeighborInfo ni : neighborsInfoCollection) {
 			ni.update();
 		}
 	}

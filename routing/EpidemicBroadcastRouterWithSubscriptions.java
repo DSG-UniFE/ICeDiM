@@ -134,13 +134,13 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	/**
 	 * Returns a list of those messages whose destination is among the
 	 * neighboring nodes and it has not received the message, yet.
-	 * @return the List of messages yet to be delivered to the neighbours.
+	 * @return the List of messages yet to be delivered to the neighbors.
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
 		/* TODO: Epidemic Routers keep a list of messages recently sent to
-		 * each neighbour, and hosts also exchange a list of the messages
-		 * they have and that can transfer to others. This is a semplification,
+		 * each neighbor, and hosts also exchange a list of the messages
+		 * they have and that can transfer to others. This is a simplification,
 		 * as it does not require hosts to exchange said lists.
 		 */
 		return !to.getRouter().hasReceivedMessage(m.getID());
@@ -193,7 +193,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			/* If no interface is sending the message and the dissemination
 			 * policy chosen allows it, we add it to the list of messages
 			 * available for sending. */
-			if (!isBeingSent && shouldDeliverMessageToNeighbours(msg, idleInterface) &&
+			if (!isBeingSent && shouldDeliverMessageToneighbors(msg, idleInterface) &&
 				(randomGenerator.nextDouble() <= sendProbability)) {
 				availableMessages.add(msg);
 			}

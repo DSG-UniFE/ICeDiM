@@ -89,7 +89,7 @@ public class MapNode implements Comparable<MapNode> {
 	}
 	
 	/**
-	 * Adds the node as this node's neighbour (unless the node is null)
+	 * Adds the node as this node's neighbor (unless the node is null)
 	 * @param node The node to add or null for no action
 	 */
 	public void addNeighbor(MapNode node) {
@@ -101,8 +101,8 @@ public class MapNode implements Comparable<MapNode> {
 	}
 
 	/**
-	 * Adds the node to list of neighbours unless it is already there or
-	 * "neighbour" is this node
+	 * Adds the node to list of neighbors unless it is already there or
+	 * "neighbor" is this node
 	 * @param node
 	 */
 	private void addToList(MapNode node) {

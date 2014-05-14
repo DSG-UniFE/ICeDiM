@@ -73,7 +73,7 @@ Scenario.nrofHostGroups = 6
 #         the value of maxSize.
 #
 #msgDissProbability: message dissemination probability - the probability of forwarding a message even if no
-#                    neighbours belong to the same subscription of the message.
+#                    neighbors belong to the same subscription of the message.
 #msgAcceptProbability: message acceptance probability - the probability of storing a received message even if
 #                      if the recipient node does not belong to the message subscription
 #

@@ -263,17 +263,17 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		}
 		
 		// Create the list of subscriptions of the neighbors
-		List<DTNHost> neighbouringHosts = ni.getReachableHosts();
-		List<Integer> neighboursSubscriptionIDs = new ArrayList<Integer>();
-		for (DTNHost host : neighbouringHosts) {
+		List<DTNHost> neighboringHosts = ni.getReachableHosts();
+		List<Integer> neighborsSubscriptionIDs = new ArrayList<Integer>();
+		for (DTNHost host : neighboringHosts) {
 			if (!(host.getRouter() instanceof PublisherSubscriber)) {
 				throw new SimError("Remote host " + host + " is not a Publisher/Subscriber router");
 			}
 			
 			PublisherSubscriber remoteHost = (PublisherSubscriber) host.getRouter();
 			for (Integer subID : remoteHost.getSubscriptionList().getSubscriptionList()) {
-				if (!neighboursSubscriptionIDs.contains(subID)) {
-					neighboursSubscriptionIDs.add(subID);
+				if (!neighborsSubscriptionIDs.contains(subID)) {
+					neighborsSubscriptionIDs.add(subID);
 				}
 			}
 		}
@@ -281,8 +281,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		List<Message> messageList = new ArrayList<Message>();
 		for (Message m : getMessageList()) {
 			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-			if (neighboursSubscriptionIDs.contains(subID)) {
-				// add all messages belonging to the subscriptions of a neighbour
+			if (neighborsSubscriptionIDs.contains(subID)) {
+				// add all messages belonging to the subscriptions of a neighbor
 				messageList.add(m);
 			}
 			else if (randomGenerator.nextDouble() <= sendProbability) {

@@ -415,12 +415,12 @@ public abstract class MessageRouter {
 	}
 	
 	/**
-	 * Returns whether the specified host is a neighbour or not
+	 * Returns whether the specified host is a neighbor or not
 	 * @param neighborHost the {@link DTNHost} we want to check
-	 * @return {@code true} if the specified host is a neighbour,
+	 * @return {@code true} if the specified host is a neighbor,
 	 * or {@code false} otherwise.
 	 */
-	protected boolean isNeighbouringHost(DTNHost neighborHost) {
+	protected boolean isneighboringHost(DTNHost neighborHost) {
 		for (Connection con : getHost().getConnections()) {
 			if (con.getOtherNode(getHost()) == neighborHost) {
 				return true;
@@ -431,15 +431,15 @@ public abstract class MessageRouter {
 	}
 	
 	/**
-	 * Returns whether the specified host is a neighbour reachable
+	 * Returns whether the specified host is a neighbor reachable
 	 * through the specified {@link NetworkInterface} or not.
 	 * @param ni the {@link NetworkInterface} considered.
 	 * @param neighborHost the {@link DTNHost} we want to check.
-	 * @return {@code true} if the specified host is a neighbour
+	 * @return {@code true} if the specified host is a neighbor
 	 * reachable through the selected {@link NetworkInterface},
 	 * or {@code false} otherwise.
 	 */
-	protected boolean isNeighbouringHost(NetworkInterface ni, DTNHost neighborHost) {
+	protected boolean isneighboringHost(NetworkInterface ni, DTNHost neighborHost) {
 		for (Connection con : getHost().getConnections()) {
 			if (con.getOtherNode(getHost()) == neighborHost) {
 				return true;

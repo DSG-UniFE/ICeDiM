@@ -134,13 +134,13 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 
 	/**
 	 * Returns a list of those messages whose destination is among the
-	 * neighbouring nodes and it has not received the message, yet.
-	 * @return the List of messages yet to be delivered to the neighbours.
+	 * neighboring nodes and it has not received the message, yet.
+	 * @return the List of messages yet to be delivered to the neighbors.
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
 		/* TODO: Epidemic Routers keep a list of messages recently sent to
-		 * each neighbour, and hosts also exchange a list of the messages
+		 * each neighbor, and hosts also exchange a list of the messages
 		 * they have and that can transfer to others. This is a semplification,
 		 * as it does not require hosts to exchange said lists.
 		 */
