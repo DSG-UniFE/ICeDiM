@@ -439,7 +439,7 @@ public abstract class MessageRouter {
 	 * reachable through the selected {@link NetworkInterface},
 	 * or {@code false} otherwise.
 	 */
-	protected boolean isneighboringHost(NetworkInterface ni, DTNHost neighborHost) {
+	protected boolean isNeighboringHost(NetworkInterface ni, DTNHost neighborHost) {
 		for (Connection con : getHost().getConnections()) {
 			if (con.getOtherNode(getHost()) == neighborHost) {
 				return true;
@@ -453,7 +453,7 @@ public abstract class MessageRouter {
 	 * Returns whether the specified {@link Message} needs to be
 	 * delivered to the selected {@link DTNHost}. This method is
 	 * a hook that returns {@code true} by default as a default
-	 * behaviour. Subclasses should overwrite it.
+	 * behavior. Subclasses should overwrite it.
 	 * @param m The Message that might need to be delivered.
 	 * @param to The host that might need the Message.
 	 * @return {@code true} if the specified host needs the

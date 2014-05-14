@@ -295,7 +295,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 
 		List<Message> messageList = new ArrayList<Message>();
 		for (Message m : getMessageList()) {
-			if (isneighboringHost(ni, m.getTo())) {
+			if (isNeighboringHost(ni, m.getTo())) {
 				messageList.add(m);
 			}
 		}
