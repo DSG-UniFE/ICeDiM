@@ -420,9 +420,9 @@ public abstract class MessageRouter {
 	 * @return {@code true} if the specified host is a neighbor,
 	 * or {@code false} otherwise.
 	 */
-	protected boolean isneighboringHost(DTNHost neighborHost) {
-		for (Connection con : getHost().getConnections()) {
-			if (con.getOtherNode(getHost()) == neighborHost) {
+	protected boolean isNeighboringHost(DTNHost neighborHost) {
+		for (NetworkInterface ni : getHost().getInterfaces()) {
+			if (isNeighboringHost(ni, neighborHost)) {
 				return true;
 			}
 		}
@@ -440,7 +440,7 @@ public abstract class MessageRouter {
 	 * or {@code false} otherwise.
 	 */
 	protected boolean isNeighboringHost(NetworkInterface ni, DTNHost neighborHost) {
-		for (Connection con : getHost().getConnections()) {
+		for (Connection con : ni.getConnections()) {
 			if (con.getOtherNode(getHost()) == neighborHost) {
 				return true;
 			}

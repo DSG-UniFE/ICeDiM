@@ -273,7 +273,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 
 		List<Message> messageList = new ArrayList<Message>();
 		for (Message m : getMessageList()) {
-			if (isneighboringHost(m.getTo())) {
+			if (isNeighboringHost(m.getTo())) {
 				messageList.add(m);
 			}
 		}
