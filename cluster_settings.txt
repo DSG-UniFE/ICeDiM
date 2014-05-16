@@ -27,7 +27,7 @@ Group.nrofInterfaces = 1
 Group.interface1 = firstinterface
 # walking speeds
 Group.speed = 0.5, 1.5
-#Group.msgTtl = 60
+#Group.msgTTL = 60
 
 Group.nrofHosts = 40
 Group.nrofApplications = 0

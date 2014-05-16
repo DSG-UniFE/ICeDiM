@@ -397,7 +397,7 @@ Time intervals (comma-separated simulated time value tuples: start1, end1,
 start2, end2, ...) when the nodes in the group should be active. If no 
 intervals are defined, nodes are active all the time.
 
-msgTtl
+msgTTL
 Time To Live (simulated minutes) of the messages created by this host group.  
 Nodes (with active routing module) check every one minute whether some of 
 their messages' TTLs have expired and drop such messages. If no TTL is 
