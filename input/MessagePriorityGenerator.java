@@ -6,6 +6,7 @@ package input;
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
 import core.Message;
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 
@@ -30,10 +31,10 @@ public class MessagePriorityGenerator {
 	private final double prioritySlotRanges[];
 	
 	public MessagePriorityGenerator(Settings s) {
-		this.randomPriorityGenerator = new MersenneTwisterRNG();
 		long seed = s.contains(PRIORITY_RANDOMIZER_SEED_S) ?
 						s.getInt(PRIORITY_RANDOMIZER_SEED_S) : DEF_RANDOM_PRIORITY_GENERATOR_SEED;
-		this.randomPriorityGenerator.setSeed(seed);
+		this.randomPriorityGenerator = new MersenneTwisterRNG(
+											SeedGeneratorHelper.get16BytesSeedFromValue(seed));
 		
 		if (!s.contains(MESSAGE_PRIORITY_SLOT_S)) {
 			this.prioritySlotRanges = new double[DEFAULT_PRIORITY_SLOT_RANGES.length];

@@ -4,7 +4,6 @@
  */
 package routing;
 
-import java.nio.channels.ConnectionPendingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -21,6 +20,7 @@ import core.Message;
 import core.MessageListener;
 import core.MessageQueueManager;
 import core.NetworkInterface;
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimClock;
 import core.SimError;
@@ -49,7 +49,7 @@ public abstract class MessageRouter {
 	public static final int DENIED_UNSPECIFIED = 99;
 	
 	/** Message TTL -setting id ({@value}). Integer expressed in minutes */
-	public static final String MSG_TTL_S = "msgTtl";
+	public static final String MSG_TTL_S = "msgTTL";
 	/** Random generator seed value -setting id ({@value}). Integer */
 	public static final String ROUTER_RANDOM_SEED_S = "routerRndSeed";
 
@@ -88,10 +88,8 @@ public abstract class MessageRouter {
 		
 		if (RANDOM_GENERATOR == null) {
 			// Singleton
-			RANDOM_GENERATOR = new MersenneTwisterRNG();
-			if (s.contains(ROUTER_RANDOM_SEED_S)) {
-				RANDOM_GENERATOR_SEED = s.getInt(ROUTER_RANDOM_SEED_S);
-			}
+			RANDOM_GENERATOR = new MersenneTwisterRNG(
+					SeedGeneratorHelper.get16BytesSeedFromValue(RANDOM_GENERATOR_SEED));
 			RANDOM_GENERATOR.setSeed(RANDOM_GENERATOR_SEED);
 		}
 	}
@@ -453,8 +451,8 @@ public abstract class MessageRouter {
 	/**
 	 * Returns whether the specified {@link Message} needs to be
 	 * delivered to the selected {@link DTNHost}. This method is
-	 * a hook that returns {@code true} by default as a default
-	 * behavior. Subclasses should overwrite it.
+	 * a hook that returns {@code true} as its default behavior.
+	 * Subclasses should overwrite it.
 	 * @param m The Message that might need to be delivered.
 	 * @param to The host that might need the Message.
 	 * @return {@code true} if the specified host needs the

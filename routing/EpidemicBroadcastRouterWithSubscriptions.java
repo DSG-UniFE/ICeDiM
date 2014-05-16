@@ -17,6 +17,7 @@ import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import core.disService.PublisherSubscriber;
@@ -33,8 +34,6 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	/** identifier for the binary-mode setting ({@value})*/
 	public static final String MESSAGE_ACCEPT_PROBABILITY_S = "msgAcceptProbability";
 	
-	private static MersenneTwisterRNG randomGenerator = null;
-	private static final long SEED = 1;
 	private final double sendProbability;
 	private final double receiveProbability;
 
@@ -61,11 +60,6 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		if ((subpubDisMode < 0) || (subpubDisMode > SubscriptionBasedDisseminationMode.values().length)) {
 			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S +
 								" value " + "in the settings file is out of range");
-		}
-		
-		if (randomGenerator == null) {
-			randomGenerator = new MersenneTwisterRNG();
-			randomGenerator.setSeed(SEED);
 		}
 		
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
@@ -158,7 +152,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	public Message messageTransferred(String id, Connection con) {
 		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
-			if (randomGenerator.nextDouble() > receiveProbability) {
+			if (RANDOM_GENERATOR.nextDouble() > receiveProbability) {
 				// remove message from receiving interface and refuse message
 				Message incoming = retrieveTransferredMessageFromInterface(id, con);
 				if (incoming == null) {
@@ -204,7 +198,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			 * policy chosen allows it, we add it to the list of messages
 			 * available for sending. */
 			if (!isBeingSent && shouldDeliverMessageToNeighbors(msg, idleInterface) &&
-				(randomGenerator.nextDouble() <= sendProbability)) {
+				(RANDOM_GENERATOR.nextDouble() <= sendProbability)) {
 				availableMessages.add(msg);
 			}
 		}

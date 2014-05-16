@@ -17,6 +17,7 @@ import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import core.disService.PublisherSubscriber;
@@ -28,7 +29,8 @@ import core.disService.SubscriptionListManager;
  * Connected Mobile Networks</I> by Thrasyvoulos Spyropoulus et al.
  *
  */
-public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter implements PublisherSubscriber {
+public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
+													implements PublisherSubscriber {
 	/** identifier for the initial number of copies setting ({@value})*/ 
 	public static final String NROF_COPIES_S = "nrofCopies";
 	/** identifier for the binary-mode setting ({@value})*/
@@ -44,9 +46,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	
 	protected int initialNrofCopies;
 	protected boolean isBinary;
-	
-	private static MersenneTwisterRNG randomGenerator = null;
-	private static final long SEED = 1;
+
 	private final double sendProbability;
 	private final double receiveProbability;
 	
@@ -75,13 +75,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 		}
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
 		
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) { 
-			if (randomGenerator == null) {
-				// Singleton is instanciated only if needed
-				randomGenerator = new MersenneTwisterRNG();
-				randomGenerator.setSeed(SEED);
-			}
-			
+		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
@@ -171,7 +165,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 	public Message messageTransferred(String id, Connection con) {
 		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
-			if (randomGenerator.nextDouble() > receiveProbability) {
+			if (RANDOM_GENERATOR.nextDouble() > receiveProbability) {
 				// remove message from receiving interface and refuse message
 				Message incoming = retrieveTransferredMessageFromInterface(id, con);
 				if (incoming == null) {
@@ -309,7 +303,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter 
 				// add all messages belonging to the subscriptions of a neighbor
 				messageList.add(m);
 			}
-			else if (randomGenerator.nextDouble() <= sendProbability) {
+			else if (RANDOM_GENERATOR.nextDouble() <= sendProbability) {
 				/* Add the message to the list. This will happen with
 				 * probability 1 if the selected dissemination mode
 				 * is FLEXIBLE, with the configured probability if the

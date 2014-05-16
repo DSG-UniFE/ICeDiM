@@ -2,10 +2,12 @@ package messageForwardingOrderManager;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
 import core.Message;
 import core.MessageQueueManager;
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import strategies.MessagePrioritizationStrategy;
@@ -24,19 +26,19 @@ import strategies.MessagePrioritizationStrategy;
 public class ExponentiallyDecayingManager extends MessageForwardingOrderManager {
 
 	/** Random number generator */
-	static MersenneTwisterRNG randomGenerator = null;
+	static MersenneTwisterRNG RANDOM_GENERATOR = null;
 	/** Random number generator's seed */
-	static final long SEED = 1;
+	static final long RANDOM_GENERATOR_SEED = 105;
 	
 	
 	public ExponentiallyDecayingManager(Settings s, MessageQueueManager queueManager,
 										MessagePrioritizationStrategy orderingStrategy) {
 		super(MessageForwardingManagerImplementation.EDP_MANAGER, queueManager, orderingStrategy);
 		
-		if (ExponentiallyDecayingManager.randomGenerator == null) {
+		if (RANDOM_GENERATOR == null) {
 			// Singleton
-			ExponentiallyDecayingManager.randomGenerator = new MersenneTwisterRNG();
-			ExponentiallyDecayingManager.randomGenerator.setSeed(SEED);
+			RANDOM_GENERATOR = new MersenneTwisterRNG(
+					SeedGeneratorHelper.get16BytesSeedFromValue(RANDOM_GENERATOR_SEED));
 		}
 	}
 
@@ -102,7 +104,7 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 	 * @return a Message randomly extracted from the queue.
 	 */
 	private Message drawMessageFromOrderedList(List<Message> messageList, List<Double> probVector) {
-		return messageList.get(findMessageIndex(randomGenerator.nextDouble(), probVector));
+		return messageList.get(findMessageIndex(RANDOM_GENERATOR.nextDouble(), probVector));
 	}
 
 	/**

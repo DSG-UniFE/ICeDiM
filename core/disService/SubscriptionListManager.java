@@ -7,12 +7,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.uncommons.maths.random.DefaultSeedGenerator;
 import org.uncommons.maths.random.MersenneTwisterRNG;
 import org.uncommons.maths.random.SeedException;
 import org.uncommons.maths.random.SeedGenerator;
 
 import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
 
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 
@@ -33,8 +35,8 @@ public class SubscriptionListManager {
 	/** The highest SubscriptionID used in the simulation */
 	public static int MAX_SUB_ID_OF_SIMULATION = Integer.MIN_VALUE;
 	
-	private static MersenneTwisterRNG RandomIDGenerator = null;
-	private static long RandomGeneratorSeed = 1;
+	private static MersenneTwisterRNG RANDOM_ID_GENERATOR = null;
+	private static long RANDOM_ID_GENERATOR_SEED = 3;
 	
 	/** Value to specify errors or invalid subscription IDs */
 	public static final int INVALID_SUB_ID = -1;
@@ -71,6 +73,11 @@ public class SubscriptionListManager {
 		this.subscriptionList = new ArrayList<Integer>();
 		
 		MAX_SUB_ID_OF_SIMULATION = Math.max(MAX_SUB_ID_OF_SIMULATION, this.maxSubID);
+		
+		if (RANDOM_ID_GENERATOR == null) {
+			RANDOM_ID_GENERATOR = new MersenneTwisterRNG(SeedGeneratorHelper.
+														get16BytesSeedFromValue(RANDOM_ID_GENERATOR_SEED));
+		}
 		randomizeSubscriptions();
 	}
 	
@@ -99,11 +106,6 @@ public class SubscriptionListManager {
 			}
 		}
 
-		// Check this setting regardless subscriptions are random or not
-		if (s.contains(SUB_ID_RND_SEED_S)) {
-			SubscriptionListManager.RandomGeneratorSeed = s.getInt(SUB_ID_RND_SEED_S);
-		}
-
 		if (this.subscriptionList.size() == 0) {
 			// Parsing was unsuccessful or the first element in the list was "-1" or lower
 			if (s.contains(MIN_NROF_SUBSCRIPTIONS)) {
@@ -130,8 +132,15 @@ public class SubscriptionListManager {
 			this.maxSubID = Math.max(this.maxSubID, this.maxNumberOfSubscriptions);
 			
 			this.areSubscriptionsRandom = true;
-			
-			randomizeSubscriptions();
+			if (RANDOM_ID_GENERATOR == null) {
+				// Singleton
+				if (s.contains(SUB_ID_RND_SEED_S)) {
+					RANDOM_ID_GENERATOR_SEED = s.getInt(SUB_ID_RND_SEED_S);
+				}
+				RANDOM_ID_GENERATOR = new MersenneTwisterRNG(
+						SeedGeneratorHelper.get16BytesSeedFromValue(RANDOM_ID_GENERATOR_SEED));
+			}
+			this.randomizeSubscriptions();
 		}
 		
 		MAX_SUB_ID_OF_SIMULATION = Math.max(MAX_SUB_ID_OF_SIMULATION, this.maxSubID);
@@ -141,15 +150,15 @@ public class SubscriptionListManager {
 		this.maxSubID = sl.maxSubID;
 		this.minNumberOfSubscriptions = sl.minNumberOfSubscriptions;
 		this.maxNumberOfSubscriptions = sl.maxNumberOfSubscriptions;
-		areSubscriptionsRandom = sl.areSubscriptionsRandom;
+		this.areSubscriptionsRandom = sl.areSubscriptionsRandom;
 		
 		this.subscriptionList = new ArrayList<Integer>();
-		if (areSubscriptionsRandom) {
-			randomizeSubscriptions();
+		if (this.areSubscriptionsRandom) {
+			this.randomizeSubscriptions();
 		}
 		else {
 			for (Integer subID : sl.subscriptionList) {
-				addSubscriptionToList(subID);
+				this.addSubscriptionToList(subID);
 			}
 		}
 	}
@@ -185,7 +194,8 @@ public class SubscriptionListManager {
 			return;
 		}
 		
-		int generatedSubscriptionNumber = Math.max(minNumberOfSubscriptions, getRandomID(maxNumberOfSubscriptions + 1));
+		int generatedSubscriptionNumber = Math.max(minNumberOfSubscriptions,
+													getRandomID(maxNumberOfSubscriptions + 1));
 		for (int i = 0; i < generatedSubscriptionNumber; ++i) {
 			if (addRandomSubscriptionToList() == SubscriptionListManager.INVALID_SUB_ID) {
 				break;
@@ -199,7 +209,6 @@ public class SubscriptionListManager {
 			return INVALID_SUB_ID;
 		}
 		
-		// 
 		int subID = getRandomID(maxSubID + 1);
 		while (containsSubscriptionID(subID) || (subID <= DEFAULT_SUB_ID)) {
 			subID = getRandomID(maxSubID + 1);
@@ -221,11 +230,6 @@ public class SubscriptionListManager {
 	}
 	
 	static private int getRandomID(int maxSubID) {
-		if (RandomIDGenerator == null) {
-			RandomIDGenerator = new MersenneTwisterRNG();
-			RandomIDGenerator.setSeed(RandomGeneratorSeed);
-		}
-		
-		return RandomIDGenerator.nextInt(maxSubID);
+		return RANDOM_ID_GENERATOR.nextInt(maxSubID);
 	}
 }

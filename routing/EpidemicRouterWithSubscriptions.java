@@ -17,6 +17,7 @@ import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import core.disService.PublisherSubscriber;
@@ -33,8 +34,6 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 	/** identifier for the binary-mode setting ({@value})*/
 	public static final String MESSAGE_ACCEPT_PROBABILITY_S = "msgAcceptProbability";
 	
-	private static MersenneTwisterRNG randomGenerator = null;
-	private static final long SEED = 1;
 	private final double sendProbability;
 	private final double receiveProbability;
 
@@ -63,13 +62,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 								" value " + "in the settings file is out of range");
 		}
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) { 
-			if (randomGenerator == null) {
-				// Singleton is instanciated only if needed
-				randomGenerator = new MersenneTwisterRNG();
-				randomGenerator.setSeed(SEED);
-			}
-			
+		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
@@ -141,7 +134,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
 		/* TODO: Epidemic Routers keep a list of messages recently sent to
 		 * each neighbor, and hosts also exchange a list of the messages
-		 * they have and that can transfer to others. This is a semplification,
+		 * they have and that can transfer to others. This is a simplification,
 		 * as it does not require hosts to exchange said lists.
 		 */
 		return !to.getRouter().hasReceivedMessage(m.getID());
@@ -155,7 +148,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 	public Message messageTransferred(String id, Connection con) {
 		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
-			if (randomGenerator.nextDouble() > receiveProbability) {
+			if (RANDOM_GENERATOR.nextDouble() > receiveProbability) {
 				// remove message from receiving interface and refuse message
 				Message incoming = con.getReceiverInterface().retrieveTransferredMessage(id, con);
 				String message = null; 
@@ -195,7 +188,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 			 * policy chosen allows it, we add it to the list of messages
 			 * available for sending. */
 			if (!isBeingSent && shouldDeliverMessageToHost(msg, otherHost) &&
-				(randomGenerator.nextDouble() <= sendProbability)) {
+				(RANDOM_GENERATOR.nextDouble() <= sendProbability)) {
 				availableMessages.add(msg);
 			}
 		}

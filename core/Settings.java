@@ -612,7 +612,7 @@ public class Settings {
 
 	/**
 	 * Creates (and dynamically loads the class of) an object that
-	 * intializes itself using the settings in this Settings object
+	 * initializes itself using the settings in this Settings object
 	 * (given as the only parameter to the constructor). 
 	 * @param className Name of the class of the object
 	 * @return Initialized object

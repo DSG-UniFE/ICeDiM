@@ -113,8 +113,8 @@ public class World {
 			if (s.contains(RANDOMIZE_UPDATES_SEED_S)) {
 				RANDOM_UPDATE_ORDER_SEED = s.getInt(RANDOMIZE_UPDATES_SEED_S);
 			}
-			UPDATE_ORDER_RANDOMIZER = new MersenneTwisterRNG();
-			UPDATE_ORDER_RANDOMIZER.setSeed(RANDOM_UPDATE_ORDER_SEED);
+			UPDATE_ORDER_RANDOMIZER = new MersenneTwisterRNG(
+					SeedGeneratorHelper.get16BytesSeedFromValue(RANDOM_UPDATE_ORDER_SEED));
 		}
 		else { // null pointer means "don't randomize"
 			updateOrder = null;
