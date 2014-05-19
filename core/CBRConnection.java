@@ -53,11 +53,12 @@ public class CBRConnection extends Connection {
 
 		if ((retVal == MessageRouter.RCV_OK) ||
 			(retVal == MessageRouter.DENIED_INTERFERENCE)) {
-			transferDoneTime = SimClock.getTime() + (1.0 * m.getSize()) / this.speed;
+			transferDoneTime = SimClock.getTime() + (1.0 * m.getSize()) / speed;
 		}
 		else {
 			// The receiver is itself sending. Avoid beginning a new transfer (CSMA/CA)
-			abortTransfer();
+			throw new SimError("Unexpected error");
+			//abortTransfer();
 		}
 
 		return retVal;
@@ -104,13 +105,13 @@ public class CBRConnection extends Connection {
 	 * Aborts the transfer of the currently transferred message.
 	 */
 	@Override
-	public void abortTransfer() {
-		super.abortTransfer();
+	public void abortTransfer(String cause) {
+		super.abortTransfer(cause);
 		transferDoneTime = -1.0;
 	}
 
 	/**
-	 * Gets the transferdonetime
+	 * Gets the property {@code CBRConnection.transferDoneTime}
 	 */
 	public double getTransferDoneTime() {
 		return transferDoneTime;

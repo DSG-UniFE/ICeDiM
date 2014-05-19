@@ -50,13 +50,13 @@ public class VBRConnection extends Connection {
 		Message newMessage = m.replicate();
 		int retVal = getOtherNode(from).receiveMessage(newMessage, this);
 		
-		if ((retVal == MessageRouter.RCV_OK) ||
-			(retVal == MessageRouter.DENIED_INTERFERENCE)) {
+		if ((retVal == MessageRouter.RCV_OK) || (retVal == MessageRouter.DENIED_INTERFERENCE)) {
 			msgsize = m.getSize();
 			msgsent = 0;
 		}
 		else {
-			abortTransfer();
+			throw new SimError("Unexpected error");
+			//abortTransfer();
 		}
 
 		return retVal;
@@ -144,8 +144,8 @@ public class VBRConnection extends Connection {
 	}
 
 	@Override
-	public void abortTransfer() {
-		super.abortTransfer();
+	public void abortTransfer(String cause) {
+		super.abortTransfer(cause);
 		msgsize = 0;
 		msgsent = 0;
 	}

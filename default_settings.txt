@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = %%Group.router%%_DissMode%%Group.subDisMode%%
+Scenario.name = %%Group.router%%_DissMode%%Group.subDisMode%%_1
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 46800s == 13h
@@ -244,17 +244,16 @@ MapBasedMovement.mapFile4 = data/shops.wkt
 ## Reports - all report names have to be valid report classes
 
 # how many reports to load
-Report.nrofReports = 4
+Report.nrofReports = 3
 # length of the warm up period (simulated seconds)
 Report.warmup = 3600
 # default directory of reports (can be overridden per Report with output setting)
 Report.reportDir = reports/
 # Report classes to load
 # PrioritizedMessageStatsReport reports stats for priority-based routers
-Report.report1 = PrioritizedMessageStatsReport
-Report.report2 = CSVMessageWithSubscriptionsDeliveryReport
-Report.report3 = CSVMessageWithSubscriptionsDropReport
-Report.report4 = MessagesWithSubscriptionsStatsReport
+Report.report1 = CSVMessageWithSubscriptionsDeliveryReport
+Report.report2 = CSVMessageWithSubscriptionsDropReport
+Report.report3 = MessagesWithSubscriptionsStatsReport
 
 ## Default settings for some routers settings
 ProphetRouter.secondsInTimeUnit = 30

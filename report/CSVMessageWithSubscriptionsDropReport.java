@@ -83,7 +83,7 @@ public class CSVMessageWithSubscriptionsDropReport extends Report implements Mes
 
 	// nothing to implement for the rest
 	@Override
-	public void messageTransferAborted (Message m, DTNHost from, DTNHost to) {}
+	public void messageTransferAborted (Message m, DTNHost from, DTNHost to, String cause) {}
 	@Override
 	public void messageTransferStarted (Message m, DTNHost from, DTNHost to) {}
 	@Override

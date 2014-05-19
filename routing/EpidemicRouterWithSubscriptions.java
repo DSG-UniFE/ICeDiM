@@ -7,17 +7,13 @@ package routing;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.uncommons.maths.random.MersenneTwisterRNG;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
+import java.text.ParseException;
 
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
-import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import core.disService.PublisherSubscriber;

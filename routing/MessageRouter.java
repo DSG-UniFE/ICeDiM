@@ -721,7 +721,7 @@ public abstract class MessageRouter {
 	 * @param from Host the message was from (previous hop)
 	 * would have been ready; or -1 if the number of bytes is not known
 	 */
-	public void messageAborted(String msgID, Connection con) {
+	public void messageAborted(String msgID, Connection con, String motivation) {
 		NetworkInterface receivingInterface = con.getReceiverInterface();
 		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
 		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
@@ -744,7 +744,8 @@ public abstract class MessageRouter {
 		Message abortedMessage = receivingInterface.abortMessageReception(con);
 		if (abortedMessage != null) {
 			for (MessageListener ml : this.mListeners) {
-				ml.messageTransferAborted(abortedMessage, con.getSenderNode(), getHost());
+				ml.messageTransferAborted(abortedMessage, con.getSenderNode(),
+											getHost(), motivation);
 			}
 		}
 		else {

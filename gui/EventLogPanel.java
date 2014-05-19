@@ -314,8 +314,11 @@ public class EventLogPanel extends JPanel
 	}
 
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
-		processEvent(msgAbortCheck, "Message relay aborted", from, to, m);
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {
+		String message = "Message relay aborted";
+		message += ((cause == null) || (cause == "")) ? "" : " " + cause;
+		
+		processEvent(msgAbortCheck, message, from, to, m);
 	}
 
 	@Override

@@ -588,7 +588,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			else if (!con.isUp()) {
 				if (con.getMessage() != null) {
 					transferAborted(con);
-					con.abortTransfer();
+					con.abortTransfer("connection went down");
 				}
 				removeCurrent = true;
 			} 

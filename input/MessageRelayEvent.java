@@ -55,7 +55,7 @@ public class MessageRelayEvent extends MessageEvent {
 			to.messageTransferred(id, from.getConnection(to));
 			break;
 		case ABORTED:
-			to.messageAborted(id, from.getConnection(to));
+			to.messageAborted(id, from.getConnection(to), "abort event");
 			break;
 		case INTERFERED:
 			to.messageInterfered(id, from.getConnection(to));

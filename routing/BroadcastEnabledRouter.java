@@ -2,7 +2,9 @@ package routing;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import core.Connection;
 import core.DTNHost;
@@ -463,7 +465,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		}
 		
 		return null;
-	}	
+	}
 
 	/**
 	 * Tries to deliver any buffered message to any hosts currently
@@ -552,26 +554,38 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		 */
 		boolean freeBuffer = true;
 		for (NetworkInterface ni : getHost().getInterfaces()) {
-			for (int i=0; i < ni.getConnections().size(); ++i) {
-				Connection con = ni.getConnections().get(i);
-				if (con.isIdle()) {
-					// Not sending anything on this connection..
-					continue;
+			if (ni.isSendingData()) {
+				HashSet<Message> transferredMessages = new HashSet<Message>();
+				HashSet<Connection> transferringConnections = new HashSet<Connection>();
+				for (int i = 0; i < ni.getConnections().size(); ++i) {
+					Connection con = ni.getConnections().get(i);
+					if (con.isIdle()) {
+						// Not sending anything on this connection..
+						continue;
+					}
+					
+					/* finalize ready transfers */
+					if (con.isMessageTransferred()) {
+						transferredMessages.add(con.getMessage());
+						transferringConnections.add(con);
+						
+						transferDone(con);
+						con.finalizeTransfer();
+					}
+					/* remove connections that have gone down */
+					else if (!con.isUp()) {
+						transferAborted(con);
+						con.abortTransfer("connection went down");
+					}
+					else {
+						/* one transfer is not done, yet. Do not remove any messages */
+						freeBuffer = false;
+					}
 				}
 				
-				/* finalize ready transfers */
-				if (con.isMessageTransferred()) {
-					transferDone(con);
-					con.finalizeTransfer();
-				}
-				/* remove connections that have gone down */
-				else if (!con.isUp()) {
-					transferAborted(con);
-					con.abortTransfer();
-				}
-				else {
-					/* one transfer is not done, yet. Do not remove any messages */
-					freeBuffer = false;
+				// Check if Network Interface ni finished to transfer the message(s)
+				if (transferredMessages.size() > 0) {
+					transferDone(transferredMessages, transferringConnections);
 				}
 			}
 		}
@@ -596,18 +610,30 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	}
 	
 	/**
-	 * Method is called just before a transfer is aborted at {@link #update()} 
+	 * The method is called just before a transfer is aborted at {@link #update()} 
 	 * due connection going down. This happens on the sending host. 
-	 * Subclasses that are interested of the event may want to override this. 
+	 * Subclasses that are interested in the event may want to override this. 
 	 * @param con The connection whose transfer was aborted
 	 */
 	protected void transferAborted(Connection con) { }
 	
 	/**
-	 * Method is called just before a transfer is finalized 
-	 * at {@link #update()}.
-	 * Subclasses that are interested of the event may want to override this.
+	 * The method is called just before a transfer is finalized 
+	 * at {@link #update()}. Subclasses that are interested in
+	 * the event may want to override this.
 	 * @param con The connection whose transfer was finalized
 	 */
 	protected void transferDone(Connection con) { }
+	
+	/**
+	 * The method is called after a {@link NetworkInterface} completed
+	 * its transfers. Subclasses that are interested in the event may
+	 * want to override this.
+	 * @param transferredMessages A {@link Set} containing all
+	 * {@link Message}s transferred successfully.
+	 * @param transferringConnections A {@link Set} containing all
+	 * {@link Connection}s that completed their transfer successfully.
+	 */
+	protected void transferDone(Set<Message> transferredMessages,
+								Set<Connection> transferringConnections) { }
 }

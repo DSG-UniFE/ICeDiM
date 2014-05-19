@@ -94,14 +94,14 @@ public class EpidemicOracleRouter extends ActiveRouter {
 	 * @param id ID of the message to be removed
 	 */
 	public void removeDeliveredMessage(String id) {
-		if (this.hasMessage(id)) {
-			for (Connection c : this.sendingConnections) {
+		if (hasMessage(id)) {
+			for (Connection c : sendingConnections) {
 				/* if sending the message-to-be-removed, cancel transfer */
 				if (c.getMessage().getID().equals(id)) {
-					c.abortTransfer();
+					c.abortTransfer("message was removed while the transfer was ongoing");
 				}
 			}
-			this.deleteMessage(id, false, "message already delivered");			
+			deleteMessage(id, false, "message already delivered");
 		}
 	}
 	

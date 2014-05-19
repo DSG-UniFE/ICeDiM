@@ -7,17 +7,13 @@ package routing;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.uncommons.maths.random.MersenneTwisterRNG;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
+import java.text.ParseException;
 
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
-import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import core.disService.PublisherSubscriber;
@@ -92,6 +88,16 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	public EpidemicBroadcastRouterWithSubscriptions replicate() {
 		return new EpidemicBroadcastRouterWithSubscriptions(this);
 	}
+
+	@Override
+	public SubscriptionListManager getSubscriptionList() {
+		return nodeSubscriptions;
+	}
+
+	@Override
+	public int generateRandomSubID() {
+		return nodeSubscriptions.getRandomSubscriptionFromList();
+	}
 	
 	@Override
 	public void update() {
@@ -123,25 +129,6 @@ public class EpidemicBroadcastRouterWithSubscriptions
 				}
 			}
 		}
-	}
-
-	/**
-	 * Returns whether a message can be delivered to the specified host
-	 * or not, according to the EpidemicRouter policy. Said policy requires
-	 * that Epidemic Routers keep a list of messages recently sent to each
-	 * neighbor, and that they exchange the list of the messages they have
-	 * with other nodes before they proceed with the dissemination phase.
-	 * This phase is called Anti-entropy session in the literature.
-	 * The algorithm hereby written is a simplification, as it does not
-	 * require hosts to exchange the lists described above.
-	 * @param m the {@link Message} to deliver.
-	 * @param to the {@link DTNHost} to which deliver the Message m.
-	 * @return {@code true} if the message can be delivered to the
-	 * specified host, or {@code false} otherwise.
-	 */
-	@Override
-	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		return !to.getRouter().hasReceivedMessage(m.getID());
 	}
 	
 	/**
@@ -207,16 +194,6 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	}
 
 	@Override
-	public SubscriptionListManager getSubscriptionList() {
-		return nodeSubscriptions;
-	}
-
-	@Override
-	public int generateRandomSubID() {
-		return nodeSubscriptions.getRandomSubscriptionFromList();
-	}
-
-	@Override
 	protected boolean isMessageDestination(Message aMessage) {
 		Integer messageSubID = (Integer) aMessage.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		
@@ -226,5 +203,24 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	@Override
 	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
 		return dest.getRouter().isMessageDestination(aMessage);
+	}
+
+	/**
+	 * Returns whether a message can be delivered to the specified host
+	 * or not, according to the EpidemicRouter policy. Said policy requires
+	 * that Epidemic Routers keep a list of messages recently sent to each
+	 * neighbor, and that they exchange the list of the messages they have
+	 * with other nodes before they proceed with the dissemination phase.
+	 * This phase is called Anti-entropy session in the literature.
+	 * The algorithm hereby written is a simplification, as it does not
+	 * require hosts to exchange the lists described above.
+	 * @param m the {@link Message} to deliver.
+	 * @param to the {@link DTNHost} to which deliver the Message m.
+	 * @return {@code true} if the message can be delivered to the
+	 * specified host, or {@code false} otherwise.
+	 */
+	@Override
+	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+		return !to.getRouter().hasReceivedMessage(m.getID());
 	}
 }

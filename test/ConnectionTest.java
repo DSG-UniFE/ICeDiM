@@ -86,7 +86,7 @@ public class ConnectionTest extends TestCase {
 		assertTrue(h[1].abortedId == null);
 		assertFalse(c[0].isMessageTransferred());
 
-		c[0].abortTransfer();
+		c[0].abortTransfer("test transfer abort");
 		
 		assertTrue(h[1].abortedId != null);
 		assertTrue(h[1].abortedId.equals(m[0].getID()));

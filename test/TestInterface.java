@@ -108,15 +108,15 @@ public class TestInterface extends NetworkInterface {
 	 * that are out of range, recalculates transmission speeds etc.).
 	 */
 	public void update() {
-		for (int i=0; i<this.connections.size(); ) {
-			Connection con = this.connections.get(i);
+		for (int i = 0; i < connections.size(); ) {
+			Connection con = connections.get(i);
 			NetworkInterface anotherInterface = con.getOtherInterface(this);
 
 			// all connections should be up at this stage
 			assert con.isUp() : "Connection " + con + " was down!";
 
 			if (!isWithinRange(anotherInterface)) {
-				disconnect(con,anotherInterface);
+				disconnect(con, anotherInterface, "node out of range");
 				connections.remove(i);
 			}
 			else {

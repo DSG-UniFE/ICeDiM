@@ -36,10 +36,9 @@ public class CreatedMessagesReport extends Report implements MessageListener {
 		}
 		
 		int ttl = m.getTtl();
-		write(format(getSimTime()) + " " + m.getID() + " " + 
-				m.getSize() + " " + m.getFrom() + " " + m.getTo() + " " +
-				(ttl != Integer.MAX_VALUE ? ttl : "n/a") +  
-				(m.isResponse() ? " Y " : " N "));
+		write(format(getSimTime()) + " " + m.getID() + " " + m.getSize() + " " + m.getFrom() +
+						" " + m.getTo() + " " + (ttl != Integer.MAX_VALUE ? ttl : "n/a") +  
+						(m.isResponse() ? " Y " : " N "));
 	}
 	
 	// nothing to implement for the rest
@@ -49,7 +48,7 @@ public class CreatedMessagesReport extends Report implements MessageListener {
 	public void messageTransferred(Message m, DTNHost f, DTNHost t,
 									boolean firstDelivery, boolean finalTarget) {}
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 
 	@Override

@@ -4,20 +4,17 @@
  */
 package routing;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.uncommons.maths.random.MersenneTwisterRNG;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
+import java.util.Set;
 
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.NetworkInterface;
-import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 import core.disService.PublisherSubscriber;
@@ -102,16 +99,31 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
 	}
 	
-	@Override
-	public int receiveMessage(Message m, Connection con) {
-		return super.receiveMessage(m, con);
-	}
-	
 	@Override 
 	public boolean createNewMessage(Message m) {
 		m.addProperty(MSG_COUNT_PROPERTY, new Integer(initialNrofCopies));
 		
 		return super.createNewMessage(m);
+	}
+	
+	@Override
+	public int receiveMessage(Message m, Connection con) {
+		return super.receiveMessage(m, con);
+	}
+	
+	@Override
+	public SprayAndWaitRouterWithSubscriptions replicate() {
+		return new SprayAndWaitRouterWithSubscriptions(this);
+	}
+
+	@Override
+	public SubscriptionListManager getSubscriptionList() {
+		return nodeSubscriptions;
+	}
+
+	@Override
+	public int generateRandomSubID() {
+		return nodeSubscriptions.getRandomSubscriptionFromList();
 	}
 	
 	@Override
@@ -131,7 +143,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			/* try to send those messages over all idle interfaces */
 			for (NetworkInterface idleInterface : idleInterfaces) {
 				for (Message m : copiesLeft) {
-					if (BROADCAST_OK == tryBroadcastOneMessage(m, idleInterface)) {
+					if (shouldDeliverMessageToNeighbors(m, idleInterface) &&
+						(BROADCAST_OK == tryBroadcastOneMessage(m, idleInterface))) {
 						/* Removes transferring message from the list and moves
 						 * on to the remaining idle network interfaces */
 						copiesLeft.remove(m);
@@ -141,24 +154,27 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			}
 		}
 	}
-
+	
 	/**
-	 * Returns whether a message can be delivered to the specified host
-	 * or not, according to the Spray and Wait (SnW) policy. Said policy
-	 * requires that SnW Routers, in the spray phase, perform a message
-	 * dissemination in a way similar to Epidemic Routers, thereby also
-	 * carrying out the Anti-entropy session before proceeding with
-	 * message spraying. The algorithm hereby written is a simplification,
-	 * as it does not require hosts to exchange the lists produced for
-	 * the Anti-entropy session.
-	 * @param m the {@link Message} to deliver.
-	 * @param to the {@link DTNHost} to which deliver the Message m.
-	 * @return {@code true} if the message can be delivered to the
-	 * specified host, or {@code false} otherwise.
+	 * Creates and returns a list of messages this router is currently
+	 * carrying and still has copies left to distribute (nrofCopies > 1).
+	 * @return A list of messages that have copies left
 	 */
-	@Override
-	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		return !to.getRouter().hasReceivedMessage(m.getID());
+	protected List<Message> getMessagesWithCopiesLeft() {
+		List<Message> list = new ArrayList<Message>();
+
+		for (Message m : getMessageList()) {
+			Integer nrofCopies = (Integer)m.getProperty(MSG_COUNT_PROPERTY);
+			if (nrofCopies == null) {
+				throw new SimError("SnW message " + m + " didn't have the nrofcopies property!");
+			}
+			
+			if (nrofCopies > 1) {
+				list.add(m);
+			}
+		}
+		
+		return list;
 	}
 	
 	@Override
@@ -215,28 +231,6 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		
 		return msg;
 	}
-	
-	/**
-	 * Creates and returns a list of messages this router is currently
-	 * carrying and still has copies left to distribute (nrofCopies > 1).
-	 * @return A list of messages that have copies left
-	 */
-	protected List<Message> getMessagesWithCopiesLeft() {
-		List<Message> list = new ArrayList<Message>();
-
-		for (Message m : getMessageList()) {
-			Integer nrofCopies = (Integer)m.getProperty(MSG_COUNT_PROPERTY);
-			if (nrofCopies == null) {
-				throw new SimError("SnW message " + m + " didn't have the nrofcopies property!");
-			}
-			
-			if (nrofCopies > 1) {
-				list.add(m);
-			}
-		}
-		
-		return list;
-	}
 
 	/**
 	 * Called just before a transfer is finalized (by 
@@ -246,25 +240,32 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	 * but in standard mode, nrofCopies left is reduced by one. 
 	 */
 	@Override
-	protected void transferDone(Connection con) {
-		Integer nrofCopies;
-		String msgId = con.getMessage().getID();
-		/* get this router's copy of the message */
-		Message msg = getMessage(msgId);
-
-		if (msg == null) { // message has been dropped from the buffer after..
-			return; // ..start of transfer -> no need to reduce amount of copies
+	protected void transferDone(Set<Message> transferredMessages,
+								Set<Connection> transferringConnections) {
+		if (transferredMessages.size() > 1) {
+			throw new SimError("NetworkInterface sent more than one message at the same time");
 		}
 		
-		/* reduce the amount of copies left */
-		nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
-		if (isBinary) { 
-			nrofCopies /= 2;
+		for (Message m : transferredMessages) {
+			Integer nrofCopies;
+			/* get this router's copy of the message */
+			Message msg = getMessage(m.getID());
+			if (msg == null) {
+				/* message was dropped from the buffer after the transfer
+				 * started -> no need to reduce amount of copies. */
+				return;
+			}
+			
+			/* reduce the amount of copies left */
+			nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
+			if (isBinary) {
+				nrofCopies /= 2;
+			}
+			else {
+				nrofCopies--;
+			}
+			msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
 		}
-		else {
-			nrofCopies--;
-		}
-		msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
 	}
 	
 	/**
@@ -316,21 +317,6 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		
 		return messageList;
 	}
-	
-	@Override
-	public SprayAndWaitRouterWithSubscriptions replicate() {
-		return new SprayAndWaitRouterWithSubscriptions(this);
-	}
-
-	@Override
-	public SubscriptionListManager getSubscriptionList() {
-		return nodeSubscriptions;
-	}
-
-	@Override
-	public int generateRandomSubID() {
-		return nodeSubscriptions.getRandomSubscriptionFromList();
-	}
 
 	@Override
 	protected boolean isMessageDestination(Message aMessage) {
@@ -342,5 +328,24 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	@Override
 	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
 		return dest.getRouter().isMessageDestination(aMessage);
+	}
+
+	/**
+	 * Returns whether a message can be delivered to the specified host
+	 * or not, according to the Spray and Wait (SnW) policy. Said policy
+	 * requires that SnW Routers, in the spray phase, perform a message
+	 * dissemination in a way similar to Epidemic Routers, thereby also
+	 * carrying out the Anti-entropy session before proceeding with
+	 * message spraying. The algorithm hereby written is a simplification,
+	 * as it does not require hosts to exchange the lists produced for
+	 * the Anti-entropy session.
+	 * @param m the {@link Message} to deliver.
+	 * @param to the {@link DTNHost} to which deliver the Message m.
+	 * @return {@code true} if the message can be delivered to the
+	 * specified host, or {@code false} otherwise.
+	 */
+	@Override
+	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+		return !to.getRouter().hasReceivedMessage(m.getID());
 	}
 }

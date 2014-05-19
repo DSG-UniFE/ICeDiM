@@ -38,11 +38,12 @@ public class EventLogReport extends Report
 	 * @param extra Extra info to append in the end of line (if any, or null)
 	 */
 	private void processEvent(final String action, final DTNHost host1, 
-			final DTNHost host2, final Message message, final String extra) {
-		write(getSimTime() + " " + action + " " + (host1 != null ? host1 : "")
-				+ (host2 != null ? (" " + host2) : "")
-				+ (message != null ? " " + message : "")
-				+ (extra != null ? " " + extra : ""));
+								final DTNHost host2, final Message message,
+								final String extra) {
+		write(getSimTime() + " " + action + " " + (host1 != null ? host1 : "") +
+				(host2 != null ? (" " + host2) : "") +
+				(message != null ? " " + message : "") +
+				(extra != null ? " " + extra : ""));
 	}
 
 	@Override
@@ -94,8 +95,8 @@ public class EventLogReport extends Report
 	}
 
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
-		processEvent(StandardEventsReader.ABORT, from, to, m, null);
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {
+		processEvent(StandardEventsReader.ABORT, from, to, m, cause);
 	}
 
 	@Override

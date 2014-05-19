@@ -264,8 +264,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	/**
 	 * Force a connection event
 	 */
-	public void forceConnection(DTNHost anotherHost, String interfaceId, 
-			boolean up) {
+	public void forceConnection(DTNHost anotherHost, String interfaceId, boolean up) {
 		NetworkInterface ni;
 		NetworkInterface no;
 
@@ -273,8 +272,8 @@ public class DTNHost implements Comparable<DTNHost> {
 			ni = getInterface(interfaceId);
 			no = anotherHost.getInterface(interfaceId);
 
-			assert (ni != null) : "Tried to use a nonexisting interfacetype "+interfaceId;
-			assert (no != null) : "Tried to use a nonexisting interfacetype "+interfaceId;
+			assert (ni != null) : "Tried to use a nonexisting interfacetype " + interfaceId;
+			assert (no != null) : "Tried to use a nonexisting interfacetype " + interfaceId;
 		} else {
 			ni = getInterface(1);
 			no = anotherHost.getInterface(1);
@@ -286,7 +285,8 @@ public class DTNHost implements Comparable<DTNHost> {
 		if (up) {
 			ni.createConnection(no);
 		} else {
-			ni.destroyConnection(no);
+			ni.destroyConnection(no, "force disconnection between " +
+										this + " and " + anotherHost);
 		}
 	}
 
@@ -294,10 +294,9 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * for tests only --- do not use!!!
 	 */
 	public void connect(DTNHost h) {
-		System.err.println(
-				"WARNING: using deprecated DTNHost.connect(DTNHost)" +
-		"\n Use DTNHost.forceConnection(DTNHost,null,true) instead");
-		forceConnection(h,null,true);
+		System.err.println("WARNING: using deprecated DTNHost.connect(DTNHost)\n" +
+							"Use DTNHost.forceConnection(DTNHost,null,true) instead");
+		forceConnection(h, null, true);
 	}
 
 	/**
@@ -418,7 +417,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * {@link MessageRouter#receiveMessage(Message, DTNHost)}
 	 */
 	public int receiveMessage(Message m, Connection con) {
-		int retVal = this.router.receiveMessage(m, con);
+		int retVal = router.receiveMessage(m, con);
 
 		if (retVal == MessageRouter.RCV_OK) {
 			m.addNodeOnPath(this);	// add this node on the messages path
@@ -454,8 +453,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param bytesRemaining Nrof bytes that were left before the transfer
 	 * would have been ready; or -1 if the number of bytes is not known
 	 */
-	public void messageAborted(String id, Connection con) {
-		this.router.messageAborted(id, con);
+	public void messageAborted(String id, Connection con, String motivation) {
+		this.router.messageAborted(id, con, motivation);
 	}
 
 	/**

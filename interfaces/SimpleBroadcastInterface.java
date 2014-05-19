@@ -82,7 +82,9 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	
 	/**
 	 * Informs the client if this interface can begin a new transfer.
-	 * @return true if the interface can begin a new transfer, false otherwise
+	 * This method performs a check similar to CSMA/CA.
+	 * @return {@code true} if the interface can begin a new transfer,
+	 * or {@code false} otherwise.
 	 */
 	@Override
 	public boolean isReadyToBeginTransfer() {
@@ -173,7 +175,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 			assert con.isUp() : "Connection " + con + " was down!";
 
 			if (!isWithinRange(anotherInterface)) {
-				disconnect(con, anotherInterface);
+				disconnect(con, anotherInterface, "node out of range");
 				connections.remove(i);
 			}
 			else {

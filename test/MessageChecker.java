@@ -53,7 +53,7 @@ public class MessageChecker implements MessageListener {
 	}
 
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {
 		add(m, from, to, TYPE_ABORT, null, null);
 	}
 

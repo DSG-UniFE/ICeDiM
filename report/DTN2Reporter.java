@@ -59,7 +59,7 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param from Node where the message was being transferred from 
 	 * @param to Node where the message was being transferred to
 	 */
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 
 	/**
 	 * Method is called when a message's transfer was interfered before 

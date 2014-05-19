@@ -146,7 +146,7 @@ public abstract class Connection {
 	/**
      * Aborts the transfer of the currently transferred message.
      */
-	public void abortTransfer() {
+	public void abortTransfer(String cause) {
 		assert ((underwayTransfer != null) && (underwayTransfer.getMsgOnFly() != null)) :
 				"No message to abort on the connection " + fromNode + " - " + toNode;	
 		int remainingBytes = getRemainingByteCount();
@@ -154,7 +154,8 @@ public abstract class Connection {
 		bytesTransferred += underwayTransfer.getMsgOnFly().getSize() - remainingBytes;
 		bytesTransferredForThroughput += underwayTransfer.getMsgOnFly().getSize() - remainingBytes;
 
-		underwayTransfer.getReceiver().messageAborted(underwayTransfer.getMsgOnFly().getID(), this);
+		underwayTransfer.getReceiver().messageAborted(underwayTransfer.getMsgOnFly().getID(),
+														this, cause);
 		clearMsgOnFly();
 	}
 

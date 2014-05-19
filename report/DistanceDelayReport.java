@@ -81,7 +81,7 @@ public class DistanceDelayReport extends Report implements MessageListener {
 	/**
 	 * Writes a report line
 	 * @param id Id of the message
-	 * @param startDistance Distance of the nodes when the message was creted
+	 * @param startDistance Distance of the nodes when the message was created
 	 * @param time Time it took for the message to be delivered
 	 * @param hopCount The amount of hops it took to deliver the message
 	 */
@@ -98,7 +98,7 @@ public class DistanceDelayReport extends Report implements MessageListener {
 	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 

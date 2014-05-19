@@ -202,7 +202,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	}
 
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}

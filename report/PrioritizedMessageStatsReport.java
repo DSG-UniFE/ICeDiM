@@ -244,7 +244,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		msgBufferTime[m.getPriority()].add(getSimTime() - m.getReceiveTime());
 	}
 
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}

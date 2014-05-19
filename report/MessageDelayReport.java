@@ -90,7 +90,7 @@ public class MessageDelayReport extends Report implements MessageListener {
 	@Override
 	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to) {}
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	@Override

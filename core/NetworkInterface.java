@@ -341,19 +341,18 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 
 	/**
-	 * Disconnects this host from another host.  The derived class should
-	 * make the decision whether to disconnect or not
+	 * Disconnects this host from another host. The derived class
+	 * should make the decision whether to disconnect or not.
 	 * @param con The connection to tear down
 	 */
-	protected void disconnect(Connection con, NetworkInterface anotherInterface) {
+	protected void disconnect(Connection con, NetworkInterface anotherInterface, String cause) {
 		con.setUpState(false);
 		notifyConnectionListeners(CON_DOWN, anotherInterface.getHost());
-		finalizeBeforeDisconnection(con);
+		finalizeBeforeDisconnection(con, cause);
 
 		// tear down bidirectional connection
 		if (!anotherInterface.getConnections().remove(con)) {
-			throw new SimError("No connection " + con + " found in " +
-					anotherInterface);	
+			throw new SimError("No connection " + con + " found in " + anotherInterface);	
 		}
 
 		// Notify the hosts that the connection is down
@@ -411,7 +410,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	abstract public void update();
 	
 	/**
-	 * Informs the client wheter this interface has any connection
+	 * Informs the client whether this interface has any connection
 	 * which is transferring data. If so, the interface is busy and
 	 * no other activity should be performed on any connection of
 	 * this interface.
@@ -689,33 +688,34 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param anotherInterface The other host's network interface to disconnect 
 	 * from this host
 	 */
-	public void destroyConnection(NetworkInterface anotherInterface) {
+	public void destroyConnection(NetworkInterface anotherInterface, String cause) {
 		DTNHost anotherHost = anotherInterface.getHost();
 		for (int i=0; i < connections.size(); i++) {
 			if (connections.get(i).getOtherNode(host) == anotherHost){
-				removeConnectionByIndex(i, anotherInterface);
+				removeConnectionByIndex(i, anotherInterface, cause);
 			}
 		}
 		// the connection didn't exist, do nothing
 	}
 
 	/**
-	 * Removes a connection by its position (index) in the connections array
-	 * of the interface
-	 * @param index The array index of the connection to be removed
-	 * @param anotherInterface The interface of the other host
+	 * Removes a connection by its position (index) in the connections
+	 * array of the interface.
+	 * @param index The array index of the connection to be removed.
+	 * @param anotherInterface The interface of the other host.
+	 * @param cause A {@link String} describing the reason for the
+	 * disconnection.
 	 */
-	private void removeConnectionByIndex(int index, NetworkInterface anotherInterface) {
+	private void removeConnectionByIndex(int index, NetworkInterface anotherInterface, String cause) {
 		Connection con = connections.get(index);
 		DTNHost anotherNode = anotherInterface.getHost();
 		con.setUpState(false);
 		notifyConnectionListeners(CON_DOWN, anotherNode);
-		finalizeBeforeDisconnection(con);
+		finalizeBeforeDisconnection(con, cause);
 
 		// tear down bidirectional connection
 		if (!anotherInterface.getConnections().remove(con)) {
-			throw new SimError("No connection " + con + " found in " +
-					anotherNode);   
+			throw new SimError("No connection " + con + " found in " + anotherNode);   
 		}
 
 		host.connectionDown(con);
@@ -728,12 +728,12 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * Perform last actions before disconnecting hosts.
 	 * @param con Connection which will be disconnected.
 	 */
-	protected void finalizeBeforeDisconnection(Connection con) {
+	protected void finalizeBeforeDisconnection(Connection con, String cause) {
 		// Note: changedConnection will be called later by the invoking method
 		if (con.isTransferOngoing()) {
 			// Message transfer has not been completed
 			//getHost().getRouter().changedConnection(con);
-			con.abortTransfer();
+			con.abortTransfer(cause);
 		}
 		else if (!con.isIdle()) {
 			// Transfer was completed --> finalize transfer before connection goes down
