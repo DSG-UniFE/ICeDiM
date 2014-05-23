@@ -31,7 +31,7 @@ public class ShortestPathMapBasedMovement extends MapBasedMovement implements
 		super(settings);
 		this.pathFinder = new DijkstraPathFinder(getOkMapNodeTypes());
 		this.pois = new PointsOfInterest(getMap(), getOkMapNodeTypes(),
-				settings, rng);
+				settings, RandomNumberGenerator);
 	}
 	
 	/**

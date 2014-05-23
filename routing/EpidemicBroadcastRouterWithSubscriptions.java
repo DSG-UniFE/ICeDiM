@@ -32,12 +32,12 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	private final double sendProbability;
 	private final double receiveProbability;
 
-	private SubscriptionListManager nodeSubscriptions;
+	private final SubscriptionListManager nodeSubscriptions;
 	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
 	
 	/**
-	 * Constructor. Creates a new message router based on the settings in
-	 * the given Settings object.
+	 * Constructor. Creates a new message router based on
+	 * the settings in the given Settings object.
 	 * @param s The settings object
 	 */
 	public EpidemicBroadcastRouterWithSubscriptions(Settings s) {

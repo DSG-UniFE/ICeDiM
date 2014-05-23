@@ -100,7 +100,7 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 		if (officeLocationsFile == null) {
 			MapNode[] mapNodes = (MapNode[])getMap().getNodes().
 				toArray(new MapNode[0]);
-			int officeIndex = rng.nextInt(mapNodes.length - 1) /
+			int officeIndex = RandomNumberGenerator.nextInt(mapNodes.length - 1) /
 				(mapNodes.length/nrOfOffices);
 			officeLocation = mapNodes[officeIndex].getLocation().clone();
 		} else {
@@ -119,14 +119,14 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 					allOffices.add(coord);
 				}
 				officeLocation = allOffices.get(
-						rng.nextInt(allOffices.size())).clone();
+						RandomNumberGenerator.nextInt(allOffices.size())).clone();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 		
 		deskLocation = getRandomCoorinateInsideOffice();
-		paretoRNG = new ParetoRNG(rng, officeWaitTimeParetoCoeff, 
+		paretoRNG = new ParetoRNG(RandomNumberGenerator, officeWaitTimeParetoCoeff, 
 				officeMinWaitTime, officeMaxWaitTime);
 	}
 	
@@ -145,13 +145,13 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 		if (proto.allOffices == null) {
 			MapNode[] mapNodes = (MapNode[])getMap().getNodes().
 				toArray(new MapNode[0]);
-			int officeIndex = rng.nextInt(mapNodes.length - 1) / 
+			int officeIndex = RandomNumberGenerator.nextInt(mapNodes.length - 1) / 
 				(mapNodes.length/nrOfOffices);
 			officeLocation = mapNodes[officeIndex].getLocation().clone();
 		} else {
 			this.allOffices = proto.allOffices;
 			officeLocation = allOffices.get(
-					rng.nextInt(allOffices.size())).clone();
+					RandomNumberGenerator.nextInt(allOffices.size())).clone();
 		}
 		
 		officeWaitTimeParetoCoeff = proto.officeWaitTimeParetoCoeff;
@@ -164,14 +164,14 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 	
 	public Coord getRandomCoorinateInsideOffice() {
 		double x_coord = officeLocation.getX() + 
-			(0.5 - rng.nextDouble()) * distance;
+			(0.5 - RandomNumberGenerator.nextDouble()) * distance;
 		if (x_coord > getMaxX()) {
 			x_coord = getMaxX();
 		} else if (x_coord < 0) {
 			x_coord = 0;
 		}
 		double y_coord = officeLocation.getY() + 
-			(0.5 - rng.nextDouble()) * distance;
+			(0.5 - RandomNumberGenerator.nextDouble()) * distance;
 		if (y_coord > getMaxY()) {
 			y_coord = getMaxY();
 		} else if (y_coord < 0) {
@@ -182,8 +182,8 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 	
 	@Override
 	public Coord getInitialLocation() {
-		double x = rng.nextDouble() * getMaxX();
-		double y = rng.nextDouble() * getMaxY();
+		double x = RandomNumberGenerator.nextDouble() * getMaxX();
+		double y = RandomNumberGenerator.nextDouble() * getMaxY();
 		Coord c = new Coord(x,y);
 
 		this.lastWaypoint = c;

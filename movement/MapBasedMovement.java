@@ -144,15 +144,15 @@ public class MapBasedMovement extends MovementModel implements SwitchableMovemen
 		MapNode n,n2;
 		Coord n2Location, nLocation, placement;
 		double dx, dy;
-		double rnd = rng.nextDouble();
+		double rnd = RandomNumberGenerator.nextDouble();
 		
 		// choose a random node (from OK types if such are defined)
 		do {
-			n = nodes.get(rng.nextInt(nodes.size()));
+			n = nodes.get(RandomNumberGenerator.nextInt(nodes.size()));
 		} while (okMapNodeTypes != null && !n.isType(okMapNodeTypes));
 		
 		// choose a random neighbor of the selected node
-		n2 = n.getNeighbors().get(rng.nextInt(n.getNeighbors().size())); 
+		n2 = n.getNeighbors().get(RandomNumberGenerator.nextInt(n.getNeighbors().size())); 
 		
 		nLocation = n.getLocation();
 		n2Location = n2.getLocation();
@@ -191,7 +191,7 @@ public class MapBasedMovement extends MovementModel implements SwitchableMovemen
 		// start paths from current node 
 		p.addWaypoint(curNode.getLocation());
 		
-		int pathLength = rng.nextInt(maxPathLength-minPathLength) + 
+		int pathLength = RandomNumberGenerator.nextInt(maxPathLength-minPathLength) + 
 			minPathLength;
 
 		for (int i=0; i<pathLength; i++) {
@@ -216,7 +216,7 @@ public class MapBasedMovement extends MovementModel implements SwitchableMovemen
 				nextNode = prevNode;
 			}
 			else { // choose a random node from remaining neighbors
-				nextNode = n2.get(rng.nextInt(n2.size()));
+				nextNode = n2.get(RandomNumberGenerator.nextInt(n2.size()));
 			}
 			
 			prevNode = curNode;
@@ -243,7 +243,7 @@ public class MapBasedMovement extends MovementModel implements SwitchableMovemen
 	protected MapNode selectRandomOkNode(List<MapNode> nodes) {
 		MapNode n;
 		do {
-			n = nodes.get(rng.nextInt(nodes.size()));
+			n = nodes.get(RandomNumberGenerator.nextInt(nodes.size()));
 		} while (okMapNodeTypes != null && !n.isType(okMapNodeTypes));
 
 		return n;

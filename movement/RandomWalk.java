@@ -36,9 +36,9 @@ public class RandomWalk extends MovementModel implements SwitchableMovement {
 	 */
 	@Override
 	public Coord getInitialLocation() {
-		assert rng != null : "MovementModel not initialized!";
-		double x = rng.nextDouble() * getMaxX();
-		double y = rng.nextDouble() * getMaxY();
+		assert RandomNumberGenerator != null : "MovementModel not initialized!";
+		double x = RandomNumberGenerator.nextDouble() * getMaxX();
+		double y = RandomNumberGenerator.nextDouble() * getMaxY();
 		Coord c = new Coord(x,y);
 
 		this.lastWaypoint = c;
@@ -56,8 +56,8 @@ public class RandomWalk extends MovementModel implements SwitchableMovement {
 		Coord c = null;
 		while (true) {
 			
-			double angle = rng.nextDouble() * 2 * Math.PI;
-			double distance = minDistance + rng.nextDouble() * 
+			double angle = RandomNumberGenerator.nextDouble() * 2 * Math.PI;
+			double distance = minDistance + RandomNumberGenerator.nextDouble() * 
 				(maxDistance - minDistance);
 			
 			double x = lastWaypoint.getX() + distance * Math.cos(angle);

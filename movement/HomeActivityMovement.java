@@ -72,7 +72,7 @@ public class HomeActivityMovement extends MapBasedMovement
 		if (homeLocationsFile == null) {
 			MapNode[] mapNodes = (MapNode[])getMap().getNodes().
 				toArray(new MapNode[0]);
-			int homeIndex = rng.nextInt(mapNodes.length - 1);
+			int homeIndex = RandomNumberGenerator.nextInt(mapNodes.length - 1);
 			homeLocation = mapNodes[homeIndex].getLocation().clone();
 		} else {
 			try {
@@ -89,20 +89,20 @@ public class HomeActivityMovement extends MapBasedMovement
 					coord.translate(offset.getX(), offset.getY());
 					allHomes.add(coord);
 				}
-				homeLocation = allHomes.get(rng.nextInt(allHomes.size())).clone();
+				homeLocation = allHomes.get(RandomNumberGenerator.nextInt(allHomes.size())).clone();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 		
 		if (timeDiffSTD == -1) {
-			timeDifference = rng.nextInt(DAY_LENGTH) - DAY_LENGTH/2;
+			timeDifference = RandomNumberGenerator.nextInt(DAY_LENGTH) - DAY_LENGTH/2;
 		} else if (timeDiffSTD == 0) {
 			timeDifference = 0;
 		} else {
 			timeDifference = (int)Math.min(
 									Math.max(
-											(rng.nextGaussian() * timeDiffSTD), 
+											(RandomNumberGenerator.nextGaussian() * timeDiffSTD), 
 											-DAY_LENGTH/2
 										), 
 									DAY_LENGTH/2
@@ -125,21 +125,21 @@ public class HomeActivityMovement extends MapBasedMovement
 		if (proto.allHomes == null) {
 			MapNode[] mapNodes = (MapNode[])getMap().getNodes().
 				toArray(new MapNode[0]);
-			int homeIndex = rng.nextInt(mapNodes.length - 1);
+			int homeIndex = RandomNumberGenerator.nextInt(mapNodes.length - 1);
 			homeLocation = mapNodes[homeIndex].getLocation().clone();
 		} else {
 			this.allHomes = proto.allHomes;
-			homeLocation = allHomes.get(rng.nextInt(allHomes.size())).clone();
+			homeLocation = allHomes.get(RandomNumberGenerator.nextInt(allHomes.size())).clone();
 		}
 		
 		if (timeDiffSTD == -1) {
-			timeDifference = rng.nextInt(DAY_LENGTH) - DAY_LENGTH/2;
+			timeDifference = RandomNumberGenerator.nextInt(DAY_LENGTH) - DAY_LENGTH/2;
 		} else if (timeDiffSTD == 0) {
 			timeDifference = 0;
 		} else {
 			timeDifference = (int)Math.min(
 									Math.max(
-											(rng.nextGaussian() * timeDiffSTD), 
+											(RandomNumberGenerator.nextGaussian() * timeDiffSTD), 
 											-DAY_LENGTH/2
 										), 
 									DAY_LENGTH/2
@@ -149,8 +149,8 @@ public class HomeActivityMovement extends MapBasedMovement
 	
 	@Override
 	public Coord getInitialLocation() {
-		double x = rng.nextDouble() * getMaxX();
-		double y = rng.nextDouble() * getMaxY();
+		double x = RandomNumberGenerator.nextDouble() * getMaxX();
+		double y = RandomNumberGenerator.nextDouble() * getMaxY();
 		Coord c = new Coord(x,y);
 
 		this.lastWaypoint = c;
@@ -176,14 +176,14 @@ public class HomeActivityMovement extends MapBasedMovement
 			lastWaypoint = homeLocation.clone();
 			mode = AT_HOME_MODE;
 			
-			double newX = lastWaypoint.getX() + (rng.nextDouble() - 0.5) *
+			double newX = lastWaypoint.getX() + (RandomNumberGenerator.nextDouble() - 0.5) *
 				distance;
 			if (newX > getMaxX()) {
 				newX = getMaxX();
 			} else if (newX < 0) {
 				newX = 0;
 			}
-			double newY = lastWaypoint.getY() + (rng.nextDouble() - 0.5) * 
+			double newY = lastWaypoint.getY() + (RandomNumberGenerator.nextDouble() - 0.5) * 
 				distance;
 			if (newY > getMaxY()) {
 				newY = getMaxY();

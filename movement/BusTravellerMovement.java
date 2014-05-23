@@ -72,7 +72,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 		if (settings.contains(PROBABILITY_TAKE_OTHER_BUS)) {
 			probTakeOtherBus = settings.getDouble(PROBABILITY_TAKE_OTHER_BUS);
 		}
-		cbtd = new ContinueBusTripDecider(rng, probabilities);
+		cbtd = new ContinueBusTripDecider(RandomNumberGenerator, probabilities);
 		pathFinder = new DijkstraPathFinder(null);
 		takeBus = true;
 	}
@@ -92,7 +92,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 		id = nextID++;
 		controlSystem.registerTraveller(this);
 		probabilities = proto.probabilities;
-		cbtd = new ContinueBusTripDecider(rng, probabilities);
+		cbtd = new ContinueBusTripDecider(RandomNumberGenerator, probabilities);
 		pathFinder = proto.pathFinder;
 		this.probTakeOtherBus = proto.probTakeOtherBus;
 		takeBus = true;
@@ -103,7 +103,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 		
 		MapNode[] mapNodes = (MapNode[])getMap().getNodes().
 			toArray(new MapNode[0]);
-		int index = rng.nextInt(mapNodes.length - 1);
+		int index = RandomNumberGenerator.nextInt(mapNodes.length - 1);
 		location = mapNodes[index].getLocation().clone();
 		
 		List<Coord> allStops = controlSystem.getBusStops();
@@ -205,7 +205,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 			this.nextPath = null;
 			/* It might decide not to start walking somewhere and wait 
 			   for the next bus */
-			if (rng.nextDouble() > probTakeOtherBus) {
+			if (RandomNumberGenerator.nextDouble() > probTakeOtherBus) {
 				state = STATE_WALKING_ELSEWHERE;
 				latestBusStop = location.clone();
 			}

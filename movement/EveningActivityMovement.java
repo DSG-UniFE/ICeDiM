@@ -125,7 +125,7 @@ public class EveningActivityMovement extends MapBasedMovement
 		int scsID = settings.getInt(EVENING_ACTIVITY_CONTROL_SYSTEM_NR_SETTING);
 		
 		scs = EveningActivityControlSystem.getEveningActivityControlSystem(scsID);
-		scs.setRandomNumberGenerator(rng);
+		scs.setRandomNumberGenerator(RandomNumberGenerator);
 		scs.addEveningActivityNode(this);
 		scs.setMeetingSpots(meetingSpotLocations);
 		
@@ -163,7 +163,7 @@ public class EveningActivityMovement extends MapBasedMovement
 		
 		MapNode[] mapNodes = (MapNode[])getMap().getNodes().
 			toArray(new MapNode[0]);
-		int index = rng.nextInt(mapNodes.length - 1);
+		int index = RandomNumberGenerator.nextInt(mapNodes.length - 1);
 		lastWaypoint = mapNodes[index].getLocation().clone();
 		return lastWaypoint.clone();
 	}
@@ -199,7 +199,7 @@ public class EveningActivityMovement extends MapBasedMovement
 					lastWaypoint = super.lastMapNode.getLocation();
 					trip.setPath(path);
 					double waitTimeAtEnd = (maxWaitTime - minWaitTime) * 
-						rng.nextDouble() + minWaitTime;
+						RandomNumberGenerator.nextDouble() + minWaitTime;
 					trip.setWaitTimeAtEnd(waitTimeAtEnd);
 					trip.setDestination(lastWaypoint);
 				} 

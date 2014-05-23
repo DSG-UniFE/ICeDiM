@@ -327,56 +327,6 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
 		return !to.getRouter().hasReceivedMessage(m.getID());
 	}
-
-	/**
-	 * Returns a list of those messages whose recipient 
-	 * is among the neighboring nodes.
-	 * @return a List of messages to be delivered to the
-	 * nodes under connection range.
-	 */
-	@Override
-	protected List<Message> getDeliverableMessagesForNetworkInterface(NetworkInterface ni) {
-		if (getNrofMessages() == 0) {
-			/* no messages -> empty list */
-			return new ArrayList<Message>(0);
-		}
-		
-		// Create the list of subscriptions of the neighbors
-		List<DTNHost> neighboringHosts = ni.getReachableHosts();
-		List<Integer> neighborsSubscriptionIDs = new ArrayList<Integer>();
-		for (DTNHost host : neighboringHosts) {
-			if (!(host.getRouter() instanceof PublisherSubscriber)) {
-				throw new SimError("Remote host " + host + " is not a Publisher/Subscriber router");
-			}
-			
-			PublisherSubscriber remoteHost = (PublisherSubscriber) host.getRouter();
-			for (Integer subID : remoteHost.getSubscriptionList().getSubscriptionList()) {
-				if (!neighborsSubscriptionIDs.contains(subID)) {
-					neighborsSubscriptionIDs.add(subID);
-				}
-			}
-		}
-		
-		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageList()) {
-			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-			if (neighborsSubscriptionIDs.contains(subID)) {
-				// add all messages belonging to the subscriptions of a neighbor
-				messageList.add(m);
-			}
-			else if (nextRandomDouble() <= sendProbability) {
-				/* Add the message to the list. This will happen with
-				 * probability 1 if the selected dissemination mode
-				 * is FLEXIBLE, with the configured probability if the
-				 * dissemination mode is SEMI-POROUS, or it won't
-				 * happen at all if the dissemination mode set to STRICT.
-				 */
-				messageList.add(m);
-			}
-		}
-		
-		return messageList;
-	}
 	
 	private List<Message> getMessagesAccordingToDisseminationPolicy(NetworkInterface idleInterface) {
 		List<Message> availableMessages = new ArrayList<Message>();

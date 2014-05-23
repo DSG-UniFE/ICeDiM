@@ -88,7 +88,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 		
 		if (firstStopIndex < 0) {
 			/* set a random starting position on the route */
-			this.route.setNextIndex(rng.nextInt(route.getNrofStops()-1));
+			this.route.setNextIndex(RandomNumberGenerator.nextInt(route.getNrofStops()-1));
 		} else {
 			/* use the one defined in the config file */
 			this.route.setNextIndex(this.firstStopIndex);

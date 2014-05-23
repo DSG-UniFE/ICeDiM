@@ -4,8 +4,9 @@
  */
 package input;
 
-import java.util.Random;
+import org.uncommons.maths.random.MersenneTwisterRNG;
 
+import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SettingsError;
 
@@ -68,7 +69,7 @@ public class MessageEventGenerator implements EventQueue {
 	protected double[] msgTime;
 
 	/** Random number generator for this Class */
-	protected Random rng;
+	protected MersenneTwisterRNG randomNumberGenerator;
 	/** Random number generator's seed for this Class */
 	private long randomSeed = 50;
 	/** Random message priority generator for this Class */
@@ -105,7 +106,8 @@ public class MessageEventGenerator implements EventQueue {
 		if (s.contains(MESSAGE_GENERATOR_RANDOMIZER_SEED_S)) {
 			randomSeed = s.getInt(MESSAGE_GENERATOR_RANDOMIZER_SEED_S);
 		}
-		this.rng = new Random(randomSeed);
+		this.randomNumberGenerator = new MersenneTwisterRNG(
+				SeedGeneratorHelper.get16BytesSeedFromValue(randomSeed));
 		
 		if (this.sizeRange.length == 1) {
 			/* convert single value to range with 0 length */
@@ -141,7 +143,7 @@ public class MessageEventGenerator implements EventQueue {
 		/* calculate the first event's time */
 		this.nextEventsTime = ((this.msgTime != null) ? this.msgTime[0] : 0) +
 				this.msgInterval[0] + (this.msgInterval[0] == this.msgInterval[1] ?
-					0 : this.rng.nextInt(this.msgInterval[1] - this.msgInterval[0]));
+					0 : this.randomNumberGenerator.nextInt(this.msgInterval[1] - this.msgInterval[0]));
 	}
 	
 	
@@ -157,7 +159,7 @@ public class MessageEventGenerator implements EventQueue {
 		/* +1 added to include the last node (as indicated in hostRange[1])
 		 * as a possible source/destination when messages are generated
 		 */
-		return hostRange[0] + rng.nextInt(hostRange[1] - hostRange[0] + 1);
+		return hostRange[0] + randomNumberGenerator.nextInt(hostRange[1] - hostRange[0] + 1);
 	}
 	
 	/**
@@ -166,7 +168,7 @@ public class MessageEventGenerator implements EventQueue {
 	 */
 	protected int drawMessageSize() {
 		int sizeDiff = (sizeRange[0] == sizeRange[1]) ? 
-						0 : rng.nextInt(sizeRange[1] - sizeRange[0]);
+						0 : randomNumberGenerator.nextInt(sizeRange[1] - sizeRange[0]);
 		return sizeRange[0] + sizeDiff;
 	}
 	
@@ -176,7 +178,7 @@ public class MessageEventGenerator implements EventQueue {
 	 */
 	protected int drawNextEventTimeDiff() {
 		int timeDiff = (msgInterval[0] == msgInterval[1]) ?
-						0 : rng.nextInt(msgInterval[1] - msgInterval[0]);
+						0 : randomNumberGenerator.nextInt(msgInterval[1] - msgInterval[0]);
 		return msgInterval[0] + timeDiff;
 	}
 	

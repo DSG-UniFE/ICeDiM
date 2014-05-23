@@ -10,8 +10,9 @@ import interfaces.ConnectivityOptimizer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
+
+import org.uncommons.maths.random.MersenneTwisterRNG;
 
 /**
  * Network interface of a DTNHost. Takes care of connectivity among hosts.
@@ -46,7 +47,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public static final int BROADCAST_DENIED = -1;
 	
 	private static int nextAddress = 0;
-	private static Random rng;
+	private static MersenneTwisterRNG RandomGenerator;
+	private static final int RandomGeneratorSeed = 37;
 	protected DTNHost host = null;
 
 	protected String interfacetype;
@@ -74,7 +76,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public static void reset() {
 		nextAddress = 0;
-		rng = new Random(0);
+		RandomGenerator = new MersenneTwisterRNG(
+				SeedGeneratorHelper.get16BytesSeedFromValue(RandomGeneratorSeed));
 	}
 	
 	/**
@@ -122,7 +125,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		this.transmitSpeed = ni.transmitSpeed;
 		
 		/* draw lastScanTime of [0 -- scanInterval] */
-		this.lastScanTime = rng.nextDouble() * scanInterval;
+		this.lastScanTime = RandomGenerator.nextDouble() * scanInterval;
 	}
 
 	/**

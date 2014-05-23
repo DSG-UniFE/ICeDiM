@@ -36,7 +36,7 @@ public class OneToEachMessageGenerator extends MessageEventGenerator {
 		for (int i = toHostRange[0]; i < toHostRange[1]; i++) {
 			toIds.add(i);
 		}
-		Collections.shuffle(toIds, rng);
+		Collections.shuffle(toIds, randomNumberGenerator);
 	}
 	
 	/** 

@@ -5,10 +5,12 @@ package strategies;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
+import org.uncommons.maths.random.MersenneTwisterRNG;
+
+import core.DTNSim;
 import core.Message;
-import core.SimClock;
+import core.SeedGeneratorHelper;
 
 /**
  * @author Alex
@@ -16,28 +18,41 @@ import core.SimClock;
  */
 public class RandomForwardingOrder extends MessagePrioritizationStrategy {
 
-	static RandomForwardingOrder singletonInstance = null;
-	static Random randomGenerator = null;
+	static private RandomForwardingOrder singletonInstance = null;
+	static private MersenneTwisterRNG RandomGenerator = null;
+	static private final int RandomGeneratorSeed = 1043;
+
 	
-	private RandomForwardingOrder() {
-		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Random);
+	static {
+		DTNSim.registerForReset(RandomForwardingOrder.class.getCanonicalName());
+		reset();
 	}
 	
-	/* (non-Javadoc)
-	 * @see strategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
+	/**
+	 * Resets the static fields of the class
 	 */
+	public static void reset() {
+		singletonInstance = null;
+		RandomGenerator = null;
+	}
+	
 	static RandomForwardingOrder getForwardingOrderInstance() {
 		if (singletonInstance == null) {
 			singletonInstance = new RandomForwardingOrder();
-			randomGenerator = new Random(System.currentTimeMillis());
+			RandomGenerator = new MersenneTwisterRNG(
+					SeedGeneratorHelper.get16BytesSeedFromValue(RandomGeneratorSeed));
 		}
 		
 		return singletonInstance;
 	}
 	
+	private RandomForwardingOrder() {
+		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Random);
+	}
+	
 	@Override
 	public void sortList(List<Message> inputList) {
-		Collections.shuffle(inputList, new Random(SimClock.getIntTime()));
+		Collections.shuffle(inputList, RandomGenerator);
 	}
 
 	@Override
@@ -49,7 +64,7 @@ public class RandomForwardingOrder extends MessagePrioritizationStrategy {
 	
 	@Override
 	public int comparatorMethod(Message m1, Message m2) {
-		return RandomForwardingOrder.randomGenerator.nextInt(3) - 1;
+		return RandomGenerator.nextInt(3) - 1;
 	}
 
 }

@@ -55,7 +55,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 		eveningActivityMovement = new EveningActivityMovement(settings);
 		carMM = new CarMovement(settings);
 		ownCarProb = settings.getDouble(PROBABILITY_TO_OWN_CAR_SETTING);
-		if (rng.nextDouble() < ownCarProb) { 
+		if (RandomNumberGenerator.nextDouble() < ownCarProb) { 
 			movementUsedForTransfers = carMM;
 		} else {
 			movementUsedForTransfers = busTravellerMM;
@@ -81,7 +81,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 		carMM = new CarMovement(proto.carMM);
 		
 		ownCarProb = proto.ownCarProb;
-		if (rng.nextDouble() < ownCarProb) { 
+		if (RandomNumberGenerator.nextDouble() < ownCarProb) { 
 			movementUsedForTransfers = carMM;
 		} else {
 			movementUsedForTransfers = busTravellerMM;
@@ -98,7 +98,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 		case WORK_MODE:
 			if (workerMM.isReady()) {
 				setCurrentMovementModel(movementUsedForTransfers);
-				if (doEveningActivityProb > rng.nextDouble()) {
+				if (doEveningActivityProb > RandomNumberGenerator.nextDouble()) {
 					movementUsedForTransfers.setNextRoute(
 							workerMM.getOfficeLocation(), 
 							eveningActivityMovement.

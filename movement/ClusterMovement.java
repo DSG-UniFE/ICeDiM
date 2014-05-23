@@ -44,11 +44,11 @@ public class ClusterMovement extends RandomWaypoint {
 	
 	@Override
 	protected Coord randomCoord() {
-		double x = (rng.nextDouble()*2 - 1)*this.p_range;
-		double y = (rng.nextDouble()*2 - 1)*this.p_range;
+		double x = (RandomNumberGenerator.nextDouble()*2 - 1)*this.p_range;
+		double y = (RandomNumberGenerator.nextDouble()*2 - 1)*this.p_range;
 		while (x*x + y*y>this.p_range*this.p_range) {
-			x = (rng.nextDouble()*2 - 1)*this.p_range;
-			y = (rng.nextDouble()*2 - 1)*this.p_range;
+			x = (RandomNumberGenerator.nextDouble()*2 - 1)*this.p_range;
+			y = (RandomNumberGenerator.nextDouble()*2 - 1)*this.p_range;
 		}
 		x += this.p_x_center;
 		y += this.p_y_center;

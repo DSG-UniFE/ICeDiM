@@ -36,7 +36,7 @@ public class OneFromEachMessageGenerator extends MessageEventGenerator {
 		for (int i = hostRange[0]; i < hostRange[1]; i++) {
 			fromIds.add(i);
 		}
-		Collections.shuffle(fromIds, rng);
+		Collections.shuffle(fromIds, randomNumberGenerator);
 	}
 	
 	/** 
