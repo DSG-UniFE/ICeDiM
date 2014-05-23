@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -73,15 +74,18 @@ public class CSVMessageWithSubscriptionsDropReport extends Report implements Mes
 	}
 	
 	@Override
-	public void messageDeleted (Message m, DTNHost where, boolean dropped, String cause) {
+	public void messageDeleted (Message m, DTNHost where, MessageDropMode dropMode, String cause) {
 		if (isWarmupID(m.getID())) {
 			// Ignore messages created during warmup
 			return;
 		}
-		abortEventsMap.get(m.getID()).add(makeDropEventString(m, where, dropped, cause));
+		
+		abortEventsMap.get(m.getID()).add(makeDropEventString(m, where, dropMode, cause));
 	}
 
 	// nothing to implement for the rest
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {}
 	@Override
 	public void messageTransferAborted (Message m, DTNHost from, DTNHost to, String cause) {}
 	@Override
@@ -108,11 +112,28 @@ public class CSVMessageWithSubscriptionsDropReport extends Report implements Mes
 	}
 
 
-	private String makeDropEventString (Message m, DTNHost droppingNode, boolean dropped, String cause) {
-		return m.getID() + "," + m.getFrom() + "," + m.getTo() + "," + droppingNode + "," +
-				m.getPriority() + "," + m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY) +
-				"," + format(m.getCreationTime()) + "," + format(getSimTime()) + "," +
-				(dropped ? "DROP" : "DELETE") + "," + cause;
+	private String makeDropEventString (Message m, DTNHost droppingNode,
+										MessageDropMode dropMode, String cause) {
+		String csvEventString = m.getID() + "," + m.getFrom() + "," + m.getTo() + "," +
+				droppingNode + "," + m.getPriority() + "," +
+				m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY) +
+				"," + format(m.getCreationTime()) + "," + format(getSimTime()) + ",";
+		switch (dropMode) {
+		case REMOVED:
+			csvEventString += "DELETE";
+			break;
+		case DROPPED:
+			csvEventString += "DROP";
+			break;
+		case DISCARDED:
+			csvEventString += "DISCARD";
+			break;
+		case TTL_EXPIRATION:
+			csvEventString += "TTL_EXPIRATION";
+			break;
+		}
+		
+		return csvEventString + "," + cause;
 	}
 	
 }

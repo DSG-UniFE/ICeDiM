@@ -14,8 +14,8 @@ import core.MessageQueueManager;
  * Tests for EpidemicRouter and, due the simple nature of Epidemic router,
  * also ActiveRouter in general. 
  */
+@SuppressWarnings("deprecation")
 public class EpidemicRouterTest extends AbstractRouterTest {
-
 	private static int TTL = 300;
 	
 	@Override

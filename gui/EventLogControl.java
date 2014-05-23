@@ -30,7 +30,7 @@ public class EventLogControl {
 	 * @return true if this event type should be shown
 	 */
 	public boolean showEvent() {
-		return this.show.isSelected();
+		return show.isSelected();
 	}
 	
 	/** 
@@ -39,7 +39,7 @@ public class EventLogControl {
 	 */
 
 	public boolean pauseOnEvent() {
-		return this.pause.isSelected();
+		return pause.isSelected();
 	}
 	
 	/**

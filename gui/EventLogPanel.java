@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import routing.MessageRouter.MessageDropMode;
 import core.ConnectionListener;
 import core.DTNHost;
 import core.Message;
@@ -60,6 +61,7 @@ public class EventLogPanel extends JPanel
 	
 	private EventLogControlPanel controls;
 	private EventLogControl nodeRegistrationCheck;
+	private EventLogControl transmissionPerformedCheck;
 	private EventLogControl conUpCheck;
 	private EventLogControl conDownCheck;
 	private EventLogControl msgCreateCheck;
@@ -67,6 +69,8 @@ public class EventLogPanel extends JPanel
 	private EventLogControl msgRelayCheck;
 	private EventLogControl msgDuplicateCheck;
 	private EventLogControl msgRemoveCheck;
+	private EventLogControl msgDiscardCheck;
+	private EventLogControl msgExpirationCheck;
 	private EventLogControl msgDeliveredCheck;
 	private EventLogControl msgDropCheck;
 	private EventLogControl msgAbortCheck;
@@ -78,6 +82,7 @@ public class EventLogPanel extends JPanel
 	 */
 	public EventLogPanel(DTNSimGUI gui) {
 		this.gui = gui;
+		
 		String title = PANEL_TITLE;
 		Settings s = new Settings("GUI.EventLogPanel");
 		
@@ -105,11 +110,11 @@ public class EventLogPanel extends JPanel
 		// also ensures that the update is done in Swing's EDT
 		ActionListener taskPerformer = new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
-		          updateLogView();
-		      }
-		  };
-		  Timer t = new Timer(LOG_UP_INTERVAL, taskPerformer);
-		  t.start();
+				updateLogView();
+	        }
+		};
+		Timer t = new Timer(LOG_UP_INTERVAL, taskPerformer);
+		t.start();
 	}
 
 	/**
@@ -118,19 +123,23 @@ public class EventLogPanel extends JPanel
 	 */
 	private EventLogControlPanel createControls() {
 		EventLogControlPanel c = new EventLogControlPanel();
-		c.addHeading("connections");
 		
+		c.addHeading("connections");
 		nodeRegistrationCheck = c.addControl("registration");
 		conUpCheck = c.addControl("up");
 		conDownCheck = c.addControl("down");
+		
 		c.addHeading("messages");
 		msgCreateCheck = c.addControl("created");
+		transmissionPerformedCheck = c.addControl("transmission");
 		msgTransferStartCheck = c.addControl("started relay");
 		msgRelayCheck = c.addControl("relayed");
 		msgDuplicateCheck = c.addControl("duplicated relay");
 		msgDeliveredCheck = c.addControl("delivered");
 		msgRemoveCheck = c.addControl("removed");
 		msgDropCheck = c.addControl("dropped");
+		msgDiscardCheck= c.addControl("discarded");
+		msgExpirationCheck = c.addControl("expired");
 		msgAbortCheck = c.addControl("aborted");
 		msgInterferedCheck = c.addControl("interfered");
 		
@@ -142,7 +151,7 @@ public class EventLogPanel extends JPanel
 	 * @return The control panel
 	 */
 	public EventLogControlPanel getControls() {
-		return this.controls;
+		return controls;
 	}
 	
 	/**
@@ -194,10 +203,11 @@ public class EventLogPanel extends JPanel
 	 */
 	private void updateLogView() {
 		//TODO Optimization: Check if update is really necessary
-		this.removeAll();
-		for (int i=0; i< this.eventPanes.size(); i++) {
-			this.add(eventPanes.get(i));
+		removeAll();
+		for (int i=0; i< eventPanes.size(); i++) {
+			add(eventPanes.get(i));
 		}
+		
 		revalidate();
 	}
 	
@@ -260,6 +270,11 @@ public class EventLogPanel extends JPanel
 	public void registerNode(DTNHost node) {
 		processEvent(nodeRegistrationCheck, "Node registered itself", node, null, null);
 	}
+
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {
+		processEvent(transmissionPerformedCheck, "Node finished transmission", source, null, null);
+	}
 	
 	// Implementations of ConnectionListener and MessageListener interfaces
 	public void hostsConnected(DTNHost host1, DTNHost host2) {
@@ -271,23 +286,33 @@ public class EventLogPanel extends JPanel
 	}
 
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
-		if ((cause == null) || (cause.length() == 0)) {
-			if (!dropped) {
-				processEvent(msgRemoveCheck, "Message removed", where, null, m);
-			}
-			else {
-				processEvent(msgDropCheck, "Message dropped", where, null, m);
-			}
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {
+		EventLogControl event = null;
+		String message = "Message ";
+		
+		switch (dropMode) {
+		case REMOVED:
+			event = msgRemoveCheck;
+			message += "deleted";
+			break;
+		case DROPPED:
+			event = msgDropCheck;
+			message += "dropped";
+			break;
+		case DISCARDED:
+			event = msgDiscardCheck;
+			message += "discarded";
+			break;
+		case TTL_EXPIRATION:
+			event = msgExpirationCheck;
+			message += "expired";
+			break;
 		}
-		else {
-			if (!dropped) {
-				processEvent(msgRemoveCheck, "Message removed due to " + cause, where, null, m);
-			}
-			else {
-				processEvent(msgDropCheck, "Message dropped due to " + cause, where, null, m);
-			}
+		if ((cause != null) && (cause.length() > 0)) {
+			message += " due to " + cause;
 		}
+		
+		processEvent(event, message, where, null, m);
 	}
 
 	@Override
@@ -323,16 +348,13 @@ public class EventLogPanel extends JPanel
 
 	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		processEvent(msgTransferStartCheck,"Message relay started", from, to, m);
+		processEvent(msgTransferStartCheck, "Message relay started", from, to, m);
 	}
 
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from,DTNHost to) {
-		processEvent(msgInterferedCheck,"Interference detected during message relay", from, to, m);
-		
+		processEvent(msgInterferedCheck, "Interference detected during message relay", from, to, m);
 	}
-	
-	// end of message interface implementations
 	
 	
 	/**

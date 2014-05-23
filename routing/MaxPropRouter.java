@@ -176,20 +176,20 @@ public class MaxPropRouter extends ActiveRouter {
 	 * Deletes the messages from the message buffer that are known to be ACKed
 	 */
 	private void deleteAckedMessages() {
-		for (String id : this.ackedMessageIds) {
-			if (this.hasMessage(id) && !isSending(id)) {
-				this.deleteMessage(id, false, "message acknowledged");
+		for (String id : ackedMessageIds) {
+			if (hasMessage(id) && !isSendingMessage(id)) {
+				deleteMessage(id, MessageDropMode.REMOVED, "message acknowledged");
 			}
 		}
 	}
 	
 	@Override
 	public Message messageTransferred(String id, Connection con) {
-		this.costsForMessages = null; // new message -> invalidate costs
+		costsForMessages = null; // new message -> invalidate costs
 		Message m = super.messageTransferred(id, con);
 		/* was this node the final recipient of the message? */
 		if (isDeliveredMessage(m)) {
-			this.ackedMessageIds.add(id);
+			ackedMessageIds.add(id);
 		}
 		return m;
 	}
@@ -202,12 +202,15 @@ public class MaxPropRouter extends ActiveRouter {
 	 */
 	@Override
 	protected void transferDone(Connection con) {
+		super.transferDone(con);
+		
 		Message m = con.getMessage();
 		/* was the message delivered to the final recipient? */
 		if (m.getTo() == con.getOtherNode(getHost())) {
 			 // Add to ACKed messages and then delete from buffer 
-			this.ackedMessageIds.add(m.getID());
-			this.deleteMessage(m.getID(), false, "message delivered to final recipient");
+			ackedMessageIds.add(m.getID());
+			deleteMessage(m.getID(), MessageDropMode.REMOVED,
+							"message delivered to final recipient");
 		}
 	}
 	
@@ -256,7 +259,7 @@ public class MaxPropRouter extends ActiveRouter {
 		List<Message> validMessages = new ArrayList<Message>();
 
 		for (Message m : messages) {
-			if (excludeMsgBeingSent && isSending(m.getID())) {
+			if (excludeMsgBeingSent && isSendingMessage(m.getID())) {
 				continue; // skip the message(s) that router is sending
 			}
 			validMessages.add(m);
@@ -270,7 +273,7 @@ public class MaxPropRouter extends ActiveRouter {
 	@Override
 	public void update() {
 		super.update();
-		if (!canStartTransfer() ||isTransferring()) {
+		if (!canBeginNewTransfer() ||isTransferring()) {
 			return; // nothing to transfer or is currently transferring 
 		}
 		

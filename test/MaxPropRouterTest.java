@@ -13,6 +13,7 @@ import core.SimScenario;
 /**
  * Tests for the MaxProp routing module
  */
+@SuppressWarnings("deprecation")
 public class MaxPropRouterTest extends AbstractRouterTest {
 
 	private MaxPropRouter r1,r2,r3,r4;

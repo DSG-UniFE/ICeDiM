@@ -5,6 +5,7 @@
  
 package report;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTN2Manager;
 import core.DTNHost;
 import core.Message;
@@ -29,11 +30,16 @@ public class DTN2Reporter extends Report implements MessageListener {
 
 	@Override
 	public void registerNode(DTNHost node) {}
+
+
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {}
 	
 	/**
 	 * Method is called when a new message is created
 	 * @param m Message that was created
 	 */
+	@Override
 	public void newMessage(Message m) {}
 	
 	/**
@@ -42,6 +48,7 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param from Node where the message is transferred from 
 	 * @param to Node where the message is transferred to
 	 */
+	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	
 	/**
@@ -50,7 +57,8 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param where The host where the message was deleted
 	 * @param dropped True if the message was dropped, false if removed
 	 */
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	@Override
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {}
 	
 	/**
 	 * Method is called when a message's transfer was aborted before 
@@ -59,6 +67,7 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param from Node where the message was being transferred from 
 	 * @param to Node where the message was being transferred to
 	 */
+	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 
 	/**
@@ -80,6 +89,7 @@ public class DTN2Reporter extends Report implements MessageListener {
 	 * @param firstDelivery Was the target node final destination of the message
 	 * and received this message for the first time.
 	 */
+	@Override
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
 									boolean firstDelivery, boolean finalTarget) {
 		if (firstDelivery && finalTarget) {
@@ -90,4 +100,5 @@ public class DTN2Reporter extends Report implements MessageListener {
 			}
 		}
 	}
+	
 }

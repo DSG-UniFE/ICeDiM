@@ -12,7 +12,6 @@ import java.text.ParseException;
 import core.Connection;
 import core.DTNHost;
 import core.Message;
-import core.MessageListener;
 import core.NetworkInterface;
 import core.Settings;
 import core.SimError;
@@ -89,22 +88,53 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		return new EpidemicBroadcastRouterWithSubscriptions(this);
 	}
 
+	/**
+	 * It applies the chosen dissemination policy at the moment
+	 * that the reception of a new message is complete.
+	 */
 	@Override
-	public SubscriptionListManager getSubscriptionList() {
-		return nodeSubscriptions;
-	}
-
-	@Override
-	public int generateRandomSubID() {
-		return nodeSubscriptions.getRandomSubscriptionFromList();
+	public Message messageTransferred(String id, Connection con) {
+		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
+			if (nextRandomDouble() > receiveProbability) {
+				// remove message from receiving interface and refuse message
+				Message incoming = retrieveTransferredMessageFromInterface(id, con);
+				if (incoming == null) {
+					// reception was interfered --> no need to apply dissemination mode
+					return null;
+				}
+				
+				String message = null;
+				switch (pubSubDisseminationMode) {
+				case FLEXIBLE:
+					throw new SimError("message refuse despite FLEXIBLE strategy was set");
+				case STRICT:
+					message = "strict dissemination mode";
+					break;
+				case SEMI_POROUS:
+					message = "message discaded due to a semi-porous strategy. The probability" +
+							  " of discarding messages is " + (1 - receiveProbability);
+					break;
+				}
+				notifyListenersAboutMessageDelete(incoming, MessageDropMode.DISCARDED, message);
+				
+				return null;
+			}
+		}
+		
+		return super.messageTransferred(id, con);
 	}
 	
+	/**
+	 * Router uses broadcast, so no line for having performed
+	 * a new transmission should be logged. 
+	 */
+	@Override
+	protected void transferDone(Connection con) {}
+
 	@Override
 	public void update() {
 		super.update();
-		if (isTransferring() || !canBeginNewTransfer()) {
-			return; // transferring, don't try other connections yet
-		}
 		
 		/* First, try to send the messages that can be delivered to their
 		 * final recipient; this is consistent with any dissemination policy.
@@ -131,72 +161,23 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		}
 	}
 	
-	/**
-	 * It applies the chosen dissemination policy at the moment
-	 * that the reception of a new message is complete.
-	 */
 	@Override
-	public Message messageTransferred(String id, Connection con) {
-		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
-			if (RANDOM_GENERATOR.nextDouble() > receiveProbability) {
-				// remove message from receiving interface and refuse message
-				Message incoming = retrieveTransferredMessageFromInterface(id, con);
-				if (incoming == null) {
-					// reception was interfered --> no need to apply dissemination mode
-					return null;
-				}
-				
-				String message = null;
-				switch (pubSubDisseminationMode) {
-				case FLEXIBLE:
-					throw new SimError("message refuse despite FLEXIBLE strategy was set");
-				case STRICT:
-					message = "strict dissemination mode";
-					break;
-				case SEMI_POROUS:
-					message = "message discaded due to a semi-porous strategy. The probability" +
-							  " of discarding messages is " + (1 - receiveProbability);
-					break;
-				}
-				for (MessageListener ml : mListeners) {
-					ml.messageDeleted(incoming, getHost(), true, message);
-				}
-				
-				return null;
-			}
-		}
-		
-		return super.messageTransferred(id, con);
+	public SubscriptionListManager getSubscriptionList() {
+		return nodeSubscriptions;
 	}
 
-	/**
-	 * It selects all the messages available for transmission, according
-	 * to the selected dissemination policy, which are not being sent.
-	 */
-	private List<Message> getMessagesAccordingToDisseminationPolicy(NetworkInterface idleInterface) {
-		List<Message> availableMessages = new ArrayList<Message>();
-		for (Message msg : getMessageList()) {
-			boolean isBeingSent = false;
-			for (NetworkInterface ni : getHost().getInterfaces()) {
-				isBeingSent |= ni.isSendingMessage(msg.getID());
-			}
-			/* If no interface is sending the message and the dissemination
-			 * policy chosen allows it, we add it to the list of messages
-			 * available for sending. */
-			if (!isBeingSent && shouldDeliverMessageToNeighbors(msg, idleInterface) &&
-				(RANDOM_GENERATOR.nextDouble() <= sendProbability)) {
-				availableMessages.add(msg);
-			}
-		}
-		
-		return availableMessages;
+	@Override
+	public int generateRandomSubID() {
+		return nodeSubscriptions.getRandomSubscriptionFromList();
 	}
 
 	@Override
 	protected boolean isMessageDestination(Message aMessage) {
-		Integer messageSubID = (Integer) aMessage.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+		if (aMessage == null) {
+			return false;
+		}
 		
+		Integer messageSubID = (Integer) aMessage.getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
 		return getSubscriptionList().containsSubscriptionID(messageSubID);
 	}
 
@@ -222,5 +203,33 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
 		return !to.getRouter().hasReceivedMessage(m.getID());
+	}
+
+	/**
+	 * It selects all the messages available for transmission, according
+	 * to the selected dissemination policy, which are not being sent.
+	 * @param idleInterface The {@link NetworkInterface} onto which
+	 * selected {@link Message}s will be sent out. It identifies
+	 * the set of potential recipients for the messages.
+	 * @return A {@link List} containing all the {@link Message}s
+	 * that can be disseminated, according to the chosen strategy. 
+	 */
+	private List<Message> getMessagesAccordingToDisseminationPolicy(NetworkInterface idleInterface) {
+		List<Message> availableMessages = new ArrayList<Message>();
+		for (Message msg : getMessageList()) {
+			boolean isBeingSent = false;
+			for (NetworkInterface ni : getNetworkInterfaces()) {
+				isBeingSent |= ni.isSendingMessage(msg.getID());
+			}
+			/* If no interface is sending the message and the dissemination
+			 * policy chosen allows it, we add it to the list of messages
+			 * available for sending. */
+			if (!isBeingSent && shouldDeliverMessageToNeighbors(msg, idleInterface) &&
+				(nextRandomDouble() <= sendProbability)) {
+				availableMessages.add(msg);
+			}
+		}
+		
+		return availableMessages;
 	}
 }

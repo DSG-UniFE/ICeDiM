@@ -34,7 +34,7 @@ public class EpidemicRouter extends ActiveRouter {
 	@Override
 	public void update() {
 		super.update();
-		if (isTransferring() || !canStartTransfer()) {
+		if (isTransferring() || !canBeginNewTransfer()) {
 			return; // transferring, don't try other connections yet
 		}
 		

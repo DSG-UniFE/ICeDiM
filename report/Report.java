@@ -343,11 +343,11 @@ public abstract class Report {
 	 * @return average of double values stored in the List in a formatted String 
 	 */
 	public String getAverage(List<Double> values) {
-		double sum = 0;
 		if (values.size() == 0) {
 			return NAN;
 		}
 
+		double sum = 0.0;
 		for (double dValue : values) {
 			sum += dValue;
 		}
@@ -364,7 +364,7 @@ public abstract class Report {
 	public String getIntAverage(List<Integer> values) {
 		List<Double> dValues = new ArrayList<Double>(values.size());
 		for (int i : values) {
-			dValues.add((double)i);
+			dValues.add((double) i);
 		}	
 		return getAverage(dValues);
 	}
@@ -381,7 +381,8 @@ public abstract class Report {
 		}
 		
 		Collections.sort(values);
-		return format(values.get(values.size()/2));
+		return format(((values.size() % 2) == 0) ? (values.get((values.size() / 2) - 1) +
+						values.get(values.size() / 2)) / 2 : values.get(values.size()/2));
 	}
 	
 	/**

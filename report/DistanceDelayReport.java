@@ -6,6 +6,7 @@ package report;
 
 import java.util.HashMap;
 
+import routing.MessageRouter.MessageDropMode;
 import core.Coord;
 import core.DTNHost;
 import core.Message;
@@ -89,18 +90,19 @@ public class DistanceDelayReport extends Report implements MessageListener {
 		write(format(startDistance) + " " + format(time) + " " + hopCount +	" " + id);
 	}
 	
-	/* nothing to implement for the rest */
-
+	// nothing to implement for the rest
 	@Override
 	public void registerNode(DTNHost node) {}
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	public void transmissionPerformed(Message m, DTNHost source) {}
 	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
+	@Override
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {}
 
 	@Override
 	public void done() {
@@ -112,6 +114,7 @@ public class DistanceDelayReport extends Report implements MessageListener {
 		
 		super.done();
 	}
+	
 	
  	/**
 	 * Private class that encapsulates time and location related information
@@ -138,6 +141,7 @@ public class DistanceDelayReport extends Report implements MessageListener {
 		public double getTime() {
 			return time;
 		}
+		
 	}
 
 }

@@ -48,7 +48,7 @@ public class FirstContactRouter extends ActiveRouter {
 	@Override
 	public void update() {
 		super.update();
-		if (isTransferring() || !canStartTransfer()) {
+		if (isTransferring() || !canBeginNewTransfer()) {
 			return; 
 		}
 		
@@ -62,7 +62,8 @@ public class FirstContactRouter extends ActiveRouter {
 	@Override
 	protected void transferDone(Connection con) {
 		/* don't leave a copy for the sender */
-		deleteMessage(con.getMessage().getID(), false, "message transferred successfully");
+		super.transferDone(con);
+		deleteMessage(con.getMessage().getID(), MessageDropMode.REMOVED, "message transferred successfully");
 	}
 		
 	@Override

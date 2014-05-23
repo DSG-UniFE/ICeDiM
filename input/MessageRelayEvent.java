@@ -4,6 +4,7 @@
  */
 package input;
 
+import core.Connection;
 import core.DTNHost;
 import core.World;
 
@@ -42,23 +43,25 @@ public class MessageRelayEvent extends MessageEvent {
 	/**
 	 * Relays the message
 	 */
+	@SuppressWarnings("deprecation")
 	public void processEvent(World world) {
 		// get DTNHosts and pass messages between them
-		DTNHost from = world.getNodeByAddress(this.fromAddr);
-		DTNHost to = world.getNodeByAddress(this.toAddr);			
+		DTNHost from = world.getNodeByAddress(fromAddr);
+		DTNHost to = world.getNodeByAddress(toAddr);
+		Connection bridgingConnection = from.getRouter().getConnectionTo(to);
 
 		switch(stage) {
 		case SENDING:
-			from.sendMessage(id, to);
+			from.getRouter().sendMessage(id, to);
 			break;
 		case TRANSFERRED:
-			to.messageTransferred(id, from.getConnection(to));
+			to.messageTransferred(id, bridgingConnection);
 			break;
 		case ABORTED:
-			to.messageAborted(id, from.getConnection(to), "abort event");
+			to.messageAborted(id, bridgingConnection, "abort event");
 			break;
 		case INTERFERED:
-			to.messageInterfered(id, from.getConnection(to));
+			to.messageInterfered(id, bridgingConnection);
 			break;
 		default:
 			assert false : "Invalid stage (" + stage + ") for " + this;

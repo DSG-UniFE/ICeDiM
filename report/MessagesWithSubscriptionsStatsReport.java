@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -27,19 +28,22 @@ import core.disService.SubscriptionListManager;
  */
 public class MessagesWithSubscriptionsStatsReport extends Report implements MessageListener {
 	private Map<String, Double> creationTimes;
-	
-	private int nrofDropped;
-	private int nrofRemoved;
+
+	private int nrofCreated;
 	private int nrofStarted;
-	private int nrofAborted;
-	private int nrofInterfered;
 	private int nrofRelayed;
 	private int nrofDuplicates;
-	private int nrofCreated;
+	private int nrofDelivered;
+	private int nrofAborted;
+	private int nrofInterfered;
+	private int nrofRemoved;
+	private int nrofDropped;
+	private int nrofDiscarded;
+	private int nrofExpired;
 	private int nrofResponseReqCreated;
 	private int nrofResponseDelivered;
-	private int nrofDelivered;
-	
+
+	private int nrofTransmissions;
 	private int nrofTotalDueDeliveries;
 	
 	private int nrofHelloMessagesStarted;
@@ -48,6 +52,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	private int nrofHelloMessagesInterfered;
 	
 	private HashMap<Integer, Integer> nodesPerSubscription;
+	private HashMap<Integer, Integer> transmissionsPerSubscription;
 	private HashMap<Integer, Integer> messageCreatedPerSubscription;
 	private HashMap<Integer, Integer> messageResponseCreatedPerSubscription;
 	private HashMap<Integer, Integer> messageStartedPerSubscription;
@@ -56,11 +61,14 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	private HashMap<Integer, Integer> messageDeliveredPerSubscription;
 	private HashMap<Integer, Integer> messageResponseDeliveredPerSubscription;
 	private HashMap<Integer, Integer> messageAbortedPerSubscription;
-	private HashMap<Integer, Integer> messageDroppedPerSubscription;
 	private HashMap<Integer, Integer> messageRemovedPerSubscription;
+	private HashMap<Integer, Integer> messageDroppedPerSubscription;
+	private HashMap<Integer, Integer> messageDiscardedPerSubscription;
+	private HashMap<Integer, Integer> messageExpiredPerSubscription;
 	private HashMap<Integer, Integer> messageInterferedPerSubscription;
 	
 	private HashMap<String, Integer> firstDeliveriesPerMessage;
+	private HashMap<String, Integer> totalTransmissionsPerMessage;
 	
 	private HashMap<Integer, ArrayList<Double>> latenciesPerSubscription;
 	private HashMap<Integer, ArrayList<Integer>> hopCountsPerSubscription;
@@ -80,85 +88,98 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		super.init();
 		int subscriptionsArraySize = SubscriptionListManager.MAX_SUB_ID_OF_SIMULATION + 1;
 		
-		this.creationTimes = new HashMap<String, Double>();
+		creationTimes = new HashMap<String, Double>();
 		
-		this.nrofHelloMessagesStarted = 0;
-		this.nrofHelloMessagesDelivered = 0;
-		this.nrofHelloMessagesAborted = 0;
-		this.nrofHelloMessagesInterfered = 0;
+		nrofHelloMessagesStarted = 0;
+		nrofHelloMessagesDelivered = 0;
+		nrofHelloMessagesAborted = 0;
+		nrofHelloMessagesInterfered = 0;
 
-		this.nrofDropped = 0;
-		this.nrofRemoved = 0;
-		this.nrofStarted = 0;
-		this.nrofAborted = 0;
-		this.nrofInterfered = 0;
-		this.nrofRelayed = 0;
-		this.nrofDuplicates = 0;
-		this.nrofCreated = 0;
-		this.nrofResponseReqCreated = 0;
-		this.nrofResponseDelivered = 0;
-		this.nrofDelivered = 0;
+		nrofCreated = 0;
+		nrofStarted = 0;
+		nrofAborted = 0;
+		nrofInterfered = 0;
+		nrofRelayed = 0;
+		nrofDuplicates = 0;
+		nrofDelivered = 0;
+		nrofRemoved = 0;
+		nrofDropped = 0;
+		nrofDiscarded = 0;
+		nrofExpired = 0;
+		nrofResponseReqCreated = 0;
+		nrofResponseDelivered = 0;
 		
-		this.nrofTotalDueDeliveries = 0;
+		nrofTransmissions = 0;
+		nrofTotalDueDeliveries = 0;
 
-		this.nodesPerSubscription = new HashMap<Integer, Integer>();
-		this.messageCreatedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageResponseCreatedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageStartedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageRelayedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageDuplicatesPerSubscription = new HashMap<Integer, Integer>();
-		this.messageDeliveredPerSubscription = new HashMap<Integer, Integer>();
-		this.messageResponseDeliveredPerSubscription = new HashMap<Integer, Integer>();
-		this.messageAbortedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageDroppedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageRemovedPerSubscription = new HashMap<Integer, Integer>();
-		this.messageInterferedPerSubscription = new HashMap<Integer, Integer>();
+		nodesPerSubscription = new HashMap<Integer, Integer>();
+		transmissionsPerSubscription = new HashMap<Integer, Integer>();
+		messageCreatedPerSubscription = new HashMap<Integer, Integer>();
+		messageResponseCreatedPerSubscription = new HashMap<Integer, Integer>();
+		messageStartedPerSubscription = new HashMap<Integer, Integer>();
+		messageRelayedPerSubscription = new HashMap<Integer, Integer>();
+		messageDuplicatesPerSubscription = new HashMap<Integer, Integer>();
+		messageDeliveredPerSubscription = new HashMap<Integer, Integer>();
+		messageResponseDeliveredPerSubscription = new HashMap<Integer, Integer>();
+		messageAbortedPerSubscription = new HashMap<Integer, Integer>();
+		messageRemovedPerSubscription = new HashMap<Integer, Integer>();
+		messageDroppedPerSubscription = new HashMap<Integer, Integer>();
+		messageDiscardedPerSubscription= new HashMap<Integer, Integer>();
+		messageExpiredPerSubscription = new HashMap<Integer, Integer>();
+		messageInterferedPerSubscription = new HashMap<Integer, Integer>();
 		
-		this.firstDeliveriesPerMessage = new HashMap<String, Integer>();
+		firstDeliveriesPerMessage = new HashMap<String, Integer>();
+		totalTransmissionsPerMessage = new HashMap<String, Integer>();
 		
-		this.latenciesPerSubscription = new HashMap<Integer, ArrayList<Double>>();
-		this.hopCountsPerSubscription = new HashMap<Integer, ArrayList<Integer>>();
-		this.msgBufferTimePerSubscription = new HashMap<Integer, ArrayList<Double>>();
-		this.msgRTTPerSubscription = new HashMap<Integer, ArrayList<Double>>();
+		latenciesPerSubscription = new HashMap<Integer, ArrayList<Double>>();
+		hopCountsPerSubscription = new HashMap<Integer, ArrayList<Integer>>();
+		msgBufferTimePerSubscription = new HashMap<Integer, ArrayList<Double>>();
+		msgRTTPerSubscription = new HashMap<Integer, ArrayList<Double>>();
 
 		for (int i = 1; i < subscriptionsArraySize; ++i) {
-			this.nodesPerSubscription.put(i, 0);
-			this.messageCreatedPerSubscription.put(i, 0);
-			this.messageResponseCreatedPerSubscription.put(i, 0);
-			this.messageStartedPerSubscription.put(i, 0);
-			this.messageRelayedPerSubscription.put(i, 0);
-			this.messageDuplicatesPerSubscription.put(i, 0);
-			this.messageDeliveredPerSubscription.put(i, 0);
-			this.messageResponseDeliveredPerSubscription.put(i, 0);
-			this.messageAbortedPerSubscription.put(i, 0);
-			this.messageDroppedPerSubscription.put(i, 0);
-			this.messageRemovedPerSubscription.put(i, 0);
-			this.messageInterferedPerSubscription.put(i, 0);
+			nodesPerSubscription.put(i, 0);
+			transmissionsPerSubscription.put(i, 0);
+			messageCreatedPerSubscription.put(i, 0);
+			messageResponseCreatedPerSubscription.put(i, 0);
+			messageStartedPerSubscription.put(i, 0);
+			messageRelayedPerSubscription.put(i, 0);
+			messageDuplicatesPerSubscription.put(i, 0);
+			messageDeliveredPerSubscription.put(i, 0);
+			messageResponseDeliveredPerSubscription.put(i, 0);
+			messageAbortedPerSubscription.put(i, 0);
+			messageRemovedPerSubscription.put(i, 0);
+			messageDroppedPerSubscription.put(i, 0);
+			messageDiscardedPerSubscription.put(i, 0);
+			messageExpiredPerSubscription.put(i, 0);
+			messageInterferedPerSubscription.put(i, 0);
 			
-			this.latenciesPerSubscription.put(i, new ArrayList<Double>());
-			this.hopCountsPerSubscription.put(i, new ArrayList<Integer>());
-			this.msgBufferTimePerSubscription.put(i, new ArrayList<Double>());
-			this.msgRTTPerSubscription.put(i, new ArrayList<Double>());
+			latenciesPerSubscription.put(i, new ArrayList<Double>());
+			hopCountsPerSubscription.put(i, new ArrayList<Integer>());
+			msgBufferTimePerSubscription.put(i, new ArrayList<Double>());
+			msgRTTPerSubscription.put(i, new ArrayList<Double>());
 		}
 		
 		if (subscriptionsArraySize <= 1) {
-			this.nodesPerSubscription.put(0, 0);
-			this.messageCreatedPerSubscription.put(0, 0);
-			this.messageResponseCreatedPerSubscription.put(0, 0);
-			this.messageStartedPerSubscription.put(0, 0);
-			this.messageRelayedPerSubscription.put(0, 0);
-			this.messageDuplicatesPerSubscription.put(0, 0);
-			this.messageDeliveredPerSubscription.put(0, 0);
-			this.messageResponseDeliveredPerSubscription.put(0, 0);
-			this.messageAbortedPerSubscription.put(0, 0);
-			this.messageDroppedPerSubscription.put(0, 0);
-			this.messageRemovedPerSubscription.put(0, 0);
-			this.messageInterferedPerSubscription.put(0, 0);
+			nodesPerSubscription.put(0, 0);
+			transmissionsPerSubscription.put(0, 0);
+			messageCreatedPerSubscription.put(0, 0);
+			messageResponseCreatedPerSubscription.put(0, 0);
+			messageStartedPerSubscription.put(0, 0);
+			messageRelayedPerSubscription.put(0, 0);
+			messageDuplicatesPerSubscription.put(0, 0);
+			messageDeliveredPerSubscription.put(0, 0);
+			messageResponseDeliveredPerSubscription.put(0, 0);
+			messageAbortedPerSubscription.put(0, 0);
+			messageRemovedPerSubscription.put(0, 0);
+			messageDroppedPerSubscription.put(0, 0);
+			messageDiscardedPerSubscription.put(0, 0);
+			messageExpiredPerSubscription.put(0, 0);
+			messageInterferedPerSubscription.put(0, 0);
 			
-			this.latenciesPerSubscription.put(0, new ArrayList<Double>());
-			this.hopCountsPerSubscription.put(0, new ArrayList<Integer>());
-			this.msgBufferTimePerSubscription.put(0, new ArrayList<Double>());
-			this.msgRTTPerSubscription.put(0, new ArrayList<Double>());
+			latenciesPerSubscription.put(0, new ArrayList<Double>());
+			hopCountsPerSubscription.put(0, new ArrayList<Integer>());
+			msgBufferTimePerSubscription.put(0, new ArrayList<Double>());
+			msgRTTPerSubscription.put(0, new ArrayList<Double>());
 		}
 	}
 
@@ -182,23 +203,118 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	}
 
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
+	public void newMessage(Message m) {
+		if (isWarmup()) {
+			addWarmupID(m.getID());
+			return;
+		}
+	
+		nrofCreated++;
+		creationTimes.put(m.getID(), getSimTime());
+		firstDeliveriesPerMessage.put(m.getID(), 0);
+		totalTransmissionsPerMessage.put(m.getID(), 0);
+	
+		Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+		nrofTotalDueDeliveries += nodesPerSubscription.get(subID);
+		messageCreatedPerSubscription.put(subID, Integer.valueOf(
+				messageCreatedPerSubscription.get(subID).intValue() + 1));
+		
+		if (m.getResponseSize() > 0) {
+			nrofResponseReqCreated++;
+			messageResponseCreatedPerSubscription.put(subID, Integer.valueOf(
+					messageResponseCreatedPerSubscription.get(subID).intValue() + 1));
+		}
+	}
+
+	@Override
+	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
-
-		Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);		
-		if (dropped) {
-			nrofDropped++;
-			messageDroppedPerSubscription.put(subID, Integer.valueOf(
-					messageDroppedPerSubscription.get(subID).intValue() + 1));
+		
+		if (m instanceof DisServiceHelloMessage) {
+			nrofHelloMessagesStarted++;
 		}
 		else {
-			nrofRemoved++;
-			messageRemovedPerSubscription.put(subID, Integer.valueOf(
-					messageRemovedPerSubscription.get(subID).intValue() + 1));
+			nrofStarted++;
+	
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+			messageStartedPerSubscription.put(subID, Integer.valueOf(
+					messageStartedPerSubscription.get(subID).intValue() + 1));
 		}
-		msgBufferTimePerSubscription.get(subID).add(getSimTime() - m.getReceiveTime());
+	}
+
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {
+		if (isWarmupID(m.getID())) {
+			// Ignore messages created during warmup
+			return;
+		}
+		
+		nrofTransmissions++;
+		totalTransmissionsPerMessage.put(m.getID(), Integer.valueOf(
+				totalTransmissionsPerMessage.get(m.getID()).intValue() + 1));
+		
+		Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+		transmissionsPerSubscription.put(subID, Integer.valueOf(
+				transmissionsPerSubscription.get(subID).intValue() + 1));
+	}
+
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+	
+		if (m instanceof DisServiceHelloMessage) {
+			nrofHelloMessagesDelivered++;
+		}
+		else if (firstDelivery) {
+			nrofRelayed++;
+			
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+			messageRelayedPerSubscription.put(subID,
+			Integer.valueOf(messageRelayedPerSubscription.get(subID).intValue() + 1));
+			
+			if (finalTarget) {
+				nrofDelivered++;
+				firstDeliveriesPerMessage.put(m.getID(), firstDeliveriesPerMessage.get(m.getID()) + 1);
+				latenciesPerSubscription.get(subID).add(getSimTime() - creationTimes.get(m.getID()));
+				hopCountsPerSubscription.get(subID).add(m.getHops().size() - 1);
+				
+				if (m.isResponse()) {
+					nrofResponseDelivered++;
+					msgRTTPerSubscription.get(subID).add(getSimTime() -	m.getRequest().getCreationTime());
+				}
+	
+				if (to.getRouter() instanceof PublisherSubscriber) {
+					if (subID <= SubscriptionListManager.INVALID_SUB_ID) {
+						throw new SimError("Message subscription ID (" + subID + ") is invalid");
+					}
+	
+					PublisherSubscriber destNode = (PublisherSubscriber) to.getRouter();
+					SubscriptionListManager sl = destNode.getSubscriptionList();
+					if (sl.containsSubscriptionID(subID)) {
+						messageDeliveredPerSubscription.put(subID, Integer.valueOf(
+								messageDeliveredPerSubscription.get(subID).intValue() + 1));
+					}
+	
+					if (m.isResponse() && sl.containsSubscriptionID(subID)) {
+						messageResponseDeliveredPerSubscription.put(subID, Integer.valueOf(
+								messageResponseDeliveredPerSubscription.get(subID).intValue() + 1));
+					}
+				}
+			}
+		}
+		else {
+			// Duplicate message
+			nrofDuplicates++;
+			
+			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+			messageDuplicatesPerSubscription.put(subID, Integer.valueOf(
+					messageDuplicatesPerSubscription.get(subID).intValue() + 1));
+		}
 	}
 
 	@Override
@@ -234,101 +350,35 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	}
 
 	@Override
-	public void messageTransferred(Message m, DTNHost from, DTNHost to,
-									boolean firstDelivery, boolean finalTarget) {
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
-
-		if (m instanceof DisServiceHelloMessage) {
-			nrofHelloMessagesDelivered++;
-		}
-		else if (firstDelivery) {
-			nrofRelayed++;
-			
-			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-			messageRelayedPerSubscription.put(subID,
-			Integer.valueOf(messageRelayedPerSubscription.get(subID).intValue() + 1));
-			
-			if (finalTarget) {
-				nrofDelivered++;
-				firstDeliveriesPerMessage.put(m.getID(), firstDeliveriesPerMessage.get(m.getID()) + 1);
-				latenciesPerSubscription.get(subID).add(getSimTime() - creationTimes.get(m.getID()));
-				hopCountsPerSubscription.get(subID).add(m.getHops().size() - 1);
-				
-				if (m.isResponse()) {
-					nrofResponseDelivered++;
-					msgRTTPerSubscription.get(subID).add(getSimTime() -	m.getRequest().getCreationTime());
-				}
-
-				if (to.getRouter() instanceof PublisherSubscriber) {
-					if (subID <= SubscriptionListManager.INVALID_SUB_ID) {
-						throw new SimError("Message subscription ID (" + subID + ") is invalid");
-					}
-
-					PublisherSubscriber destNode = (PublisherSubscriber) to.getRouter();
-					SubscriptionListManager sl = destNode.getSubscriptionList();
-					if (sl.containsSubscriptionID(subID)) {
-						messageDeliveredPerSubscription.put(subID, Integer.valueOf(
-								messageDeliveredPerSubscription.get(subID).intValue() + 1));
-					}
-
-					if (m.isResponse() && sl.containsSubscriptionID(subID)) {
-						messageResponseDeliveredPerSubscription.put(subID, Integer.valueOf(
-								messageResponseDeliveredPerSubscription.get(subID).intValue() + 1));
-					}
-				}
-			}
-		}
-		else {
-			// Duplicate message
-			nrofDuplicates++;
-			
-			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-			messageDuplicatesPerSubscription.put(subID, Integer.valueOf(
-					messageDuplicatesPerSubscription.get(subID).intValue() + 1));
-		}
-	}
-
-	@Override
-	public void newMessage(Message m) {
-		if (isWarmup()) {
-			addWarmupID(m.getID());
-			return;
-		}
-
-		nrofCreated++;
-		creationTimes.put(m.getID(), getSimTime());
-		firstDeliveriesPerMessage.put(m.getID(), 0);
-
+	
 		Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-		nrofTotalDueDeliveries += nodesPerSubscription.get(subID);
-		messageCreatedPerSubscription.put(subID, Integer.valueOf(
-				messageCreatedPerSubscription.get(subID).intValue() + 1));
-		
-		if (m.getResponseSize() > 0) {
-			nrofResponseReqCreated++;
-			messageResponseCreatedPerSubscription.put(subID, Integer.valueOf(
-					messageResponseCreatedPerSubscription.get(subID).intValue() + 1));
+		switch (dropMode) {
+		case REMOVED:
+			nrofRemoved++;
+			messageRemovedPerSubscription.put(subID, Integer.valueOf(
+					messageRemovedPerSubscription.get(subID).intValue() + 1));
+			break;
+		case DROPPED:
+			nrofDropped++;
+			messageDroppedPerSubscription.put(subID, Integer.valueOf(
+					messageDroppedPerSubscription.get(subID).intValue() + 1));
+			break;
+		case DISCARDED:
+			nrofDiscarded++;
+			messageDiscardedPerSubscription.put(subID, Integer.valueOf(
+					messageDiscardedPerSubscription.get(subID).intValue() + 1));
+			break;
+		case TTL_EXPIRATION:
+			nrofExpired++;
+			messageExpiredPerSubscription.put(subID, Integer.valueOf(
+					messageExpiredPerSubscription.get(subID).intValue() + 1));
+			break;
 		}
-	}
-
-	@Override
-	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getID())) {
-			return;
-		}
-		
-		if (m instanceof DisServiceHelloMessage) {
-			nrofHelloMessagesStarted++;
-		}
-		else {
-			nrofStarted++;
-
-			Integer subID = (Integer) m.getProperty(PublisherSubscriber.SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-			messageStartedPerSubscription.put(subID, Integer.valueOf(
-					messageStartedPerSubscription.get(subID).intValue() + 1));
-		}
+		msgBufferTimePerSubscription.get(subID).add(getSimTime() - m.getReceiveTime());
 	}
 
 	@Override
@@ -341,11 +391,12 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		if (nrofResponseReqCreated > 0) {
 			responseProb = (1.0 * nrofResponseDelivered) / nrofResponseReqCreated;
 		}
-		overHead = (1.0 * (nrofDuplicates + nrofRelayed - nrofDelivered)) / nrofDelivered;
+		//overHead = (1.0 * (nrofDuplicates + nrofRelayed - nrofDelivered)) / nrofDelivered;
+		overHead = (1.0 * (nrofTransmissions - nrofDelivered)) / nrofDelivered;
 		
 		/* printing stats */
-		write("Message stats for scenario " + getScenarioName() + "\nsim_time: " + format(getSimTime()));
 		String statsText = "";
+		write("Message stats for scenario " + getScenarioName() + "\nsim_time: " + format(getSimTime()));
 		if (nrofHelloMessagesStarted > 0) {
 			statsText = "\nHMSent: " + nrofHelloMessagesStarted + 
 						"\nHMDelivered : " + nrofHelloMessagesDelivered + 
@@ -372,14 +423,17 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		}		
 		
 		statsText = "General results:" +
+					"\ntotal transmissions: " + nrofTransmissions +
 					"\ncreated: " + nrofCreated +
 					"\nstarted: " + nrofStarted +
 					"\nrelayed: " + nrofRelayed +
 					"\nduplicates: " + nrofDuplicates +
 					"\naborted: " + nrofAborted +
 					"\nInterfered: " + nrofInterfered +
-					"\ndropped: " + nrofDropped +
 					"\nremoved: " + nrofRemoved +
+					"\ndropped: " + nrofDropped +
+					"\ndiscarded: " + nrofDiscarded +
+					"\nexpired: " + nrofExpired +
 					"\ndelivered: " + nrofDelivered +
 					"\ndelivery_prob: " + format(deliveryProb) +
 					"\nresponse_prob: " + format(responseProb) +
@@ -412,8 +466,13 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			}
 			for (int i = 1; i <= statsSize; i++) {
 				if (messageDeliveredPerSubscription.get(i).intValue() > 0) {
+					/*
 					overHeadPerSub[i - 1] = (1.0 * (messageDuplicatesPerSubscription.get(i) +
 												messageRelayedPerSubscription.get(i).intValue() -
+												messageDeliveredPerSubscription.get(i).intValue())) /
+												messageDeliveredPerSubscription.get(i).intValue();
+												*/
+					overHeadPerSub[i - 1] = (1.0 * (transmissionsPerSubscription.get(i) -
 												messageDeliveredPerSubscription.get(i).intValue())) /
 												messageDeliveredPerSubscription.get(i).intValue();
 				}

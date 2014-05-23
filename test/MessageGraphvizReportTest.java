@@ -36,6 +36,7 @@ public class MessageGraphvizReportTest extends TestCase {
 		utils = new TestUtils(null, ml, ts);
 	}
 	
+	@SuppressWarnings("deprecation")
 	private void generateMessages() {
 		Coord c1 = new Coord(0,0);
 		Coord c2 = new Coord(1,0);
@@ -49,12 +50,12 @@ public class MessageGraphvizReportTest extends TestCase {
 		h1.createNewMessage(new Message(h1, h3, "M1", 1));
 		h1.forceConnection(h2, null, true);
 		h2.forceConnection(h3, null, true);
-		h1.sendMessage("M1", h2);
+		h1.getRouter().sendMessage("M1", h2);
 		h2.messageTransferred("M1", h1.getConnection(h2));
-		h2.sendMessage("M1", h3);
+		h2.getRouter().sendMessage("M1", h3);
 		h3.messageTransferred("M1", h2.getConnection(h3));
 		h3.createNewMessage(new Message(h3, h2, "M2", 1));
-		h3.sendMessage("M2", h2);
+		h3.getRouter().sendMessage("M2", h2);
 		h2.messageTransferred("M2", h3.getConnection(h2));
 	}
 	

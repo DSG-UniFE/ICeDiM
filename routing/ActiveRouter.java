@@ -84,6 +84,30 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	@Override
 	public void changedConnection(Connection con) { }
+
+	/**
+	 * Returns a list of those messages whose recipient is the
+	 * host reachable through the specified Connection.
+	 * @param con the Connection to some host.
+	 * @return a List of messages to be delivered to the host
+	 * reachable through the specified Connection.
+	 */
+	protected List<Message> getDeliverableMessagesForConnection(Connection con) {
+		if (getNrofMessages() == 0) {
+			/* no messages -> empty list */
+			return new ArrayList<Message>(0); 
+		}
+	
+		final DTNHost to = con.getOtherNode(getHost());
+		List<Message> messageList = new ArrayList<Message>();
+		for (Message m : getMessageList()) {
+			if (isMessageDestination(m, to)) {
+				messageList.add(m);
+			}
+		}
+		
+		return messageList;
+	}
 	
 	@Override
 	public Message requestDeliverableMessages(Connection con) {
@@ -113,15 +137,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		return null;
 	}
 	
-	@Override 
-	public boolean createNewMessage(Message m) {
-		if (makeRoomForNewMessage(m.getSize(), m.getPriority())) {
-			return super.createNewMessage(m);
-		}
-		
-		return false;
-	}
-	
 	@Override
 	public int receiveMessage(Message m, Connection con) {
 		int recvCheck = checkReceiving(m, con); 
@@ -142,11 +157,10 @@ public abstract class ActiveRouter extends MessageRouter {
 		 *  becomes obsolete, and the response size should be configured 
 		 *  to zero.
 		 */
-		// check if msg was for this host and a response was requested
-		if ((m != null) && (m.getTo() == getHost()) &&
-			(m.getResponseSize() > 0)) {
-			// generate a response message
-			Message res = new Message(this.getHost(),m.getFrom(), RESPONSE_PREFIX+m.getID(),
+		// check if the Message was for this host and a response was requested
+		if (isMessageDestination(m) && (m.getResponseSize() > 0)) {
+			// generate a response message with the same priority level
+			Message res = new Message(this.getHost(),m.getFrom(), RESPONSE_PREFIX + m.getID(),
 										m.getResponseSize(), m.getPriority());
 			res.copyPropertiesFrom(m);
 			createNewMessage(res);
@@ -154,14 +168,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		return m;
-	}
-	
-	/**
-	 * Returns a list of connections this host currently has with other hosts.
-	 * @return a list of connections this host currently has with other hosts
-	 */
-	protected List<Connection> getConnections() {
-		return getHost().getConnections();
 	}
 	
 	/**
@@ -186,28 +192,13 @@ public abstract class ActiveRouter extends MessageRouter {
 			return RCV_OK;
 		}
 		else if (deleteDelivered && (retVal == DENIED_OLD) &&
-			(m.getTo() == con.getOtherNode(this.getHost()))) {
+			(m.getTo() == con.getOtherNode(getHost()))) {
 			/* final recipient has already received the msg -> delete it */
-			deleteMessage(m.getID(), false, "message already delivered");
+			deleteMessage(m.getID(), MessageDropMode.REMOVED,
+							"message already delivered");
 		}
 		
 		return retVal;
-	}
-	
-	/**
-	 * Makes rudimentary checks (that we have at least one message and one
-	 * connection) about can this router start transfer.
-	 * @return True if router can start transfer, false if not
-	 */
-	protected boolean canStartTransfer() {
-		if (getNrofMessages() == 0) {
-			return false;
-		}
-		if (getConnections().size() == 0) {
-			return false;
-		}
-		
-		return true;
 	}
 	
 	/**
@@ -238,91 +229,6 @@ public abstract class ActiveRouter extends MessageRouter {
 		}
 		
 		return RCV_OK;
-	}
-	
-	/** 
-	 * Removes messages from the buffer (oldest first) until
-	 * there's enough space for the new message.
-	 * @param size Size of the new message transferred,
-	 * the transfer is aborted before message is removed
-	 * @param priority Priority level of the new message
-	 * @return True if enough space could be freed, false if not
-	 */
-	protected boolean makeRoomForMessage(int size, int priority) {
-		if (size > getBufferSize()) {
-			// message too big for the buffer
-			return false;
-		}
-			
-		int freeBuffer = this.getFreeBufferSize();
-		ArrayList<Message> deletedMessages = new ArrayList<Message>();
-		// delete messages from the buffer until there's enough space
-		while (freeBuffer < size) {
-			// can't remove messages being sent --> use true as parameter
-			Message m = getLeastImportantMessageInQueue(true);
-			if ((m == null) || (m.getPriority() > priority)) {
-				// can't remove any more messages
-				break;
-			}
-
-			// delete message from the buffer as "drop"
-			deleteMessageWithoutRaisingEvents(m.getID());
-			deletedMessages.add(m);
-			freeBuffer += m.getSize();
-		}
-		
-		// notify message drops only if necessary amount of space was freed
-		if (freeBuffer < size) {
-			// rollback deletes and return false
-			for (Message m : deletedMessages) {
-				addToMessages(m, false);
-			}
-			return false;
-		}
-
-		// commit deletes by notifying event listeners about the deletes
-		for (Message m : deletedMessages) {
-			// true identifies dropped messages
-			notifyListenersAboutMessageDelete(m, true, "Buffer size exceeded");
-		}
-		return true;
-	}
-	
-	/**
-	 * Tries to make room for a new message. Current implementation simply
-	 * calls {@link #makeRoomForMessage(int)} and ignores the return value.
-	 * Therefore, if the message can't fit into buffer, the buffer is only 
-	 * cleared from messages that are not being sent.
-	 * @param size Size of the new message
-	 * @param priority Priority level of the new message
-	 */
-	protected boolean makeRoomForNewMessage(int size, int priority) {
-		return makeRoomForMessage(size, priority);
-	}
-	
-	/**
-	 * Returns the oldest (by receive time) message in the message buffer 
-	 * (that is not being sent if excludeMsgBeingSent is true).
-	 * @param excludeMsgBeingSent If true, excludes message(s) that are
-	 * being sent from the oldest message check (i.e. if oldest message is
-	 * being sent, the second oldest message is returned)
-	 * @return The oldest message or null if no message could be returned
-	 * (no messages in buffer or all messages in buffer are being sent and
-	 * exludeMsgBeingSent is true)
-	 */
-	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
-		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(getMessageList());
-		
-		// Traverse the list in order and return the first available message
-		for (Message m : sortedList) {
-			if (excludeMsgBeingSent && isSending(m.getID())) {
-				// skip the message(s) that router is sending
-				continue;
-			}
-			return m;
-		}
-		
-		return null;
 	}
 	
 	/**
@@ -489,7 +395,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			Tuple<Message, Connection> t = null;
 			for (Connection con : connections) {
 				t = tryMessagesForConnection(
-						sortListOfMessagesForForwarding(getMessagesForConnection(con)), con);
+						sortListOfMessagesForForwarding(getDeliverableMessagesForConnection(con)), con);
 				if (t != null) {
 					// started transfer
 					return t.getValue();
@@ -515,49 +421,6 @@ public abstract class ActiveRouter extends MessageRouter {
 	 */
 	protected void addToSendingConnections(Connection con) {
 		sendingConnections.add(con);
-	}
-	
-	/**
-	 * Returns true if this router is transferring something
-	 * at the moment or some transfer has not been finalized.
-	 * @return true if this router is transferring something
-	 */
-	public boolean isTransferring() {
-		if (sendingConnections.size() > 0) {
-			return true; // sending something
-		}
-		
-		if (getHost().getConnections().size() == 0) {
-			return false; // not connected
-		}
-		
-		List<Connection> connections = getConnections();
-		for (int i = 0, n = connections.size(); i < n; ++i) {
-			Connection con = connections.get(i);
-			if (!con.isReadyForTransfer()) {
-				return true;	// a connection isn't ready for new transfer
-			}
-		}
-		
-		return false;		
-	}
-	
-	/**
-	 * Returns true if this router is currently sending a message with 
-	 * <CODE>msgId</CODE>.
-	 * @param msgId The ID of the message
-	 * @return True if the message is being sent false if not
-	 */
-	public boolean isSending(String msgId) {
-		for (Connection con : sendingConnections) {
-			if (con.getMessage() == null) {
-				continue; // transmission is finalized
-			}
-			if (con.getMessage().getID().equals(msgId)) {
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	/**
@@ -609,7 +472,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		/* time to do a TTL check and drop old messages? Only if not sending */
 		if ((SimClock.getTime() - lastTtlCheck >= TTL_CHECK_INTERVAL) &&
 			(sendingConnections.size() == 0)) {
-			dropExpiredMessages();
+			removeExpiredMessagesFromBuffer();
 			lastTtlCheck = SimClock.getTime();
 		}
 	}
@@ -628,6 +491,9 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * Subclasses that are interested of the event may want to override this.
 	 * @param con The connection whose transfer was finalized
 	 */
-	protected void transferDone(Connection con) { }
+	protected void transferDone(Connection con) {
+		// Notify listeners of the completed message transmission
+		notifyListenersAboutTransmissionCompleted(con.getMessage());
+	}
 	
 }

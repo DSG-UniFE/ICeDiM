@@ -68,6 +68,7 @@ public class ContactTimesReportTest extends TestCase {
 
 	}
 	
+	@SuppressWarnings("deprecation")
 	private void generateConnections(TestUtils utils) {
 		Coord c1 = new Coord(0,0);
 		Coord c2 = new Coord(1,0);

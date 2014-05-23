@@ -69,7 +69,7 @@ public class CBRConnection extends Connection {
 			return;
 		}
 		if (from != c.getSenderNode()) {
-			throw new SimError("The present node and specified connection's" +
+			throw new SimError("The present node and the specified connection's" +
 								" sender node are different");
 		}
 		

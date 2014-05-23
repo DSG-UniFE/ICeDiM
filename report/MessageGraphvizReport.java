@@ -7,6 +7,7 @@ package report;
 import java.util.List;
 import java.util.Vector;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -57,15 +58,17 @@ public class MessageGraphvizReport extends Report implements MessageListener {
 		}
 	}
 
-	/* nothing to implement for these */
+	// nothing to implement for these
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
-	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
+	public void transmissionPerformed(Message m, DTNHost source) {}
 	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	@Override
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
+	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
+	@Override
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {}
 
 	@Override
 	public void done() {

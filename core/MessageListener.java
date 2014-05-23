@@ -4,6 +4,8 @@
  */
 package core;
 
+import routing.MessageRouter.MessageDropMode;
+
 /**
  * Interface for classes that want to be informed about messages
  * between hosts
@@ -23,30 +25,21 @@ public interface MessageListener {
 	public void newMessage(Message m);
 	
 	/**
+	 * Method is called whenever transmission has been accomplished.
+	 * The point of this method is different from messageTransferred(),
+	 * especially when Routers leverages broadcast message transmissions.
+	 * @param m The {@link Message} that was transferred.
+	 * @param source The {@link DTNHost} performing the transmission.
+	 */
+	public void transmissionPerformed(Message m, DTNHost source);
+
+	/**
 	 * Method is called when a message's transfer is started
 	 * @param m The message that is going to be transferred
 	 * @param from Node where the message is transferred from 
 	 * @param to Node where the message is transferred to
 	 */
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to);
-	
-	/**
-	 * Method is called when a message is deleted
-	 * @param m The message that was deleted
-	 * @param where The host where the message was deleted
-	 * @param dropped True if the message was dropped, false if removed
-	 * @param cause a String describing the reason for the deletion
-	 */
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause);
-	
-	/**
-	 * Method is called when a message's transfer was aborted before 
-	 * it finished
-	 * @param m The message that was being transferred
-	 * @param from Node where the message was being transferred from 
-	 * @param to Node where the message was being transferred to
-	 */
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause);
 	
 	/**
 	 * Method is called when a message is successfully transferred from
@@ -59,6 +52,15 @@ public interface MessageListener {
 	 */
 	public void messageTransferred(Message m, DTNHost from, DTNHost to,
 									boolean firstDelivery, boolean finalTarget);
+	
+	/**
+	 * Method is called when a message's transfer was aborted before 
+	 * it finished
+	 * @param m The message that was being transferred
+	 * @param from Node where the message was being transferred from 
+	 * @param to Node where the message was being transferred to
+	 */
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause);
 
 	/**
 	 * Method is called when a message cannot be transferred successfully because
@@ -68,4 +70,14 @@ public interface MessageListener {
 	 * @param to Node where the message was transferred to
 	 */
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to);
+
+	/**
+	 * Method is called when a {@link Message} is deleted
+	 * @param m The message that was deleted
+	 * @param where The host where the message was deleted
+	 * @param dropMode The {@link MessageDropMode} that describes
+	 * the reason behind the message deletion
+	 * @param cause a String describing the reason for the deletion
+	 */
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause);
 }

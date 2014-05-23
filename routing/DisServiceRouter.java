@@ -112,7 +112,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	 * @throws SimError
 	 */
 	private void forwardDataMessagesToNeighbors() throws SimError {
-		NetworkInterface ni = getIdleInterface();
+		NetworkInterface ni = getNextIdleInterface();
 		
 		while (ni != null) {
 			/* Retrieve reachable nodes
@@ -146,7 +146,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 				}
 			}
 			
-			NetworkInterface newNI = getIdleInterface();
+			NetworkInterface newNI = getNextIdleInterface();
 			if (ni != newNI) {
 				ni = newNI;
 			}
@@ -157,7 +157,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 					throw new SimError("Impossible transmit message " + pm +
 										" via Network Interface" + ni);
 				}
-				ni = getIdleInterface();
+				ni = getNextIdleInterface();
 			}
 		}
 	}
@@ -239,7 +239,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			// Process DisService HELLO message
 			DisServiceHelloMessage receivedHelloMessage = (DisServiceHelloMessage) m;
 			worldState.processHelloMessage(receivedHelloMessage);
-			removeFromMessages(id);
+			deleteMessageWithoutRaisingEvents(id);
 		}
 		else if (m != null) {
 			receivedMsgIDs.add(m.getID());
@@ -286,7 +286,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	 * Drops messages whose TTL is less than zero.
 	 */
 	@Override
-	protected void dropExpiredMessages() {
+	protected void removeExpiredMessagesFromBuffer() {
 		for (Message m : getMessageList()) {
 			if (m.getTtl() <= 0) {
 				if (!receivedMsgIDs.remove(m.getID())) {
@@ -295,7 +295,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 				}
 			}
 		}
-		super.dropExpiredMessages();
+		super.removeExpiredMessagesFromBuffer();
 	}
 	
 	@Override

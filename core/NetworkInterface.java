@@ -345,7 +345,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * should make the decision whether to disconnect or not.
 	 * @param con The connection to tear down
 	 */
-	protected void disconnect(Connection con, NetworkInterface anotherInterface, String cause) {
+	final protected void disconnect(Connection con, NetworkInterface anotherInterface,
+									String cause) throws SimError {
 		con.setUpState(false);
 		notifyConnectionListeners(CON_DOWN, anotherInterface.getHost());
 		finalizeBeforeDisconnection(con, cause);
@@ -444,7 +445,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 
 	/**
-	 * Informs the client wheter this interface is sending
+	 * Informs the client whether this interface is sending
 	 * the {@link Message} with the specified ID onto
 	 * any of its connections.
 	 * @param msgID A {@link String} specifying the ID
@@ -463,7 +464,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 	
 	/**
-	 * Informs the client wheter this interface is
+	 * Informs the client whether this interface is
 	 * receiving data from any connections.
 	 * @return true if the interface is receiving data,
 	 * false otherwise
@@ -479,7 +480,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 
 	/**
-	 * Informs the client wheter this interface is
+	 * Informs the client whether this interface is
 	 * receiving the specified message.
 	 * @return true if the interface is receiving the
 	 * message, false otherwise

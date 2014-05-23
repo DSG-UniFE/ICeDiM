@@ -6,10 +6,12 @@ package core.disService;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
+import core.DTNSim;
 import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
@@ -61,6 +63,19 @@ public class SubscriptionListManager {
 	private static final int DEFAULT_MAX_SUB_ID = 10;
 	
 	
+	static {
+		DTNSim.registerForReset(SubscriptionListManager.class.getCanonicalName());
+		reset();
+	}
+	
+	static private int getRandomID(int maxSubID) {
+		return RANDOM_ID_GENERATOR.nextInt(maxSubID);
+	}
+	
+	static public void reset() {
+		RANDOM_ID_GENERATOR = null;
+	}
+	
 	public SubscriptionListManager() {
 		this.minNumberOfSubscriptions = DEFAULT_MIN_NROF_SUBSCRIPTIONS;
 		this.maxNumberOfSubscriptions = DEFAULT_MAX_NROF_SUBSCRIPTIONS;
@@ -71,8 +86,8 @@ public class SubscriptionListManager {
 		MAX_SUB_ID_OF_SIMULATION = Math.max(MAX_SUB_ID_OF_SIMULATION, this.maxSubID);
 		
 		if (RANDOM_ID_GENERATOR == null) {
-			RANDOM_ID_GENERATOR = new MersenneTwisterRNG(SeedGeneratorHelper.
-														get16BytesSeedFromValue(RANDOM_ID_GENERATOR_SEED));
+			RANDOM_ID_GENERATOR = new MersenneTwisterRNG(
+					SeedGeneratorHelper.get16BytesSeedFromValue(RANDOM_ID_GENERATOR_SEED));
 		}
 		randomizeSubscriptions();
 	}
@@ -104,27 +119,14 @@ public class SubscriptionListManager {
 
 		if (this.subscriptionList.size() == 0) {
 			// Parsing was unsuccessful or the first element in the list was "-1" or lower
-			if (s.contains(MIN_NROF_SUBSCRIPTIONS)) {
-				this.minNumberOfSubscriptions = s.getInt(MIN_NROF_SUBSCRIPTIONS);
-			}
-			else {
-				this.minNumberOfSubscriptions = DEFAULT_MIN_NROF_SUBSCRIPTIONS;
-			}
-			if (s.contains(MAX_NROF_SUBSCRIPTIONS)) {
-				this.maxNumberOfSubscriptions = s.getInt(MAX_NROF_SUBSCRIPTIONS);
-			}
-			else {
-				this.maxNumberOfSubscriptions = DEFAULT_MAX_NROF_SUBSCRIPTIONS;
-			}
+			this.minNumberOfSubscriptions = s.contains(MIN_NROF_SUBSCRIPTIONS) ?
+					s.getInt(MIN_NROF_SUBSCRIPTIONS) : DEFAULT_MIN_NROF_SUBSCRIPTIONS;
+			this.maxNumberOfSubscriptions = s.contains(MAX_NROF_SUBSCRIPTIONS) ?
+					s.getInt(MAX_NROF_SUBSCRIPTIONS) : DEFAULT_MAX_NROF_SUBSCRIPTIONS;
 			this.minNumberOfSubscriptions = Math.min(this.minNumberOfSubscriptions,
 														this.maxNumberOfSubscriptions);
 
-			if (s.contains(MAX_SUB_ID)) {
-				this.maxSubID = s.getInt(MAX_SUB_ID);
-			}
-			else {
-				this.maxSubID = DEFAULT_MAX_SUB_ID;
-			}
+			this.maxSubID = s.contains(MAX_SUB_ID) ? s.getInt(MAX_SUB_ID) : DEFAULT_MAX_SUB_ID;
 			this.maxSubID = Math.max(this.maxSubID, this.maxNumberOfSubscriptions);
 			
 			this.areSubscriptionsRandom = true;
@@ -136,7 +138,7 @@ public class SubscriptionListManager {
 				RANDOM_ID_GENERATOR = new MersenneTwisterRNG(
 						SeedGeneratorHelper.get16BytesSeedFromValue(RANDOM_ID_GENERATOR_SEED));
 			}
-			this.randomizeSubscriptions();
+			randomizeSubscriptions();
 		}
 		
 		MAX_SUB_ID_OF_SIMULATION = Math.max(MAX_SUB_ID_OF_SIMULATION, this.maxSubID);
@@ -150,12 +152,13 @@ public class SubscriptionListManager {
 		
 		this.subscriptionList = new ArrayList<Integer>();
 		if (this.areSubscriptionsRandom) {
-			this.randomizeSubscriptions();
+			randomizeSubscriptions();
 		}
 		else {
 			for (Integer subID : sl.subscriptionList) {
-				this.addSubscriptionToList(subID);
+				addSubscriptionToList(subID);
 			}
+			Collections.sort(this.subscriptionList);
 		}
 	}
 	
@@ -193,10 +196,12 @@ public class SubscriptionListManager {
 		int generatedSubscriptionNumber = Math.max(minNumberOfSubscriptions,
 													getRandomID(maxNumberOfSubscriptions + 1));
 		for (int i = 0; i < generatedSubscriptionNumber; ++i) {
-			if (addRandomSubscriptionToList() == SubscriptionListManager.INVALID_SUB_ID) {
+			if (addRandomSubscriptionToList() == INVALID_SUB_ID) {
 				break;
 			}
 		}
+		
+		Collections.sort(subscriptionList);
 	}
 	
 	public int addRandomSubscriptionToList() {
@@ -225,7 +230,9 @@ public class SubscriptionListManager {
 		return subscriptionList.get(SubscriptionListManager.getRandomID(subscriptionList.size()));
 	}
 	
-	static private int getRandomID(int maxSubID) {
-		return RANDOM_ID_GENERATOR.nextInt(maxSubID);
+	@Override
+	public String toString() {
+		return subscriptionList.toString();
 	}
+	
 }

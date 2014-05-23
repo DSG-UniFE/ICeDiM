@@ -4,6 +4,7 @@
  */
 package report;
 
+import routing.MessageRouter.MessageDropMode;
 import core.ConnectionListener;
 import core.DTNHost;
 import core.Message;
@@ -64,9 +65,13 @@ public class EventLogReport extends Report
 	}
 
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
-		processEvent((dropped ? StandardEventsReader.DROP : 
-			StandardEventsReader.REMOVE), where, null, m, cause);
+	public void newMessage(Message m) {
+		processEvent(StandardEventsReader.CREATE, m.getFrom(), null, m, null);
+	}
+
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {
+		processEvent(StandardEventsReader.TRANSMISSION, source, null, m, null);
 	}
 
 	@Override
@@ -90,8 +95,8 @@ public class EventLogReport extends Report
 	}
 
 	@Override
-	public void newMessage(Message m) {
-		processEvent(StandardEventsReader.CREATE, m.getFrom(), null, m, null);
+	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
+		processEvent(StandardEventsReader.SEND, from, to, m, null);
 	}
 
 	@Override
@@ -100,12 +105,28 @@ public class EventLogReport extends Report
 	}
 
 	@Override
-	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		processEvent(StandardEventsReader.SEND, from, to, m, null);
+	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {
+		processEvent(StandardEventsReader.INTERFERED, from, to, m, null);
 	}
 
 	@Override
-	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {
-		processEvent(StandardEventsReader.INTERFERED, from, to, m, null);
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {
+		String event = null;
+		switch (dropMode) {
+		case REMOVED:
+			event = StandardEventsReader.REMOVE;
+			break;
+		case DROPPED:
+			event = StandardEventsReader.DROP;
+			break;
+		case DISCARDED:
+			event = StandardEventsReader.DISCARD;
+			break;
+		case TTL_EXPIRATION:
+			event = StandardEventsReader.EXPIRATION;
+			break;
+		}
+		
+		processEvent(event, where, null, m, cause);
 	}
 }

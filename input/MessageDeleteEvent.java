@@ -7,6 +7,7 @@ package input;
 import java.util.ArrayList;
 import java.util.List;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.World;
@@ -45,10 +46,11 @@ public class MessageDeleteEvent extends MessageEvent {
 				ids.add(m.getID());
 			}
 			for (String nextId : ids) {
-				host.deleteMessage(nextId, drop, cause);
+				host.deleteMessage(nextId, drop ? MessageDropMode.DROPPED : MessageDropMode.REMOVED,
+									cause);
 			}
 		} else {
-			host.deleteMessage(id, drop, cause);
+			host.deleteMessage(id, drop ? MessageDropMode.DROPPED : MessageDropMode.REMOVED, cause);
 		}
 	}
 

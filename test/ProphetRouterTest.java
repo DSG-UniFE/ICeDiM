@@ -11,6 +11,7 @@ import core.MessageQueueManager;
 /**
  * Tests for PRoPHET router
  */
+@SuppressWarnings("deprecation")
 public class ProphetRouterTest extends AbstractRouterTest {
 
 	private static int SECONDS_IN_TIME_UNIT = 60;

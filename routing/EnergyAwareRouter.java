@@ -174,7 +174,7 @@ public class EnergyAwareRouter extends ActiveRouter
 		super.update();
 		reduceSendingAndScanningEnergy();
 				
-		if (isTransferring() || !canStartTransfer()) {
+		if (isTransferring() || !canBeginNewTransfer()) {
 			return; // transferring, don't try other connections yet
 		}
 		

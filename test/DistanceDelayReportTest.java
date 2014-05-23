@@ -41,7 +41,7 @@ public class DistanceDelayReportTest extends TestCase {
 		this.utils = new TestUtils(null, ml, ts);
 	}
 	
-	
+	@SuppressWarnings("deprecation")
 	public void testMessageTransferred() throws IOException {
 		DTNHost h1 = utils.createHost(new Coord(0,0));
 		DTNHost h2 = utils.createHost(new Coord(2,0));
@@ -52,22 +52,22 @@ public class DistanceDelayReportTest extends TestCase {
 		h1.createNewMessage(m1);
 		h1.forceConnection(h2, null, true);
 		clock.advance(1.5);
-		h1.sendMessage("tst1", h2);
+		h1.getRouter().sendMessage("tst1", h2);
 		h2.messageTransferred("tst1", h1.getConnection(h2));
 
 		Message m2 = new Message(h2,h1, "tst2", 1);
 		h2.createNewMessage(m2);
 		h2.forceConnection(h3, null, true);
 		clock.advance(0.5);
-		h2.sendMessage("tst2", h1);
+		h2.getRouter().sendMessage("tst2", h1);
 		h1.messageTransferred("tst2", h2.getConnection(h1));
 		
 		Message m3 = new Message(h1,h3, "tst3", 1);
 		h1.createNewMessage(m3);
 		clock.advance(1.0);
-		h1.sendMessage("tst3", h2);
+		h1.getRouter().sendMessage("tst3", h2);
 		h2.messageTransferred("tst3", h1.getConnection(h2));
-		h2.sendMessage("tst3", h3);
+		h2.getRouter().sendMessage("tst3", h3);
 		h3.messageTransferred("tst3", h2.getConnection(h3));
 		
 		r.done();

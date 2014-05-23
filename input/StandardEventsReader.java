@@ -45,6 +45,8 @@ public class StandardEventsReader implements ExternalEventsReader {
 	public static final String REGISTER = "REG";
 	/** Identifier of message creation event ({@value}) */
 	public static final String CREATE = "C";
+	/** Identifier of transmission accomplished event ({@value}) */
+	public static final String TRANSMISSION = "TR";
 	/** Identifier of message transfer start event ({@value}) */
 	public static final String SEND = "S";
 	/** Identifier of message delivered event ({@value}) */
@@ -53,10 +55,14 @@ public class StandardEventsReader implements ExternalEventsReader {
 	public static final String ABORT = "A";
 	/** Identifier of message transfer interfered event ({@value}) */
 	public static final String INTERFERED = "I";
-	/** Identifier of message dropped event ({@value}) */
-	public static final String DROP = "DR";
 	/** Identifier of message removed event ({@value}) */
 	public static final String REMOVE = "R";
+	/** Identifier of message dropped event ({@value}) */
+	public static final String DROP = "DR";
+	/** Identifier of message discard event ({@value}) */
+	public static final String DISCARD = "DIS";
+	/** Identifier of message expiration event ({@value}) */
+	public static final String EXPIRATION = "EX";
 	/** Identifier of connection event ({@value}) */
 	public static final String CONNECTION = "CONN";
 	/** Value identifier of connection down event ({@value}) */

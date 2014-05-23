@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -27,18 +28,22 @@ public class MessageStatsReport extends Report implements MessageListener {
 	private List<Integer> hopCounts;
 	private List<Double> msgBufferTime;
 	private List<Double> rtt; // round trip times
-	
-	private int nrofDropped;
-	private int nrofRemoved;
+
+	private int nrofCreated;
 	private int nrofStarted;
 	private int nrofAborted;
 	private int nrofInterfered;
 	private int nrofRelayed;
 	private int nrofDuplicated;
-	private int nrofCreated;
+	private int nrofDelivered;
+	private int nrofRemoved;
+	private int nrofDropped;
+	private int nrofDiscarded;
+	private int nrofExpired;
 	private int nrofResponseReqCreated;
 	private int nrofResponseDelivered;
-	private int nrofDelivered;
+
+	private int nrofTransmissions;
 	
 	/**
 	 * Constructor.
@@ -51,42 +56,87 @@ public class MessageStatsReport extends Report implements MessageListener {
 	protected void init() {
 		super.init();
 		
-		creationTimes = new HashMap<String, Double>();
-		latencies = new ArrayList<Double>();
-		msgBufferTime = new ArrayList<Double>();
-		hopCounts = new ArrayList<Integer>();
-		rtt = new ArrayList<Double>();
+		this.creationTimes = new HashMap<String, Double>();
+		this.latencies = new ArrayList<Double>();
+		this.msgBufferTime = new ArrayList<Double>();
+		this.hopCounts = new ArrayList<Integer>();
+		this.rtt = new ArrayList<Double>();
+
+		this.nrofCreated = 0;
+		this.nrofStarted = 0;
+		this.nrofAborted = 0;
+		this.nrofInterfered = 0;
+		this.nrofRelayed = 0;
+		this.nrofDuplicated = 0;
+		this.nrofDelivered = 0;
+		this.nrofRemoved = 0;
+		this.nrofDropped = 0;
+		this.nrofDiscarded = 0;
+		this.nrofExpired = 0;
+		this.nrofResponseReqCreated = 0;
+		this.nrofResponseDelivered = 0;
 		
-		nrofDropped = 0;
-		nrofRemoved = 0;
-		nrofStarted = 0;
-		nrofAborted = 0;
-		nrofInterfered = 0;
-		nrofRelayed = 0;
-		nrofDuplicated = 0;
-		nrofCreated = 0;
-		nrofResponseReqCreated = 0;
-		nrofResponseDelivered = 0;
-		nrofDelivered = 0;
+		this.nrofTransmissions = 0;
 	}
 	
 	@Override
 	public void registerNode(DTNHost node) {}
-	
+
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
+	public void newMessage(Message m) {
+		if (isWarmup()) {
+			addWarmupID(m.getID());
+			return;
+		}
+		
+		creationTimes.put(m.getID(), getSimTime());
+		nrofCreated++;
+		if (m.getResponseSize() > 0) {
+			nrofResponseReqCreated++;
+		}
+	}
+
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {
 		if (isWarmupID(m.getID())) {
 			return;
 		}
 		
-		if (dropped) {
-			nrofDropped++;
+		nrofTransmissions++;
+	}
+	
+	@Override
+	public void messageTransferred(Message m, DTNHost from, DTNHost to,
+									boolean firstDelivery, boolean finalTarget) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+	
+		if (firstDelivery) {
+			nrofRelayed++;
+			if (finalTarget) {
+				nrofDelivered++;
+				latencies.add(getSimTime() - creationTimes.get(m.getID()));
+				hopCounts.add(m.getHops().size() - 1);
+				
+				if (m.isResponse()) {
+					rtt.add(getSimTime() -	m.getRequest().getCreationTime());
+					nrofResponseDelivered++;
+				}
+			}
 		}
 		else {
-			nrofRemoved++;
+			nrofDuplicated++;
 		}
-		
-		msgBufferTime.add(getSimTime() - m.getReceiveTime());
+	}
+
+	@Override
+	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
+		if (isWarmupID(m.getID())) {
+			return;
+		}
+	
+		nrofStarted++;
 	}
 
 	@Override
@@ -108,54 +158,29 @@ public class MessageStatsReport extends Report implements MessageListener {
 	}
 
 	@Override
-	public void messageTransferred(Message m, DTNHost from, DTNHost to,
-									boolean firstDelivery, boolean finalTarget) {
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {
 		if (isWarmupID(m.getID())) {
-			return;
-		}
-
-		if (firstDelivery) {
-			nrofRelayed++;
-			if (finalTarget) {
-				nrofDelivered++;
-				latencies.add(getSimTime() - creationTimes.get(m.getID()));
-				hopCounts.add(m.getHops().size() - 1);
-				
-				if (m.isResponse()) {
-					rtt.add(getSimTime() -	m.getRequest().getCreationTime());
-					nrofResponseDelivered++;
-				}
-			}
-		}
-		else {
-			nrofDuplicated++;
-		}
-	}
-
-	@Override
-	public void newMessage(Message m) {
-		if (isWarmup()) {
-			addWarmupID(m.getID());
 			return;
 		}
 		
-		creationTimes.put(m.getID(), getSimTime());
-		nrofCreated++;
-		if (m.getResponseSize() > 0) {
-			nrofResponseReqCreated++;
+		switch (dropMode) {
+		case REMOVED:
+			nrofRemoved++;
+			break;
+		case DROPPED:
+			nrofDropped++;
+			break;
+		case DISCARDED:
+			nrofDiscarded++;
+			break;
+		case TTL_EXPIRATION:
+			nrofExpired++;
+			break;
 		}
+		
+		msgBufferTime.add(getSimTime() - m.getReceiveTime());
 	}
 
-	@Override
-	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		if (isWarmupID(m.getID())) {
-			return;
-		}
-
-		nrofStarted++;
-	}
-
-	
 	@Override
 	public void done() {
 		double deliveryProb = 0; // delivery probability
@@ -176,14 +201,17 @@ public class MessageStatsReport extends Report implements MessageListener {
 		}
 		
 		String statsText = "created: " + nrofCreated + 
+							"\ntransmissions: " + nrofTransmissions + 
 							"\nstarted: " + nrofStarted + 
 							"\nrelayed: " + nrofRelayed + 
 							"\nduplicated: " + nrofRelayed +
 							"\naborted: " + nrofAborted +
 							"\ninterfered: " + nrofInterfered +
-							"\ndropped: " + nrofDropped +
 							"\nremoved: " + nrofRemoved +
-							"\ndelivered: " + nrofDelivered +
+							"\ndropped: " + nrofDropped +
+							"\ndiscarded: " + nrofDiscarded +
+							"\nexpired: " + nrofInterfered +
+							"\ndelivered: " + nrofExpired +
 							"\ndelivery_prob: " + format(deliveryProb) +
 							"\nresponse_prob: " + format(responseProb) + 
 							"\noverhead_ratio: " + format(overHead) + 

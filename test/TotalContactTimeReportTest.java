@@ -17,6 +17,7 @@ import core.Coord;
 import core.DTNHost;
 import core.SimClock;
 
+@SuppressWarnings("deprecation")
 public class TotalContactTimeReportTest extends TestCase {
 	private BufferedReader ctReader;
 	private File outFile;

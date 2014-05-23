@@ -74,8 +74,7 @@ public class EventLogControlPanel extends JPanel implements ActionListener{
 	 * @param pauseOn Is "pause" initially selected
 	 * @return Event log control object that can be queried for status
 	 */
-	public EventLogControl addControl(String name, boolean showOn,
-			boolean pauseOn) {
+	public EventLogControl addControl(String name, boolean showOn, boolean pauseOn) {
 		JCheckBox filterCheck;
 		JCheckBox pauseCheck;
 		EventLogControl control;
@@ -86,7 +85,8 @@ public class EventLogControlPanel extends JPanel implements ActionListener{
 		pauseCheck = addCheckBox(pauseOn, true);
 		
 		control = new EventLogControl(filterCheck, pauseCheck);
-		this.logControls.add(control);
+		logControls.add(control);
+		
 		return control;
 	}
 
@@ -136,9 +136,10 @@ public class EventLogControlPanel extends JPanel implements ActionListener{
 	
 	private JLabel addLabel(String txt) {
 		JLabel label = new JLabel(txt);
-		label.setFont(this.smallFont);
+		label.setFont(smallFont);
 		layout.setConstraints(label, c);
 		add(label);
+		
 		return label;
 	}
 

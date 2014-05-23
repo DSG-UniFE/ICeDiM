@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
+import core.DTNSim;
 import core.Message;
 import core.MessageQueueManager;
 import core.SeedGeneratorHelper;
@@ -30,6 +31,19 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 	/** Random number generator's seed */
 	static final long RANDOM_GENERATOR_SEED = 105;
 	
+	
+	static {
+		DTNSim.registerForReset(ExponentiallyDecayingManager.class.getCanonicalName());
+		reset();
+	}
+	
+	static private double nextDouble() {
+		return RANDOM_GENERATOR.nextDouble();
+	}
+	
+	static public void reset() {
+		RANDOM_GENERATOR = null;
+	}
 	
 	public ExponentiallyDecayingManager(Settings s, MessageQueueManager queueManager,
 										MessagePrioritizationStrategy orderingStrategy) {
@@ -104,7 +118,7 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 	 * @return a Message randomly extracted from the queue.
 	 */
 	private Message drawMessageFromOrderedList(List<Message> messageList, List<Double> probVector) {
-		return messageList.get(findMessageIndex(RANDOM_GENERATOR.nextDouble(), probVector));
+		return messageList.get(findMessageIndex(nextDouble(), probVector));
 	}
 
 	/**

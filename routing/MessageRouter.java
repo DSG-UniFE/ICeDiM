@@ -15,6 +15,7 @@ import org.uncommons.maths.random.MersenneTwisterRNG;
 import core.Application;
 import core.Connection;
 import core.DTNHost;
+import core.DTNSim;
 import core.InterferenceModel;
 import core.Message;
 import core.MessageListener;
@@ -29,6 +30,14 @@ import core.SimError;
  * Superclass for message routers.
  */
 public abstract class MessageRouter {
+	/** Enum that discerns the reasons underlying a {@link Message} drop. <br/>
+	 * REMOVED stands for messages explicitly removed from the buffer by the
+	 * Router; <br/> DROPPED stands for messages removed for reasons of memory
+	 * limits; <br/> DISCARDED stands for messages correctly received, but never
+	 * stored in the Router's buffer; <br/> TTL_EXPIRATION stands for messages
+	 * deleted because their TTL expired while on the node. */
+	public static enum MessageDropMode {REMOVED, DROPPED, DISCARDED, TTL_EXPIRATION};
+	
 	/** Receive return value for a successful broadcast */
 	public static final int BROADCAST_OK = 0;
 	/** Receive return value for an unsuccessful broadcast */
@@ -75,6 +84,28 @@ public abstract class MessageRouter {
 	/** applications attached to the host */
 	private HashMap<String, Collection<Application>> applications = null;
 	
+	
+	static {
+		DTNSim.registerForReset(MessageRouter.class.getCanonicalName());
+		reset();
+	}
+	
+	static protected int nextRandomInt() {
+		return RANDOM_GENERATOR.nextInt();
+	}
+	
+	static protected int nextRandomInt(int n) {
+		return RANDOM_GENERATOR.nextInt(n);
+	}
+	
+	static protected double nextRandomDouble() {
+		return RANDOM_GENERATOR.nextDouble();
+	}
+	
+	static public void reset() {
+		RANDOM_GENERATOR = null;
+	}
+	
 	/**
 	 * Constructor. Creates a new message router based on the settings in
 	 * the given Settings object. Size of the message buffer is read from
@@ -95,6 +126,21 @@ public abstract class MessageRouter {
 	}
 	
 	/**
+	 * Copy-constructor.
+	 * @param r Router to copy the settings from.
+	 */
+	protected MessageRouter(MessageRouter r) {
+		this.msgTTL = r.msgTTL;
+		this.messageQueueManager = new MessageQueueManager(r.messageQueueManager);
+		this.applications = new HashMap<String, Collection<Application>>();		
+		for (Collection<Application> apps : r.applications.values()) {
+			for (Application app : apps) {
+				addApplication(app.replicate());
+			}
+		}
+	}
+
+	/**
 	 * Initializes the router; i.e. sets the host this router is in and
 	 * message listeners that need to be informed about message related
 	 * events etc.
@@ -109,149 +155,279 @@ public abstract class MessageRouter {
 	}
 	
 	/**
-	 * Copy-constructor.
-	 * @param r Router to copy the settings from.
+	 * Creates a replicate of this router. The replicate has the same
+	 * settings as this router but empty buffers and routing tables.
+	 * @return The replicate
 	 */
-	protected MessageRouter(MessageRouter r) {
-		this.msgTTL = r.msgTTL;
-		this.messageQueueManager = new MessageQueueManager(r.messageQueueManager);
-		this.applications = new HashMap<String, Collection<Application>>();		
-		for (Collection<Application> apps : r.applications.values()) {
-			for (Application app : apps) {
-				addApplication(app.replicate());
-			}
-		}
+	public abstract MessageRouter replicate();
+
+	/**
+	 * Returns the host this router is in
+	 * @return The host object
+	 */
+	final protected DTNHost getHost() {
+		return host;
 	}
-	
+
 	/**
-	 * Updates router.
-	 * This method should be called (at least once) on every simulation
-	 * interval to update the status of transfer(s). 
+	 * Returns whether the specified host is a neighbor or not
+	 * @param neighborHost the {@link DTNHost} we want to check
+	 * @return {@code true} if the specified host is a neighbor,
+	 * or {@code false} otherwise.
 	 */
-	public void update() {
-		for (Collection<Application> apps : applications.values()) {
-			for (Application app : apps) {
-				app.update(getHost());
-			}
-		}
-	}
-	
-	/**
-	 * Informs the router about change in connections state.
-	 * @param con The connection that changed
-	 */
-	public abstract void changedConnection(Connection con);	
-	
-	/**
-	 * Returns a message by ID.
-	 * @param id ID of the message
-	 * @return The message
-	 */
-	protected Message getMessage(String msgID) {
-		return messageQueueManager.getMessage(msgID);
-	}
-	
-	/**
-	 * Checks if this router has a message with certain id buffered.
-	 * @param id Identifier of the message
-	 * @return True if the router has message with this id, false if not
-	 */
-	protected boolean hasMessage(String msgID) {
-		return messageQueueManager.hasMessage(msgID);
-	}
-	
-	/**
-	 * Checks if this router has received a {@link Message}
-	 * with the specified identifier in the past.
-	 * @param msgID Identifier of the message.
-	 * @return {@code true} if the router has message
-	 * with this id, {@code false} otherwise.
-	 */
-	protected boolean hasReceivedMessage(String msgID) {
-		return receivedMessages.containsKey(msgID);
-	}
-	
-	/**
-	 * Returns true if a full message with same ID as the given message has been
-	 * received by this host as the <strong>final</strong> recipient 
-	 * (at least once).
-	 * @param m message we're interested of
-	 * @return true if a message with the same ID has been received by 
-	 * this host as the final recipient.
-	 */
-	protected boolean isIncomingMessage(String msgID) {
-		for (NetworkInterface ni : getHost().getInterfaces()) {
-			if (ni.isReceivingMessage(msgID)) {
+	final protected boolean isNeighboringHost(DTNHost neighborHost) {
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			if (isNeighboringHost(ni, neighborHost)) {
 				return true;
 			}
 		}
 		
 		return false;
 	}
-	
+
 	/**
-	 * Returns true if a full message with same ID as the given message
-	 * has been received by this host as the <strong>final</strong>
-	 * recipient (at least once).
-	 * @param m message we're interested of
-	 * @return true if a message with the same ID has been received by 
-	 * this host as the final recipient.
+	 * Returns whether the specified host is a neighbor reachable
+	 * through the specified {@link NetworkInterface} or not.
+	 * @param ni the {@link NetworkInterface} considered.
+	 * @param neighborHost the {@link DTNHost} we want to check.
+	 * @return {@code true} if the specified host is a neighbor
+	 * reachable through the selected {@link NetworkInterface},
+	 * or {@code false} otherwise.
 	 */
-	protected boolean isDeliveredMessage(Message m) {
-		return deliveredMessages.containsKey(m.getID());
+	final protected boolean isNeighboringHost(NetworkInterface ni, DTNHost neighborHost) {
+		for (Connection con : ni.getConnections()) {
+			if (con.getOtherNode(getHost()) == neighborHost) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
-	
+
+	/**
+	 * Returns the {@link RoutingInfo} about this Router.
+	 * @return The {@link RoutingInfo} about this Router.
+	 */
+	public RoutingInfo getRoutingInfo() {
+		RoutingInfo ri = new RoutingInfo(this);
+		
+		int incomingMessages = 0;
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			incomingMessages += ni.getNumberOfIncomingMessages();
+		}
+		RoutingInfo incoming = new RoutingInfo(incomingMessages + " incoming message(s)");
+		RoutingInfo delivered = new RoutingInfo(deliveredMessages.size() + " delivered message(s)");
+		RoutingInfo cons = new RoutingInfo(getConnections().size() + " connection(s)");
+		ri.addMoreInfo(incoming);
+		ri.addMoreInfo(delivered);
+		ri.addMoreInfo(cons);
+		
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			for (Message m : ni.getIncomingMessages()) {
+				incoming.addMoreInfo(new RoutingInfo(m));
+			}
+		}
+		for (Message m : deliveredMessages.values()) {
+			delivered.addMoreInfo(new RoutingInfo(m + " path:" + m.getHops()));
+		}
+		for (Connection c : getConnections()) {
+			cons.addMoreInfo(new RoutingInfo(c));
+		}
+		
+		return ri;
+	}
+
+	/** 
+	 * Adds an {@link Application} to the {@link List}
+	 * of Applications installed on this Router. 
+	 * @param app The {@link Application} to attach
+	 * to this router.
+	 */
+	final public void addApplication(Application app) {
+		if (!applications.containsKey(app.getAppID())) {
+			applications.put(app.getAppID(), new LinkedList<Application>());
+		}
+		applications.get(app.getAppID()).add(app);
+	}
+
+	/** 
+	 * Returns all the {@link Application}s that want to receive
+	 * {@link Message}s for the given application ID. 
+	 * @param ID A {@link String} representing the ID of an
+	 * {@link Application}, or {@code null} for all apps.
+	 * @return A list of all {@link Application}s that
+	 * want to receive {@link Message}s for the Application
+	 * ID passed as parameter.
+	 */
+	final public Collection<Application> getApplications(String ID) {
+		LinkedList<Application>	apps = new LinkedList<Application>();
+		// Applications that match
+		Collection<Application> tmp = applications.get(ID);
+		if (tmp != null) {
+			apps.addAll(tmp);
+		}
+		
+		// Applications that want to look at all messages
+		if (ID != null) {
+			tmp = applications.get(null);
+			if (tmp != null) {
+				apps.addAll(tmp);
+			}
+		}
+		
+		return apps;
+	}
+
+	/**
+	 * Returns a {@link List} of {@link Connection}s
+	 * this host currently has with other hosts.
+	 * @return a {@link List} of {@link Connection}s
+	 * this host currently has with other hosts.
+	 */
+	@Deprecated
+	public Connection getConnectionTo(DTNHost dest) {
+		assert dest != getHost() : "Source and destination nodes are the same node";
+		
+		for (Connection con : getConnections()) {
+			if (con.getOtherNode(getHost()) == dest) {
+				return con;
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Returns a {@link List} of {@link Connection}s
+	 * this host currently has with other hosts.
+	 * @return a {@link List} of {@link Connection}s
+	 * this host currently has with other hosts.
+	 */
+	final protected List<Connection> getConnections() {
+		return getHost().getConnections();
+	}
+
+	/**
+	 * Returns a {@link List} of idle {@link Connection}s
+	 * this host currently has with other hosts.
+	 * @return a {@link List} of idle {@link Connection}s
+	 * this host currently has with other hosts.
+	 */
+	final protected List<Connection> getIdleConnections() {
+		List<Connection> idleConnections = new ArrayList<Connection>();
+		for (Connection con : getConnections()) {
+			if (con.isIdle()) {
+				idleConnections.add(con);
+			}
+		}
+		
+		return idleConnections;
+	}
+
+	/**
+	 * Returns a {@link List} containing all
+	 * {@link NetworkInterface}s of this host.
+	 * @return a {@link List} containing all
+	 * {@link NetworkInterface}s of this host.
+	 */
+	final protected List<NetworkInterface> getNetworkInterfaces() {
+		return getHost().getInterfaces();
+	}
+
+	/**
+	 * Returns the first idle {@link NetworkInterface}s available.
+	 * @return the first {@link NetworkInterface} ready to begin
+	 * a new transfer.
+	 */
+	final protected NetworkInterface getNextIdleInterface() {
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			if (ni.isReadyToBeginTransfer()) {
+				return ni;
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Returns a {@link List} of all {@link NetworkInterface}
+	 * ready to begin a new transfer.
+	 * @return The {@link List} of all idle {@link NetworkInterface} 
+	 */
+	final protected List<NetworkInterface> getIdleNetworkInterfaces() {
+		List<NetworkInterface> idleInterfaces = new ArrayList<NetworkInterface>();
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			if (ni.isReadyToBeginTransfer()) {
+				idleInterfaces.add(ni);
+			}
+		}
+		
+		return idleInterfaces;
+	}
+
+	/**
+	 * Check if there is any traffic from/to this node.
+	 * @return {@code true} if a {@link NetworkInterface} is
+	 * sending any data, {@code false} otherwise.
+	 */	
+	final protected boolean isTransferring() {
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			if (ni.isSendingData() || ni.isReceivingData()) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Returns true if this router is currently sending the
+	 * message with ID {@code msgID}.
+	 * @param msgID The ID of the message.
+	 * @return {@code true} if the message is being sent,
+	 * {@code false} otherwise.
+	 */
+	final protected boolean isSendingMessage(String msgID) {
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			if (ni.isSendingMessage(msgID)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 	/**
 	 * Returns the number of messages this router has
 	 * @return How many messages this router has
 	 */
-	public int getNrofMessages() {
+	final public int getNrofMessages() {
 		return messageQueueManager.getNumberOfMessages();
 	}
-	
-	/**
-	 * Returns the size of the message buffer.
-	 * @return The size or Integer.MAX_VALUE if the size isn't defined.
-	 */
-	public int getBufferSize() {
-		return messageQueueManager.getBufferSize();
-	}
-	
-	/**
-	 * Returns the amount of free space in the buffer. May return a negative
-	 * value if there are more messages in the buffer than should fit there
-	 * (because of creating new messages).
-	 * @return The amount of free space (Integer.MAX_VALUE if the buffer
-	 * size isn't defined)
-	 */
-	public int getFreeBufferSize() {
-		return messageQueueManager.getFreeBufferSize();
-	}
-	
-	/**
-	 * Returns a list of those messages whose recipient is the
-	 * host reachable through the specified Connection.
-	 * @param con the Connection to some host.
-	 * @return a List of messages to be delivered to the host
-	 * reachable through the specified Connection.
-	 */
-	protected List<Message> getMessagesForConnection(Connection con) {
-		if (getNrofMessages() == 0) {
-			/* no messages -> empty list */
-			return new ArrayList<Message>(0); 
-		}
 
-		final DTNHost to = con.getOtherNode(getHost());
-		List<Message> messageList = new ArrayList<Message>();
-		for (Message m : getMessageList()) {
-			if (isMessageDestination(m, to)) {
-				messageList.add(m);
+	/**
+	 * Creates a new {@link Message} to store in the buffer.
+	 * By default, newly created messages have higher
+	 * priority than any other message in the buffer.
+	 * @param m The {@link Message} just created.
+	 * @return True if the creation succeeded, false if not
+	 * (e.g., the message was too big for the buffer).
+	 */
+	public boolean createNewMessage(Message m) {
+		if (makeRoomForNewMessage(m.getSize(), Message.MAX_PRIORITY_LEVEL)) {
+			m.setTtl(msgTTL);
+			addToMessages(m);
+			
+			for (MessageListener ml : mListeners) {
+				ml.newMessage(m);
 			}
+			
+			return true;
 		}
 		
-		return messageList;
+		return false;
 	}
-	
+
 	/**
 	 * Adds a message to the message buffer and informs message listeners
 	 * about new message (if requested).
@@ -259,96 +435,23 @@ public abstract class MessageRouter {
 	 * @param newMessage If true, message listeners are informed about a new
 	 * message, if false, nothing is informed.
 	 */
-	protected void addToMessages(Message m, boolean newMessage) {
+	final protected void addToMessages(Message m) {
 		if (messageQueueManager.hasMessage(m)) {
 			return;
 		}
-		messageQueueManager.addMessageToQueue(m);
-
-		if (newMessage) {
-			for (MessageListener ml : mListeners) {
-				ml.newMessage(m);
-			}
-		}
-	}
-	
-	/**
-	 * Creates a new message to the router.
-	 * @param m The message to create
-	 * @return True if the creation succeeded, false if not (e.g.
-	 * the message was too big for the buffer)
-	 */
-	public boolean createNewMessage(Message m) {
-		m.setTtl(msgTTL);
-		addToMessages(m, true);
 		
-		return true;
+		messageQueueManager.addMessageToQueue(m);
 	}
 
 	/**
-	 * Removes and returns a message from the message buffer.
-	 * @param id Identifier of the message to remove
-	 * @return The removed message or null if message for the ID wasn't found
+	 * Returns a {@link Message} by ID.
+	 * @param id ID of the message
+	 * @return The message
 	 */
-	protected Message removeFromMessages(String msgID) {
-		return messageQueueManager.removeMessage(msgID);
+	final protected Message getMessage(String msgID) {
+		return messageQueueManager.getMessage(msgID);
 	}
-	
-	/**
-	 * Deletes a message from the buffer and informs message listeners
-	 * about the event
-	 * @param id Identifier of the message to delete
-	 * @param drop If the message is dropped (e.g. because of full buffer) this 
-	 * should be set to true. False value indicates e.g. remove of message
-	 * because it was delivered to final destination.  
-	 */
-	public void deleteMessage(String id, boolean drop, String cause) {
-		Message removed = removeFromMessages(id); 
-		if (removed == null) {
-			throw new SimError("No message for id " + id + " to remove at " + getHost());
-		}
 
-		for (MessageListener ml : mListeners) {
-			ml.messageDeleted(removed, getHost(), drop, cause);
-		}
-	}
-	
-	/**
-	 * Deletes a message from the buffer without informing
-	 * message listeners about the event
-	 * @param id Identifier of the message to delete
-	 * because it was delivered to final destination.  
-	 */
-	public void deleteMessageWithoutRaisingEvents(String id) {
-		if (null == removeFromMessages(id)) {
-			throw new SimError("No message for id " + id + " to remove at " + getHost());
-		}
-	}
-	
-	/**
-	 * Informs message listeners about delete event
-	 * @param id Identifier of the message to delete
-	 * @param drop If the message is dropped (e.g. because of full buffer) this 
-	 * should be set to true. False value indicates e.g. remove of message
-	 * because it was delivered to final destination.  
-	 */
-	public void notifyListenersAboutMessageDelete(Message removed, boolean drop, String cause) {		
-		for (MessageListener ml : mListeners) {
-			ml.messageDeleted(removed, getHost(), drop, cause);
-		}
-	}
-	
-	/**
-	 * Drops messages whose TTL is less than zero.
-	 */
-	protected void dropExpiredMessages() {
-		for (Message m : getMessageList()) { 
-			if (m.getTtl() <= 0) {
-				deleteMessage(m.getID(), true, "TTL expired");
-			}
-		}
-	}
-	
 	/**
 	 * Returns a reference to the messages of this router in collection.
 	 * <b>Note:</b> If there's a chance that some message(s) from the collection
@@ -357,39 +460,160 @@ public abstract class MessageRouter {
 	 * exceptions. 
 	 * @return a reference to the messages of this router in collection
 	 */
-	public List<Message> getMessageList() {
+	final public List<Message> getMessageList() {
 		return new ArrayList<Message>(messageQueueManager.getMessageCollection());
 	}
-	
+
 	/**
-	 * Sorts a copy of the list containing all messages received by the
-	 * router, according to the current message prioritization strategy.
-	 * @return A copy of the list of the received messages, sorted
-	 * according to the current message prioritization strategy.
+	 * Checks if this router has a message with certain id buffered.
+	 * @param id Identifier of the message
+	 * @return True if the router has message with this id, false if not
 	 */
-	protected List<Message> sortAllReceivedMessagesForForwarding() {
-		return messageQueueManager.sortBufferedMessagesForForwarding();
+	final protected boolean hasMessage(String msgID) {
+		return messageQueueManager.hasMessage(msgID);
 	}
-	
+
 	/**
-	 * Sorts the given list according to the current sending queue strategy.
-	 * @param inputList The list to sort
-	 * @return The sorted list
+	 * Checks if this router has received a {@link Message}
+	 * with the specified identifier in the past.
+	 * @param msgID Identifier of the message.
+	 * @return {@code true} if the router has message
+	 * with this id, {@code false} otherwise.
 	 */
-	protected List<Message> sortListOfMessagesForForwarding(List<Message> inputList) {
-		return messageQueueManager.sortMessageListForForwarding(inputList);
+	final protected boolean hasReceivedMessage(String msgID) {
+		return receivedMessages.containsKey(msgID);
 	}
-	
+
 	/**
-	 * Sorts the given list in reverse order, according to the current
-	 * sending queue strategy. The list can contain either Message or
-	 * Tuple<Message, Connection> objects. Other objects cause error.
-	 * @param list The list to sort
-	 * @return The list sorted in reverse order
+	 * Returns true if a full message with same ID as the given message has been
+	 * received by this host as the <strong>final</strong> recipient 
+	 * (at least once).
+	 * @param m message we're interested of
+	 * @return true if a message with the same ID has been received by 
+	 * this host as the final recipient.
 	 */
-	protected List<Message> getListOfMessagesInReversePriorityOrder(List<Message> inputList) {
-		messageQueueManager.sortByReversedPrioritizationMode(inputList);
-		return inputList;
+	final protected boolean isIncomingMessage(String msgID) {
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			if (ni.isReceivingMessage(msgID)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Returns true if a full message with same ID as the given message
+	 * has been received by this host as the <strong>final</strong>
+	 * recipient (at least once).
+	 * @param m message we're interested of
+	 * @return true if a message with the same ID has been received by 
+	 * this host as the final recipient.
+	 */
+	final protected boolean isDeliveredMessage(Message m) {
+		return deliveredMessages.containsKey(m.getID());
+	}
+
+	/**
+	 * Deletes a message from the buffer and informs message listeners
+	 * about the event
+	 * @param id Identifier of the message to delete
+	 * @param drop If the message is dropped (e.g. because of full buffer) this 
+	 * should be set to true. False value indicates e.g. remove of message
+	 * because it was delivered to final destination.  
+	 */
+	final public void deleteMessage(String id, MessageDropMode dropMode, String cause) {
+		Message removed = removeFromMessages(id); 
+		if (removed == null) {
+			throw new SimError("No message for id " + id + " to remove at " + getHost());
+		}
+		
+		notifyListenersAboutMessageDelete(removed, dropMode, cause);
+	}
+
+	/**
+	 * Deletes a message from the buffer without informing
+	 * message listeners about the event
+	 * @param msgID Identifier of the message to delete
+	 * because it was delivered to final destination.  
+	 */
+	final protected void deleteMessageWithoutRaisingEvents(String msgID) {
+		if (null == removeFromMessages(msgID)) {
+			throw new SimError("No message for id " + msgID +
+								" to remove at " + getHost());
+		}
+	}
+
+	/**
+	 * Removes and returns a message from the message buffer.
+	 * @param id Identifier of the message to remove
+	 * @return The removed message or null if message for the ID wasn't found
+	 */
+	private Message removeFromMessages(String msgID) {
+		return messageQueueManager.removeMessage(msgID);
+	}
+
+	/**
+	 * Drops messages whose TTL is less than zero.
+	 */
+	protected void removeExpiredMessagesFromBuffer() {
+		for (Message m : getMessageList()) {
+			if (m.getTtl() <= 0) {				
+				deleteMessage(m.getID(), MessageDropMode.TTL_EXPIRATION, "TTL expired");
+			}
+		}
+	}
+
+	/**
+	 * Informs message listeners about the delete event.
+	 * @param removedMessage The {@link Message} deleted.
+	 * @param dropMode A {@link MessageDropMode} value to
+	 * describe the reason of the deletion.
+	 * @param cause The cause of the deletion.
+	 */
+	final protected void notifyListenersAboutMessageDelete(Message removedMessage,
+															MessageDropMode dropMode,
+															String cause) {
+		if (removedMessage == null) {
+			return;
+		}
+		
+		for (MessageListener ml : mListeners) {
+			ml.messageDeleted(removedMessage, getHost(), dropMode, cause);
+		}
+	}
+
+	/**
+	 * Informs message listeners about the transmission completed event.
+	 * @param m The {@link Message} deleted.  
+	 */
+	final protected void notifyListenersAboutTransmissionCompleted(Message m) {
+		if (m == null) {
+			return;
+		}
+		
+		for (MessageListener ml : mListeners) {
+			ml.transmissionPerformed(m, getHost());
+		}
+	}
+
+	/**
+	 * Returns the size of the message buffer.
+	 * @return The size or Integer.MAX_VALUE if the size isn't defined.
+	 */
+	final public int getBufferSize() {
+		return messageQueueManager.getBufferSize();
+	}
+
+	/**
+	 * Returns the amount of free space in the buffer. May return a negative
+	 * value if there are more messages in the buffer than should fit there
+	 * (because of creating new messages).
+	 * @return The amount of free space (Integer.MAX_VALUE if the buffer
+	 * size isn't defined)
+	 */
+	final public int getFreeBufferSize() {
+		return messageQueueManager.getFreeBufferSize();
 	}
 
 	/**
@@ -403,81 +627,63 @@ public abstract class MessageRouter {
 	protected int compareMessagesByQueueMode(Message m1, Message m2) {
 		return messageQueueManager.compareByPrioritizationMode(m1, m2);
 	}
-	
-	
+
 	/**
-	 * Returns the host this router is in
-	 * @return The host object
+	 * Sorts a copy of the list containing all messages received by the
+	 * router, according to the current message prioritization strategy.
+	 * @return A copy of the list of the received messages, sorted
+	 * according to the current message prioritization strategy.
 	 */
-	protected DTNHost getHost() {
-		return host;
-	}
-	
-	/**
-	 * Returns whether the specified host is a neighbor or not
-	 * @param neighborHost the {@link DTNHost} we want to check
-	 * @return {@code true} if the specified host is a neighbor,
-	 * or {@code false} otherwise.
-	 */
-	protected boolean isNeighboringHost(DTNHost neighborHost) {
-		for (NetworkInterface ni : getHost().getInterfaces()) {
-			if (isNeighboringHost(ni, neighborHost)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	/**
-	 * Returns whether the specified host is a neighbor reachable
-	 * through the specified {@link NetworkInterface} or not.
-	 * @param ni the {@link NetworkInterface} considered.
-	 * @param neighborHost the {@link DTNHost} we want to check.
-	 * @return {@code true} if the specified host is a neighbor
-	 * reachable through the selected {@link NetworkInterface},
-	 * or {@code false} otherwise.
-	 */
-	protected boolean isNeighboringHost(NetworkInterface ni, DTNHost neighborHost) {
-		for (Connection con : ni.getConnections()) {
-			if (con.getOtherNode(getHost()) == neighborHost) {
-				return true;
-			}
-		}
-		
-		return false;
+	protected List<Message> sortAllReceivedMessagesForForwarding() {
+		return messageQueueManager.sortBufferedMessagesForForwarding();
 	}
 
 	/**
-	 * Returns whether the specified {@link Message} needs to be
-	 * delivered to the selected {@link DTNHost}. This method is
-	 * a hook that returns {@code true} as its default behavior.
-	 * Subclasses should overwrite it.
-	 * @param m The Message that might need to be delivered.
-	 * @param to The host that might need the Message.
-	 * @return {@code true} if the specified host needs the
-	 * Message, {@code false} otherwise.
+	 * Sorts the given list according to the current sending queue strategy.
+	 * @param inputList The list to sort
+	 * @return The sorted list
 	 */
-	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		return true;
+	protected List<Message> sortListOfMessagesForForwarding(List<Message> inputList) {
+		return messageQueueManager.sortMessageListForForwarding(inputList);
 	}
-	
+
 	/**
-	 * Returns a {@link List} of all {@link NetworkInterface}
-	 * ready to begin a new transfer.
-	 * @return The {@link List} of all idle {@link NetworkInterface} 
+	 * Sorts the given list in reverse order, according to the current
+	 * sending queue strategy. The list can contain either Message or
+	 * Tuple<Message, Connection> objects. Other objects cause error.
+	 * @param list The list to sort
+	 * @return The list sorted in reverse order
 	 */
-	protected List<NetworkInterface> getIdleNetworkInterfaces() {
-		List<NetworkInterface> idleInterfaces = new ArrayList<NetworkInterface>();
-		for (NetworkInterface ni : getHost().getInterfaces()) {
-			if (ni.isReadyToBeginTransfer()) {
-				idleInterfaces.add(ni);
+	protected List<Message> getListOfMessagesInReversePriorityOrder(List<Message> inputList) {
+		messageQueueManager.sortByReversedPrioritizationMode(inputList);
+		return inputList;
+	}
+
+	/**
+	 * Returns the oldest (by receive time) message in the message buffer 
+	 * (that is not being sent if excludeMsgBeingSent is true).
+	 * @param excludeMsgBeingSent If true, excludes message(s) that are
+	 * being sent from the oldest message check (i.e. if oldest message is
+	 * being sent, the second oldest message is returned)
+	 * @return The oldest message or null if no message could be returned
+	 * (no messages in buffer or all messages in buffer are being sent and
+	 * exludeMsgBeingSent is true)
+	 */
+	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
+		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(getMessageList());
+		
+		// Traverse the list in order and return the first available message
+		for (Message m : sortedList) {
+			if (excludeMsgBeingSent && isSendingMessage(m.getID())) {
+				// skip the message(s) that router is sending
+				continue;
 			}
+			return m;
 		}
 		
-		return idleInterfaces;
+		return null;
 	}
-	
+
 	/**
 	 * Returns {@code true} if the router has any free
 	 * {@link NetworkInterface}, or {@code false} otherwise.
@@ -486,52 +692,83 @@ public abstract class MessageRouter {
 	 * start a new transfer.
 	 */
 	protected boolean canBeginNewTransfer() {
-		if (getNrofMessages() == 0) {
-			return false;
-		}
-		
-		return getIdleNetworkInterfaces().size() > 0;
+		return (getNrofMessages() > 0) && (getIdleNetworkInterfaces().size() > 0);
 	}
-	
+
 	/**
-	 * Start sending a message to another host.
-	 * @param id Id of the message to send
-	 * @param to The host to send the message to
+	 * Checks if router can start receiving the {@link Message}
+	 * (i.e. router isn't transferring and there are no interferences).
+	 * @param m The {@link Message} to check
+	 * @param con The {@link Connection} transferring the {@link Message}
+	 * @return A return code similar to
+	 * {@link InterferenceModel#beginNewReception(Message, Connection)}, i.e. 
+	 * {@link InterferenceModel#RECEPTION_OK} if receiving seems to be OK, 
+	 * {@link InterferenceModel#RECEPTION_DENIED_DUE_TO_SEND} if the interface
+	 * is transferring, or {@link InterferenceModel#RECEPTION_INTERFERENCE}
+	 * in case of interference with other messages.
 	 */
-	public void sendMessage(String id, DTNHost to) {
-		Message m = getMessage(id);
-		if (m == null) throw new SimError("no message for id " + id + " to send at " + getHost());
- 
-		// send a replication of the message
-		Message m2 = m.replicate();
-		for (Connection con : getHost().getConnections()) {
-			if (con.getOtherNode(getHost()) == to) {
-				to.receiveMessage(m2, con);
-				return;
+	protected int checkReceiving(Message m, Connection con) {
+		/* Base router always accepts messages
+		 * Derived classes can override this method to provide
+		 * more complex message acceptance politics
+		 */
+		return RCV_OK;
+	}
+
+	/**
+	 * Informs the router about change in connections state.
+	 * @param con The connection that changed
+	 */
+	public abstract void changedConnection(Connection con);
+
+	/**
+	 * This method should be called (on the receiving host) when a
+	 * {@link Message} transfer was aborted.
+	 * @param msgID {@link String} ID of the {@link Message}
+	 * that was being transferred.
+	 * @param con The {@link Connection} that was aborted.
+	 * @param motivation A {@link String} describing the issue
+	 * that caused the abortion. 
+	 */
+	public void messageAborted(String msgID, Connection con, String motivation) {
+		NetworkInterface receivingInterface = con.getReceiverInterface();
+		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
+		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
+			// Abortion is not necessary
+			return;
+		}
+		else if (receiveResult == InterferenceModel.RECEPTION_OUT_OF_SYNCH) {
+			if (null == receivingInterface.abortMessageReception(con)) {
+				throw new SimError("abortMessageReception() method could not abort " +
+									"any transfer on specified connection");
+			}
+			// No notifications to listeners are necessary (transfer not synched)
+			return;
+		}
+		else if (receiveResult != InterferenceModel.RECEPTION_INCOMPLETE) {
+			throw new SimError("isMessageTransferredCorrectly() method invoked with message" +
+								" with ID " + msgID + " returned reception incomplete;");
+		}
+	
+		Message abortedMessage = receivingInterface.abortMessageReception(con);
+		if (abortedMessage != null) {
+			for (MessageListener ml : this.mListeners) {
+				ml.messageTransferAborted(abortedMessage, con.getSenderNode(),
+											getHost(), motivation);
 			}
 		}
-		
-		throw new SimError("No connection to host " + to + " from host " + getHost());
+		else {
+			throw new SimError("No incoming message for id " + msgID + " to abort in " + getHost());
+		}
 	}
-	
-	/**
-	 * Requests for deliverable message from this router to be
-	 * sent trough the specified connection.
-	 * @param con The connection to send the messages trough.
-	 * @return True if this router started a transfer,
-	 * false otherwise.
-	 */
-	public Message requestDeliverableMessages(Connection con) {
-		return null; // default behavior is to not start -- subclasses override
-	}
-	
+
 	/**
 	 * Notify the router that this connection has been interfered,
 	 * so that it can react accordingly. The Default action is to
 	 * notify the interference models and all the listeners.
 	 * @param con The connection which is transferring the message
 	 */
-	public void messageInterfered(String msgID, Connection con) {
+	final public void messageInterfered(String msgID, Connection con) {
 		if ((con.getReceiverNode() == getHost()) && (msgID != null) &&
 			con.isTransferOngoing()) {
 			Message interferedMessage = con.getReceiverInterface().
@@ -541,26 +778,6 @@ public abstract class MessageRouter {
 												con.getSenderNode(), getHost());
 			}
 		}
-	}
-	
-	/**
-	 * Checks if router can start receiving the message (i.e. router 
-	 * isn't transferring and there are no interferences).
-	 * @param m The message to check
-	 * @param con The Connection transferring the Message
-	 * @return A return code similar to 
-	 * {@link InterferenceModel#beginNewReception(Message, Connection)}, i.e. 
-	 * {@link InterferenceModel#RECEPTION_OK} if receiving seems to be OK, 
-	 * {@link InterferenceModel#RECEPTION_DENIED_DUE_TO_SEND} if the interface
-	 * is transferring, or {@link InterferenceModel#RECEPTION_INTERFERENCE}
-	 * in case of interference with other messages. 
-	 */
-	protected int checkReceiving(Message m, Connection con) {
-		/* Base router always accepts messages
-		 * Derived classes can override this method to provide
-		 * more complex message acceptance politics
-		 */
-		return RCV_OK;
 	}
 	
 	/**
@@ -575,7 +792,7 @@ public abstract class MessageRouter {
 	public int receiveMessage(Message m, Connection con) {
 		Message newMessage = m.replicate();
 		NetworkInterface receivingInterface = con.getReceiverInterface();
-		if (!getHost().getInterfaces().contains(receivingInterface)) {
+		if (!getNetworkInterfaces().contains(receivingInterface)) {
 			throw new SimError("receiveMessage method invoked on the wrong host!");
 		}
 		
@@ -596,7 +813,7 @@ public abstract class MessageRouter {
 		 // Superclass accepts messages if the interference model accepts it
 		return RCV_OK;
 	}
-	
+
 	/**
 	 * This method should be called (on the receiving host) after a message
 	 * was successfully transferred. The transferred message is put to the
@@ -631,19 +848,19 @@ public abstract class MessageRouter {
 		// then the message is not considered as 'delivered' to this host.
 		isFinalRecipient = isMessageDestination(aMessage);
 		isFirstDelivery = !hasReceivedMessage(aMessage.getID());
-
-		if (!isFinalRecipient && (outgoing != null)) {
-			/* received message is not the final recipient and
-			 * no app wants to drop it -> put it into the buffer */
-			addToMessages(aMessage, false);
-		}
-		else if (isFirstDelivery && isFinalRecipient) {
-			deliveredMessages.put(msgID, aMessage);
-		}
-		if (isFirstDelivery) {
-			/* if it is the first time the router receives
-			 * the message, add it to received messages */
+	
+		/* Messages are stored in the buffer regardless they
+		 * are addressed to this node or not, unless any
+		 * application wants to drop it. */
+		if (isFirstDelivery && (outgoing != null)) {
+			/* No app wants to drop it and it is the first time
+			 * the message was received -> put it into the buffer */
+			addToMessages(aMessage);
 			receivedMessages.put(msgID, aMessage);
+			if (isFinalRecipient) {
+				// This node is the message destination
+				deliveredMessages.put(msgID, aMessage);
+			}
 		}
 		
 		for (MessageListener ml : mListeners) {
@@ -654,6 +871,68 @@ public abstract class MessageRouter {
 		return aMessage;
 	}
 
+	/** 
+	 * Removes messages from the buffer (oldest and lowest priority first)
+	 * until there's enough space for the new message.
+	 * If admissible message removals are not enough to free required space,
+	 * all performed deletes are rolled back.
+	 * @param size Size of the new message transferred, the
+	 * transfer is aborted before message is removed
+	 * @param priority Priority level of the new message
+	 * @return True if enough space could be freed, false if not
+	 */
+	protected boolean makeRoomForMessage(int size, int priority) {
+		if (size > getBufferSize()) {
+			// message too big for the buffer
+			return false;
+		}
+		
+		int freeBuffer = getFreeBufferSize();
+		ArrayList<Message> deletedMessages = new ArrayList<Message>();
+		// delete messages from the buffer until there's enough space
+		while (freeBuffer < size) {
+			// can't remove messages being sent --> use true as parameter
+			Message m = getLeastImportantMessageInQueue(true);
+			if ((m == null) || (m.getPriority() > priority)) {
+				// can't remove any more messages
+				break;
+			}
+			
+			deleteMessageWithoutRaisingEvents(m.getID());
+			deletedMessages.add(m);
+			freeBuffer += m.getSize();
+		}
+		
+		/* notify message drops only if necessary amount of space was freed */
+		if (freeBuffer < size) {
+			// rollback deletes and return false
+			for (Message m : deletedMessages) {
+				addToMessages(m);
+			}
+			return false;
+		}
+	
+		// commit deletes by notifying event listeners about the deletes
+		for (Message m : deletedMessages) {
+			// delete message from the buffer as "removed" (false)
+			notifyListenersAboutMessageDelete(m, MessageDropMode.DROPPED,
+												"Buffer size exceeded");
+		}
+		return true;
+	}
+
+	/**
+	 * Tries to make room for a new message. Current implementation simply
+	 * calls {@link #makeRoomForMessage(int, int)} and ignores the return value.
+	 * Therefore, if the message can't fit into buffer, the buffer is only 
+	 * cleared from messages that are not being sent.
+	 * @param size Size of the new message
+	 * @param priority Priority level of the new message
+	 */
+	protected boolean makeRoomForNewMessage(int size, int priority) {
+		return makeRoomForMessage(size, priority);
+	}
+	
 	/**
 	 * The method checks that the receiving interface of the specified
 	 * {@link Connection} belongs to this node and it verifies that the
@@ -666,10 +945,10 @@ public abstract class MessageRouter {
 	 * {@code null} if the message could not be received due to interferences.
 	 * @throws SimError An error signaling any detected inconsistency.
 	 */
-	protected Message retrieveTransferredMessageFromInterface(String msgID, Connection con)
+	final protected Message retrieveTransferredMessageFromInterface(String msgID, Connection con)
 																throws SimError {
 		NetworkInterface receivingInterface = con.getReceiverInterface();
-		if (!getHost().getInterfaces().contains(receivingInterface)) {
+		if (!getNetworkInterfaces().contains(receivingInterface)) {
 			throw new SimError("messageTransferred() method called on the wrong host");
 		}
 		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
@@ -715,41 +994,15 @@ public abstract class MessageRouter {
 	}
 	
 	/**
-	 * This method should be called (on the receiving host) when a message 
-	 * transfer was aborted.
-	 * @param id Id of the message that was being transferred
-	 * @param from Host the message was from (previous hop)
-	 * would have been ready; or -1 if the number of bytes is not known
+	 * Updates router.
+	 * This method should be called (at least once) on every simulation
+	 * interval to update the status of transfer(s). 
 	 */
-	public void messageAborted(String msgID, Connection con, String motivation) {
-		NetworkInterface receivingInterface = con.getReceiverInterface();
-		int receiveResult = receivingInterface.isMessageTransferredCorrectly(msgID, con);
-		if (receiveResult == InterferenceModel.MESSAGE_ID_NOT_FOUND) {
-			// Abortion is not necessary
-			return;
-		}
-		else if (receiveResult == InterferenceModel.RECEPTION_OUT_OF_SYNCH) {
-			if (null == receivingInterface.abortMessageReception(con)) {
-				throw new SimError("abortMessageReception() method could not abort " +
-									"any transfer on specified connection");
+	public void update() {
+		for (Collection<Application> apps : applications.values()) {
+			for (Application app : apps) {
+				app.update(getHost());
 			}
-			// No notifications to listeners are necessary (transfer not synched)
-			return;
-		}
-		else if (receiveResult != InterferenceModel.RECEPTION_INCOMPLETE) {
-			throw new SimError("isMessageTransferredCorrectly() method invoked with message" +
-								" with ID " + msgID + " returned reception incomplete;");
-		}
-
-		Message abortedMessage = receivingInterface.abortMessageReception(con);
-		if (abortedMessage != null) {
-			for (MessageListener ml : this.mListeners) {
-				ml.messageTransferAborted(abortedMessage, con.getSenderNode(),
-											getHost(), motivation);
-			}
-		}
-		else {
-			throw new SimError("No incoming message for id " + msgID + " to abort in " + getHost());
 		}
 	}
 
@@ -763,7 +1016,7 @@ public abstract class MessageRouter {
 	 * or {@code false} otherwise.
 	 */
 	protected boolean isMessageDestination(Message aMessage) {
-		return aMessage.getTo() == getHost();
+		return (aMessage == null) ? false : aMessage.getTo() == getHost();
 	}
 
 	/**
@@ -779,90 +1032,54 @@ public abstract class MessageRouter {
 	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
 		return aMessage.getTo() == dest;
 	}
-	
-	/**
-	 * Returns routing information about this router.
-	 * @return The routing information.
-	 */
-	public RoutingInfo getRoutingInfo() {
-		RoutingInfo ri = new RoutingInfo(this);
-		
-		int incomingMessages = 0;
-		for (NetworkInterface ni : getHost().getInterfaces()) {
-			incomingMessages += ni.getNumberOfIncomingMessages();
-		}		
-		RoutingInfo incoming = new RoutingInfo(incomingMessages + " incoming message(s)");
-		
-		RoutingInfo delivered = new RoutingInfo(this.deliveredMessages.size() +
-				" delivered message(s)");
-		
-		RoutingInfo cons = new RoutingInfo(getHost().getConnections().size() + 
-			" connection(s)");
-				
-		ri.addMoreInfo(incoming);
-		ri.addMoreInfo(delivered);
-		ri.addMoreInfo(cons);
-		for (NetworkInterface ni : getHost().getInterfaces()) {
-			for (Message m : ni.getIncomingMessages()) {
-				incoming.addMoreInfo(new RoutingInfo(m));
-			}
-		}
-		
-		for (Message m : deliveredMessages.values()) {
-			delivered.addMoreInfo(new RoutingInfo(m + " path:" + m.getHops()));
-		}
-		
-		for (Connection c : getHost().getConnections()) {
-			cons.addMoreInfo(new RoutingInfo(c));
-		}
 
-		return ri;
-	}
-	
-	/** 
-	 * Adds an application to the attached applications list.
-	 * 
-	 * @param app	The application to attach to this router.
+	/**
+	 * Requests for deliverable message from this router to be
+	 * sent trough the specified connection.
+	 * @param con The connection to send the messages trough.
+	 * @return True if this router started a transfer,
+	 * false otherwise.
 	 */
-	public void addApplication(Application app) {
-		if (!this.applications.containsKey(app.getAppID())) {
-			this.applications.put(app.getAppID(),
-					new LinkedList<Application>());
-		}
-		this.applications.get(app.getAppID()).add(app);
-	}
-	
-	/** 
-	 * Returns all the applications that want to receive messages for the given
-	 * application ID.
-	 * 
-	 * @param ID	The application ID or <code>null</code> for all apps.
-	 * @return		A list of all applications that want to receive the message.
-	 */
-	public Collection<Application> getApplications(String ID) {
-		LinkedList<Application>	apps = new LinkedList<Application>();
-		// Applications that match
-		Collection<Application> tmp = applications.get(ID);
-		if (tmp != null) {
-			apps.addAll(tmp);
-		}
-		// Applications that want to look at all messages
-		if (ID != null) {
-			tmp = applications.get(null);
-			if (tmp != null) {
-				apps.addAll(tmp);
-			}
-		}
-		return apps;
+	public Message requestDeliverableMessages(Connection con) {
+		return null; // default behavior is to not start -- subclasses override
 	}
 
 	/**
-	 * Creates a replicate of this router. The replicate has the same
-	 * settings as this router but empty buffers and routing tables.
-	 * @return The replicate
+	 * Hook method that returns whether the specified {@link Message}
+	 * needs to be delivered to the selected {@link DTNHost}.
+	 * This method returns {@code true} as its default behavior.
+	 * Subclasses should overwrite it.
+	 * @param m The Message that might need to be delivered.
+	 * @param to The host that might need the Message.
+	 * @return {@code true} if the specified host needs the
+	 * Message, {@code false} otherwise.
 	 */
-	public abstract MessageRouter replicate();
+	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+		return true;
+	}
+
+	/**
+	 * Start sending a message to another host.
+	 * @param id Id of the message to send
+	 * @param to The host to send the message to
+	 */
+	@Deprecated
+	public void sendMessage(String id, DTNHost to) {
+		Message m = getMessage(id);
+		if (m == null) throw new SimError("no message for id " + id + " to send at " + getHost());
 	
+		// send a replication of the message
+		Message m2 = m.replicate();
+		for (Connection con : getConnections()) {
+			if (con.getOtherNode(getHost()) == to) {
+				to.receiveMessage(m2, con);
+				return;
+			}
+		}
+		
+		throw new SimError("No connection to host " + to + " from host " + getHost());
+	}
+
 	/**
 	 * Returns a String presentation of this router
 	 * @return A String presentation of this router

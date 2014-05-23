@@ -4,6 +4,7 @@
  */
 package report;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -65,8 +66,11 @@ public class CSVMessageWithSubscriptionsDeliveryReport extends Report implements
 	}
 
 	// nothing to implement for the rest
+
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	public void transmissionPerformed(Message m, DTNHost source) {}
+	@Override
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {}
 	@Override
 	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
 	@Override

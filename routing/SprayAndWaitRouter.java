@@ -89,7 +89,7 @@ public class SprayAndWaitRouter extends ActiveRouter {
 	@Override
 	public void update() {
 		super.update();
-		if (!canStartTransfer() || isTransferring()) {
+		if (!canBeginNewTransfer() || isTransferring()) {
 			return; // nothing to transfer or is currently transferring 
 		}
 

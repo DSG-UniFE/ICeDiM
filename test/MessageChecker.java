@@ -6,6 +6,7 @@ package test;
 
 import java.util.ArrayList;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -48,8 +49,16 @@ public class MessageChecker implements MessageListener {
 	public void registerNode(DTNHost node) {}
 
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {
-		add(m, where, null, TYPE_DELETE, dropped, null);
+	public void newMessage(Message m) {
+		add(m, m.getFrom(), m.getTo(), TYPE_CREATE, null, null);
+	}
+
+	@Override
+	public void transmissionPerformed(Message m, DTNHost source) {}
+	
+	@Override
+	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
+		add(m, from, to, TYPE_START, null, null);
 	}
 
 	@Override
@@ -69,13 +78,8 @@ public class MessageChecker implements MessageListener {
 	}
 
 	@Override
-	public void newMessage(Message m) {
-		add(m, m.getFrom(), m.getTo(), TYPE_CREATE, null, null);
-	}
-	
-	@Override
-	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {
-		add(m, from, to, TYPE_START, null, null);
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {
+		add(m, where, null, TYPE_DELETE, dropMode, null);
 	}
 
 	public boolean next() {
@@ -89,15 +93,15 @@ public class MessageChecker implements MessageListener {
 		lastTo = e.to;		
 		lastType = e.type;
 		lastFirstDelivery = e.delivered;
-		lastDropped = e.dropped;
+		lastDropped = e.dropMode == MessageDropMode.DROPPED;
 		
 		return true;
 
 	}
 	
 	private void add(Message m, DTNHost from, DTNHost to, String type,
-						Boolean dropped, Boolean delivered) {
-		queue.add(new MsgCheckerEvent(m,from,to,type,dropped,delivered));
+						MessageDropMode dropMode, Boolean delivered) {
+		queue.add(new MsgCheckerEvent(m, from, to, type, dropMode, delivered));
 	}
 
 	/**
@@ -150,17 +154,17 @@ public class MessageChecker implements MessageListener {
 		private Message msg;
 		private DTNHost from;
 		private DTNHost to;
-		private Boolean dropped;
+		private MessageDropMode dropMode;
 		private Boolean delivered;
 		private String type;
 		
 		public MsgCheckerEvent(Message m, DTNHost from, DTNHost to,
-								String type, Boolean dropped, Boolean delivered) {
+								String type, MessageDropMode dropMode, Boolean delivered) {
 			this.msg = m;
 			this.from = from;
 			this.to = to;
 			this.type = type;
-			this.dropped = dropped;
+			this.dropMode = dropMode;
 			this.delivered = delivered;
 		}
 

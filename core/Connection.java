@@ -105,8 +105,8 @@ public abstract class Connection {
 	}
 	
 	/**
-	 * Returns true if connected to the specified host
-	 * @param host The host of which to verify reachability
+	 * Returns true if connected to the specified host.
+	 * @param host The host of which to verify reachability.
 	 * @return {@code true} if the specified host is reachable
 	 * through this Connection, {@code false} otherwise
 	 */
@@ -406,9 +406,9 @@ public abstract class Connection {
 	 * Returns a String presentation of the connection.
 	 */
 	public String toString() {
-		return fromNode + "<->" + toNode + " (" + getSpeed() + "Bps) is " +
-				(isUp() ? "up":"down") + (this.underwayTransfer != null ? " transferring " +
-				underwayTransfer.getMsgOnFly()  + " from " + underwayTransfer.getSender() : "");
+		return fromNode + "<->" + toNode + " (" + getSpeed() + "Bps) is " + (isUp() ? "up" : "down") +
+				((underwayTransfer != null) ? " transferring " + underwayTransfer.getMsgOnFly() +
+				" from " + underwayTransfer.getSender() : "");
 	}
 
 }

@@ -78,7 +78,7 @@ public class DTNSim {
 		
 		if (batchMode) {
 			long startTime = System.currentTimeMillis();
-			for (int i=nrofRuns[0]; i<nrofRuns[1]; i++) {
+			for (int i = nrofRuns[0]; i < nrofRuns[1]; i++) {
 				print("Run " + (i+1) + "/" + nrofRuns[1]);
 				Settings.setRunIndex(i);
 				resetForNextRun();
@@ -146,16 +146,16 @@ public class DTNSim {
 			c = Class.forName(className);
 			c.getMethod(RESET_METHOD_NAME);
 		} catch (ClassNotFoundException e) {
-			System.err.println("Can't register class " + className + 
-					" for resetting; class not found");
+			System.err.println("Can't register class " + className + " for resetting; " +
+								"class not found");
 			System.exit(-1);
-					
 		}
 		catch (NoSuchMethodException e) {
-			System.err.println("Can't register class " + className + 
-			" for resetting; class doesn't contain resetting method");
-			System.exit(-1);
+			System.err.println("Can't register class " + className + " for resetting; " +
+								"class doesn't contain resetting method");
+			System.exit(-2);
 		}
+		
 		resetList.add(c);
 	}
 	

@@ -12,7 +12,6 @@ import java.text.ParseException;
 import core.Connection;
 import core.DTNHost;
 import core.Message;
-import core.MessageListener;
 import core.NetworkInterface;
 import core.Settings;
 import core.SimError;
@@ -158,9 +157,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 					message = "message discaded due to a semi-porous strategy";
 					break;
 				}
-				for (MessageListener ml : mListeners) {
-					ml.messageDeleted(incoming, getHost(), true, message);
-				}
+				notifyListenersAboutMessageDelete(incoming, MessageDropMode.DISCARDED, message);
 				
 				return null;
 			}

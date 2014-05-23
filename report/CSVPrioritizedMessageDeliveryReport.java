@@ -4,6 +4,7 @@
  */
 package report;
 
+import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
@@ -29,9 +30,6 @@ public class CSVPrioritizedMessageDeliveryReport extends Report implements Messa
 		
 		write(HEADER);
 	}
-	
-	@Override
-	public void registerNode(DTNHost node) {}
 
 	@Override
 	public void newMessage(Message m) {
@@ -65,17 +63,24 @@ public class CSVPrioritizedMessageDeliveryReport extends Report implements Messa
 
 	// nothing to implement for the rest
 	@Override
-	public void messageDeleted(Message m, DTNHost where, boolean dropped, String cause) {}
+	public void registerNode(DTNHost node) {}
 	@Override
-	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
+	public void transmissionPerformed(Message m, DTNHost source) {}
 	@Override
 	public void messageTransferStarted(Message m, DTNHost from, DTNHost to) {}
 	@Override
+	public void messageTransferAborted(Message m, DTNHost from, DTNHost to, String cause) {}
+	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {}
 	@Override
-	public void done() { super.done(); }
-
-
+	public void messageDeleted(Message m, DTNHost where, MessageDropMode dropMode, String cause) {}
+	
+	@Override
+	public void done() {
+		super.done();
+	}
+	
+	
 	private void reportValues(Message m, DTNHost from, DTNHost to, String deliveryType) {
 		write(m.getID() + "," + from + "," + to + "," + m.getFrom() + "," + m.getTo() + "," +
 				m.getPriority() + "," + format(m.getCreationTime()) + "," +
