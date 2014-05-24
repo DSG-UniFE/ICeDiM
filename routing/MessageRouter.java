@@ -7,6 +7,7 @@ package routing;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,11 +68,13 @@ public abstract class MessageRouter {
 	/** Random number generator's seed value */
 	protected static long RANDOM_GENERATOR_SEED = 13;
 
-	
-	/** Message queueing manager */
-	private MessageQueueManager messageQueueManager;
+
 	/** TTL for all messages */
 	protected final int msgTTL;
+	/** List of current neighbors */
+	private HashSet<DTNHost> neighborsList;
+	/** Message queueing manager */
+	private MessageQueueManager messageQueueManager;
 	/** List of listeners for logging purposes */
 	protected List<MessageListener> mListeners;
 	/** The messages this router has received as the final recipient */
@@ -132,6 +135,7 @@ public abstract class MessageRouter {
 	protected MessageRouter(MessageRouter r) {
 		this.msgTTL = r.msgTTL;
 		this.messageQueueManager = new MessageQueueManager(r.messageQueueManager);
+		
 		this.applications = new HashMap<String, Collection<Application>>();		
 		for (Collection<Application> apps : r.applications.values()) {
 			for (Application app : apps) {
@@ -148,6 +152,7 @@ public abstract class MessageRouter {
 	 * @param mListeners The message listeners
 	 */
 	public void init(DTNHost host, List<MessageListener> mListeners) {
+		this.neighborsList = new HashSet<DTNHost>();
 		this.deliveredMessages = new HashMap<String, Message>();
 		this.receivedMessages = new HashMap<String, Message>();
 		this.mListeners = mListeners;
@@ -202,6 +207,30 @@ public abstract class MessageRouter {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * This method updates the old neighbors list with the present
+	 * list of neighboring nodes and it returns an information
+	 * about whether there are any new neighbors nearby since
+	 * the last time the method was called.
+	 * @return {@code true} if there are new neighbors that fell
+	 * under connection range of a {@link NetworkInterface},
+	 * or {@code false} otherwise.
+	 */
+	protected final boolean updateNeighborsList() {
+		boolean newNeighbors = false;
+		HashSet<DTNHost> presentList = new HashSet<DTNHost>();
+		
+		for (NetworkInterface ni : getNetworkInterfaces()) {
+			for (Connection con : ni.getConnections()) {
+				DTNHost neighbor = con.getOtherNode(getHost()); 
+				presentList.add(neighbor);
+				newNeighbors |= !neighborsList.contains(neighbor);
+			}
+		}
+		
+		return newNeighbors;
 	}
 
 	/**
@@ -565,6 +594,36 @@ public abstract class MessageRouter {
 	}
 
 	/**
+	 * Informs message listeners about the transmission completed event.
+	 * @param m The {@link Message} deleted.  
+	 */
+	final protected void notifyListenersAboutTransmissionCompleted(Message m) {
+		if (m == null) {
+			return;
+		}
+		
+		for (MessageListener ml : mListeners) {
+			ml.transmissionPerformed(m, getHost());
+		}
+	}
+
+	/**
+	 * Informs message listeners about the {@link Message} transfer event.
+	 * @param aMessage The transferred message.
+	 * @param con The {@link Connection} transferring the message.
+	 * @param isFirstDelivery True if the message reached the host for the first time.
+	 * @param isFinalTarget True if the host was the destination of the message.
+	 */
+	protected final void notifyListenersAboutMessageTransferred(Message aMessage, Connection con,
+																boolean isFirstDelivery,
+																boolean isFinalTarget) {
+		for (MessageListener ml : mListeners) {
+			ml.messageTransferred(aMessage, con.getSenderNode(), getHost(),
+									isFirstDelivery, isFinalTarget);
+		}
+	}
+
+	/**
 	 * Informs message listeners about the delete event.
 	 * @param removedMessage The {@link Message} deleted.
 	 * @param dropMode A {@link MessageDropMode} value to
@@ -580,20 +639,6 @@ public abstract class MessageRouter {
 		
 		for (MessageListener ml : mListeners) {
 			ml.messageDeleted(removedMessage, getHost(), dropMode, cause);
-		}
-	}
-
-	/**
-	 * Informs message listeners about the transmission completed event.
-	 * @param m The {@link Message} deleted.  
-	 */
-	final protected void notifyListenersAboutTransmissionCompleted(Message m) {
-		if (m == null) {
-			return;
-		}
-		
-		for (MessageListener ml : mListeners) {
-			ml.transmissionPerformed(m, getHost());
 		}
 	}
 
@@ -823,7 +868,7 @@ public abstract class MessageRouter {
 	 * @return The message that this host received
 	 */
 	public Message messageTransferred(String msgID, Connection con) throws SimError {
-		boolean isFinalRecipient;
+		boolean isFinalTarget;
 		boolean isFirstDelivery;	// is this the first delivered instance of the msg?
 		
 		Message incoming = retrieveTransferredMessageFromInterface(msgID, con);
@@ -846,7 +891,7 @@ public abstract class MessageRouter {
 		Message aMessage = (outgoing == null) ? (incoming) : (outgoing);
 		// If the application re-targets the message (changes 'to')
 		// then the message is not considered as 'delivered' to this host.
-		isFinalRecipient = isMessageDestination(aMessage);
+		isFinalTarget = isMessageDestination(aMessage);
 		isFirstDelivery = !hasReceivedMessage(aMessage.getID());
 	
 		/* Messages are stored in the buffer regardless they
@@ -857,17 +902,13 @@ public abstract class MessageRouter {
 			 * the message was received -> put it into the buffer */
 			addToMessages(aMessage);
 			receivedMessages.put(msgID, aMessage);
-			if (isFinalRecipient) {
+			if (isFinalTarget) {
 				// This node is the message destination
 				deliveredMessages.put(msgID, aMessage);
 			}
 		}
 		
-		for (MessageListener ml : mListeners) {
-			ml.messageTransferred(aMessage, con.getSenderNode(), getHost(),
-									isFirstDelivery, isFinalRecipient);
-		}
-		
+		notifyListenersAboutMessageTransferred(aMessage, con, isFirstDelivery, isFinalTarget);
 		return aMessage;
 	}
 
@@ -1046,16 +1087,31 @@ public abstract class MessageRouter {
 
 	/**
 	 * Hook method that returns whether the specified {@link Message}
-	 * needs to be delivered to the selected {@link DTNHost}.
-	 * This method returns {@code true} as its default behavior.
-	 * Subclasses should overwrite it.
+	 * coming from the specified {@link DTNHost} should be delivered
+	 * to this host. This method returns {@code true} as its default
+	 * behavior. Subclasses should overwrite it.
 	 * @param m The Message that might need to be delivered.
 	 * @param to The host that might need the Message.
 	 * @return {@code true} if the specified host needs the
 	 * Message, {@code false} otherwise.
 	 */
-	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+	protected boolean shouldBeDeliveredMessageFromHost(Message m, DTNHost from) {
 		return true;
+	}
+
+	/**
+	 * Hook method that returns whether the specified {@link Message}
+	 * needs to be delivered to the selected {@link DTNHost}.
+	 * This method returns the value of a call to
+	 * {@link MessageRouter#shouldBeDeliveredMessageFromHost(Message, DTNHost)}
+	 * as its default behavior. Subclasses can overwrite it.
+	 * @param m The {@link Message} that might need to be delivered.
+	 * @param to The {@link DTNHost} that might need the Message.
+	 * @return {@code true} if the specified host needs the
+	 * Message, {@code false} otherwise.
+	 */
+	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
+		return to.getRouter().shouldBeDeliveredMessageFromHost(m, getHost());
 	}
 
 	/**

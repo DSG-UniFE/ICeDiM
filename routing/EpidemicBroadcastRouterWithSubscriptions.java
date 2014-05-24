@@ -6,6 +6,7 @@ package routing;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.text.ParseException;
 
@@ -28,12 +29,14 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	public static final String MESSAGE_DISSEMINATION_PROBABILITY_S = "msgDissProbability";
 	/** identifier for the binary-mode setting ({@value})*/
 	public static final String MESSAGE_ACCEPT_PROBABILITY_S = "msgAcceptProbability";
+
+	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
+	private final SubscriptionListManager nodeSubscriptions;
+	private HashMap<String, Boolean> sendMsgSemiPorousFilter;
+	private HashMap<String, Boolean> receiveMsgSemiPorousFilter;
 	
 	private final double sendProbability;
 	private final double receiveProbability;
-
-	private final SubscriptionListManager nodeSubscriptions;
-	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
 	
 	/**
 	 * Constructor. Creates a new message router based on
@@ -42,7 +45,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	 */
 	public EpidemicBroadcastRouterWithSubscriptions(Settings s) {
 		super(s);
-		
+
 		try {
 			this.nodeSubscriptions = new SubscriptionListManager(s);
 		} catch (ParseException e) {
@@ -68,6 +71,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			this.receiveProbability = (this.pubSubDisseminationMode ==
 										SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
 		}
+		this.sendMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		this.receiveMsgSemiPorousFilter = new HashMap<String, Boolean>();
 	}
 	
 	/**
@@ -77,10 +82,13 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	protected EpidemicBroadcastRouterWithSubscriptions(EpidemicBroadcastRouterWithSubscriptions r) {
 		super(r);
 		
-		this.sendProbability = r.sendProbability;
-		this.receiveProbability = r.receiveProbability;
 		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
+		this.sendMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		this.receiveMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		
+		this.sendProbability = r.sendProbability;
+		this.receiveProbability = r.receiveProbability;
 	}
 
 	@Override
@@ -93,36 +101,44 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	 * that the reception of a new message is complete.
 	 */
 	@Override
-	public Message messageTransferred(String id, Connection con) {
-		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
-		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
-			if (nextRandomDouble() > receiveProbability) {
-				// remove message from receiving interface and refuse message
-				Message incoming = retrieveTransferredMessageFromInterface(id, con);
-				if (incoming == null) {
-					// reception was interfered --> no need to apply dissemination mode
-					return null;
-				}
-				
-				String message = null;
-				switch (pubSubDisseminationMode) {
-				case FLEXIBLE:
-					throw new SimError("message refuse despite FLEXIBLE strategy was set");
-				case STRICT:
-					message = "strict dissemination mode";
-					break;
-				case SEMI_POROUS:
-					message = "message discaded due to a semi-porous strategy. The probability" +
-							  " of discarding messages is " + (1 - receiveProbability);
-					break;
-				}
-				notifyListenersAboutMessageDelete(incoming, MessageDropMode.DISCARDED, message);
-				
-				return null;
-			}
+	public Message messageTransferred(String msgID, Connection con) {
+		if (hasReceivedMessage(msgID)) {
+			// Handle duplicate message
+			return super.messageTransferred(msgID, con);
 		}
 		
-		return super.messageTransferred(id, con);
+		if (!isMessageDestination(con.getMessage())) {
+			String message = null;
+			switch (pubSubDisseminationMode) {
+			case FLEXIBLE:
+				return super.messageTransferred(msgID, con);
+			case SEMI_POROUS:
+				if (!receiveMsgSemiPorousFilter.containsKey(msgID)) {
+					receiveMsgSemiPorousFilter.put(msgID, Boolean.valueOf(
+							nextRandomDouble() <= receiveProbability));
+				}
+				
+				if (receiveMsgSemiPorousFilter.get(msgID).booleanValue()) {
+					return super.messageTransferred(msgID, con);
+				}
+				message = "semi-porous dissemination mode";
+				break;
+			case STRICT:
+				message = "strict dissemination mode";
+				break;
+			}
+			
+			// remove message from receiving interface and refuse message
+			Message incoming = retrieveTransferredMessageFromInterface(msgID, con);
+			if (incoming == null) {
+				// reception was interfered --> no need to log a discard
+				return null;
+			}
+			notifyListenersAboutMessageDelete(incoming, MessageDropMode.DISCARDED, message);
+			return null;
+		}
+		
+		return super.messageTransferred(msgID, con);
 	}
 	
 	/**
@@ -135,15 +151,21 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	@Override
 	public void update() {
 		super.update();
+		 
+		/* First, check if there are any new neighbors. */
+		if ((pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) &&
+			updateNeighborsList()) {
+			// There are new neighbors: change send filter
+			sendMsgSemiPorousFilter.clear();
+		}
 		
-		/* First, try to send the messages that can be delivered to their
-		 * final recipient; this is consistent with any dissemination policy.
-		 */
+		 /* Then, try to send the messages that can be delivered to their
+		  * final recipient; this is consistent with any dissemination policy. */
 		while (canBeginNewTransfer() && (exchangeDeliverableMessages() != null));
 		
-		/* Then, try to send messages that cannot be delivered directly to hosts
-		 * that subscribed their interest to them. The chosen dissemination
-		 * policy will affect the set of messages that can be sent this way. */
+		/* Then, try to send messages that cannot be delivered directly to
+		 * their destinations. The chosen dissemination policy will affect
+		 * the set of messages that can be sent this way. */
 		if (canBeginNewTransfer()) {
 			List<NetworkInterface> idleInterfaces = getIdleNetworkInterfaces();
 			Collections.shuffle(idleInterfaces, RANDOM_GENERATOR);
@@ -160,7 +182,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			}
 		}
 	}
-	
+
 	@Override
 	public SubscriptionListManager getSubscriptionList() {
 		return nodeSubscriptions;
@@ -185,6 +207,14 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
 		return dest.getRouter().isMessageDestination(aMessage);
 	}
+	
+	@Override
+	protected boolean shouldBeDeliveredMessageFromHost(Message m, DTNHost from) {
+		boolean receiveFilter = receiveMsgSemiPorousFilter.containsKey(m.getID()) ?
+				receiveMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
+		
+		return !hasReceivedMessage(m.getID()) && (receiveFilter || isMessageDestination(m));
+	}
 
 	/**
 	 * Returns whether a message can be delivered to the specified host
@@ -202,7 +232,11 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		return !to.getRouter().hasReceivedMessage(m.getID());
+		boolean sendFilter = sendMsgSemiPorousFilter.containsKey(m.getID()) ?
+					sendMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
+		
+		return (sendFilter || isMessageDestination(m, to)) &&
+				super.shouldDeliverMessageToHost(m, to);
 	}
 
 	/**
@@ -221,11 +255,23 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			for (NetworkInterface ni : getNetworkInterfaces()) {
 				isBeingSent |= ni.isSendingMessage(msg.getID());
 			}
+			if (isBeingSent) {
+				// Skip message
+				continue;
+			}
+			
+			/* If the message is not in the send filter yet, generate a new
+			 * random value to associate with the present message and then
+			 * add the result in the send filter. */
+			if (!sendMsgSemiPorousFilter.containsKey(msg.getID())) {
+				sendMsgSemiPorousFilter.put(msg.getID(), Boolean.valueOf(
+											nextRandomDouble() <= sendProbability));
+			}
+			
 			/* If no interface is sending the message and the dissemination
-			 * policy chosen allows it, we add it to the list of messages
-			 * available for sending. */
-			if (!isBeingSent && shouldDeliverMessageToNeighbors(msg, idleInterface) &&
-				(nextRandomDouble() <= sendProbability)) {
+			 * policy chosen allows it, we add the present message to the
+			 * list of messages available for sending. */
+			if (shouldDeliverMessageToNeighbors(msg, idleInterface)) {
 				availableMessages.add(msg);
 			}
 		}

@@ -7,6 +7,7 @@ package routing;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -42,12 +43,14 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	
 	protected int initialNrofCopies;
 	protected boolean isBinary;
-
-	private final double sendProbability;
-	private final double receiveProbability;
 	
 	private SubscriptionListManager nodeSubscriptions;
 	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
+	private HashMap<String, Boolean> sendMsgSemiPorousFilter;
+	private HashMap<String, Boolean> receiveMsgSemiPorousFilter;
+
+	private final double sendProbability;
+	private final double receiveProbability;
 
 	public SprayAndWaitRouterWithSubscriptions(Settings s) {
 		super(s);
@@ -81,6 +84,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			this.receiveProbability = (this.pubSubDisseminationMode ==
 										SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
 		}
+		this.sendMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		this.receiveMsgSemiPorousFilter = new HashMap<String, Boolean>();
 	}
 	
 	/**
@@ -92,10 +97,14 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		
 		this.initialNrofCopies = r.initialNrofCopies;
 		this.isBinary = r.isBinary;
-		this.sendProbability = r.sendProbability;
-		this.receiveProbability = r.receiveProbability;
+		
 		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
+		this.sendMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		this.receiveMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		
+		this.sendProbability = r.sendProbability;
+		this.receiveProbability = r.receiveProbability;
 	}
 	
 	@Override
@@ -114,61 +123,37 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	public int receiveMessage(Message m, Connection con) {
 		return super.receiveMessage(m, con);
 	}
-	
-	/**
-	 * This method groups the actions a SnW Router performs
-	 * when it correctly receives a {@link Message}.
-	 * @param msgID A {@link String} representing the ID
-	 * of the transferred {@link Message}.
-	 * @param con The {@link Connection} transferring
-	 * the {@link Message}.
-	 * @return The {@link Message} received if the reception
-	 * concluded correctly, or {@code null} otherwise.
-	 * @throws SimError
-	 */
-	private Message acceptMessage(String msgID, Connection con) throws SimError {
-		Message msg = super.messageTransferred(msgID, con);
-		// Check if message is null (interference, or out-of-synch) 
-		if (msg != null) {
-			Integer nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
-			assert nrofCopies != null : "Not a SnW message: " + msg;
-			
-			if (isBinary) {
-				/* in binary S'n'W the receiving node gets ceil(n/2) copies */
-				nrofCopies = (int) Math.ceil(nrofCopies/2.0);
-			}
-			else {
-				/* in standard S'n'W the receiving node gets only single copy */
-				nrofCopies = 1;
-			}
-			
-			msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
-		}
-		
-		return msg;
-	}
 
 	@Override
-	public Message messageTransferred(String id, Connection con) {
-		Integer subID = (Integer) con.getMessage().getProperty(SUBSCRIPTION_MESSAGE_PROPERTY_KEY);
+	public Message messageTransferred(String msgID, Connection con) {
+		if (hasReceivedMessage(msgID)) {
+			// Handle duplicate message
+			return acceptMessage(msgID, con);
+		}
+		
 		Integer nrofCopies = (Integer) con.getMessage().getProperty(MSG_COUNT_PROPERTY);
-		if (!getSubscriptionList().getSubscriptionList().contains(subID)) {
+		if (!isMessageDestination(con.getMessage())) {
 			String message = null;
 			switch (pubSubDisseminationMode) {
 			case FLEXIBLE:
-				return acceptMessage(id, con);
+				return acceptMessage(msgID, con);
 			case SEMI_POROUS:
 				if (nrofCopies > 1) {
+					//TODO: Check if this really makes sense
 					/* The SnW Router is in its dissemination phase:
 					 * we accept the message regardless of the porosity
 					 * of the channel to avoid losing copies now. */
-					return acceptMessage(id, con);
+					return acceptMessage(msgID, con);
 				}
-				if (nextRandomDouble() <= receiveProbability) {
-					// Randomly accept the message
-					return acceptMessage(id, con);
+
+				if (!receiveMsgSemiPorousFilter.containsKey(msgID)) {
+					receiveMsgSemiPorousFilter.put(msgID, Boolean.valueOf(
+							nextRandomDouble() <= receiveProbability));
 				}
-				// Discarding the message
+				
+				if (receiveMsgSemiPorousFilter.get(msgID)) {
+					return acceptMessage(msgID, con);
+				}
 				message = "semi-porous dissemination mode";
 				break;
 			case STRICT:
@@ -177,17 +162,16 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			}
 			
 			// remove message from receiving interface and refuse message
-			Message incoming = retrieveTransferredMessageFromInterface(id, con);
+			Message incoming = retrieveTransferredMessageFromInterface(msgID, con);
 			if (incoming == null) {
 				// reception was interfered --> no need to log a discard
 				return null;
 			}
 			notifyListenersAboutMessageDelete(incoming, MessageDropMode.DISCARDED, message);
-			
 			return null;
 		}
-	
-		return acceptMessage(id, con);
+		
+		return acceptMessage(msgID, con);
 	}
 	
 	/**
@@ -238,6 +222,13 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	@Override
 	public void update() {
 		super.update();
+		 
+		/* First, check if there are any new neighbors. */
+		if ((pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) &&
+			updateNeighborsList()) {
+			// There are new neighbors: change send filter
+			sendMsgSemiPorousFilter.clear();
+		}
 		
 		/* try messages that could be delivered to final recipient */
 		while (canBeginNewTransfer() && (exchangeDeliverableMessages() != null)) { }
@@ -308,6 +299,14 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	protected boolean isMessageDestination(Message aMessage, DTNHost dest) {
 		return dest.getRouter().isMessageDestination(aMessage);
 	}
+	
+	@Override
+	protected boolean shouldBeDeliveredMessageFromHost(Message m, DTNHost from) {
+		boolean receiveFilter = receiveMsgSemiPorousFilter.containsKey(m.getID()) ?
+					receiveMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
+		
+		return !hasReceivedMessage(m.getID()) && (receiveFilter || isMessageDestination(m));
+	}
 
 	/**
 	 * Returns whether a message can be delivered to the specified host
@@ -325,7 +324,11 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		return !to.getRouter().hasReceivedMessage(m.getID());
+		boolean sendFilter = sendMsgSemiPorousFilter.containsKey(m.getID()) ?
+					sendMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
+		
+		return (sendFilter || isMessageDestination(m, to)) &&
+				super.shouldDeliverMessageToHost(m, to);
 	}
 	
 	private List<Message> getMessagesAccordingToDisseminationPolicy(NetworkInterface idleInterface) {
@@ -336,16 +339,61 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			for (NetworkInterface ni : getNetworkInterfaces()) {
 				isBeingSent |= ni.isSendingMessage(msg.getID());
 			}
+			if (isBeingSent) {
+				// Skip message
+				continue;
+			}
+			
+			/* If the message is not in the send filter yet, generate a new
+			 * random value to associate with the present message and then
+			 * add the result in the send filter. */
+			if (!sendMsgSemiPorousFilter.containsKey(msg.getID())) {
+				sendMsgSemiPorousFilter.put(msg.getID(), Boolean.valueOf(
+											nextRandomDouble() <= sendProbability));
+			}
 			
 			/* If no interface is sending the message and the dissemination
 			 * policy chosen allows it, we add it to the list of messages
 			 * available for sending. */
-			if (!isBeingSent && shouldDeliverMessageToNeighbors(msg, idleInterface) &&
-				(nextRandomDouble() <= sendProbability)) {
+			if (shouldDeliverMessageToNeighbors(msg, idleInterface)) {
 				availableMessages.add(msg);
 			}
 		}
 		
 		return availableMessages;
 	}
+	
+	/**
+	 * This method groups the actions a SnW Router performs
+	 * when it correctly receives a {@link Message}.
+	 * @param msgID A {@link String} representing the ID
+	 * of the transferred {@link Message}.
+	 * @param con The {@link Connection} transferring
+	 * the {@link Message}.
+	 * @return The {@link Message} received if the reception
+	 * concluded correctly, or {@code null} otherwise.
+	 * @throws SimError
+	 */
+	private Message acceptMessage(String msgID, Connection con) throws SimError {
+		Message msg = super.messageTransferred(msgID, con);
+		// Check if message is null (interference, or out-of-synch) 
+		if (msg != null) {
+			Integer nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
+			assert nrofCopies != null : "Not a SnW message: " + msg;
+			
+			if (isBinary) {
+				/* in binary S'n'W the receiving node gets ceil(n/2) copies */
+				nrofCopies = (int) Math.ceil(nrofCopies/2.0);
+			}
+			else {
+				/* in standard S'n'W the receiving node gets only single copy */
+				nrofCopies = 1;
+			}
+			
+			msg.updateProperty(MSG_COUNT_PROPERTY, nrofCopies);
+		}
+		
+		return msg;
+	}
+	
 }
