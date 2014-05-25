@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.text.ParseException;
 
 import core.Connection;
@@ -147,6 +148,21 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	 */
 	@Override
 	protected void transferDone(Connection con) {}
+	
+	/**
+	 * The Router only checks that one message only was sent out.
+	 * This is a post-condition check on the Router, given traditional
+	 * wireless network interfaces such as WiFi or Bluetooth.
+	 */
+	@Override
+	protected void transferDone(Set<Message> transferredMessages,
+								Set<Connection> transferringConnections) {
+		if (transferredMessages.size() > 1) {
+			throw new SimError("NetworkInterface sent more than one message at the same time");
+		}
+		
+		super.transferDone(transferredMessages, transferringConnections);
+	}
 
 	@Override
 	public void update() {
@@ -163,6 +179,12 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		  * final recipient; this is consistent with any dissemination policy. */
 		while (canBeginNewTransfer() && (exchangeDeliverableMessages() != null));
 		
+		/* If the chosen dissemination mode is strict, then messages can not be
+		 * disseminated to nodes which are not a destination. */
+		if (pubSubDisseminationMode == SubscriptionBasedDisseminationMode.STRICT) {
+			return;
+		}
+		
 		/* Then, try to send messages that cannot be delivered directly to
 		 * their destinations. The chosen dissemination policy will affect
 		 * the set of messages that can be sent this way. */
@@ -171,9 +193,9 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			Collections.shuffle(idleInterfaces, RANDOM_GENERATOR);
 			/* try to send those messages over all idle interfaces */
 			for (NetworkInterface idleInterface : idleInterfaces) {
-				List<Message> availableMessages = sortListOfMessagesForForwarding(
+				List<Message> messagesToDisseminate = sortListOfMessagesForForwarding(
 						getMessagesAccordingToDisseminationPolicy(idleInterface));
-				for (Message m : availableMessages) {
+				for (Message m : messagesToDisseminate) {
 					if (BROADCAST_OK == tryBroadcastOneMessage(m, idleInterface)) {
 						// Move on to the remaining idle network interfaces.
 						break;
@@ -210,10 +232,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	
 	@Override
 	protected boolean shouldBeDeliveredMessageFromHost(Message m, DTNHost from) {
-		boolean receiveFilter = receiveMsgSemiPorousFilter.containsKey(m.getID()) ?
-				receiveMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
-		
-		return !hasReceivedMessage(m.getID()) && (receiveFilter || isMessageDestination(m));
+		return !hasReceivedMessage(m.getID()) &&
+				(shouldReceiveAccordingToDisseminationPolicy(m, from) || isMessageDestination(m));
 	}
 
 	/**
@@ -232,11 +252,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		boolean sendFilter = sendMsgSemiPorousFilter.containsKey(m.getID()) ?
-					sendMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
-		
-		return (sendFilter || isMessageDestination(m, to)) &&
-				super.shouldDeliverMessageToHost(m, to);
+		return (shouldSendAccordingToDisseminationPolicy(m, to) ||
+				isMessageDestination(m, to)) && super.shouldDeliverMessageToHost(m, to);
 	}
 
 	/**
@@ -260,14 +277,6 @@ public class EpidemicBroadcastRouterWithSubscriptions
 				continue;
 			}
 			
-			/* If the message is not in the send filter yet, generate a new
-			 * random value to associate with the present message and then
-			 * add the result in the send filter. */
-			if (!sendMsgSemiPorousFilter.containsKey(msg.getID())) {
-				sendMsgSemiPorousFilter.put(msg.getID(), Boolean.valueOf(
-											nextRandomDouble() <= sendProbability));
-			}
-			
 			/* If no interface is sending the message and the dissemination
 			 * policy chosen allows it, we add the present message to the
 			 * list of messages available for sending. */
@@ -278,4 +287,41 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		
 		return availableMessages;
 	}
+	
+	private boolean shouldSendAccordingToDisseminationPolicy(Message m, DTNHost to) {
+		switch(pubSubDisseminationMode) {
+		case STRICT:
+			return false;
+		case FLEXIBLE:
+			return true;
+		case SEMI_POROUS:
+			if (!sendMsgSemiPorousFilter.containsKey(m.getID())) {
+				sendMsgSemiPorousFilter.put(m.getID(), Boolean.valueOf(
+											nextRandomDouble() <= sendProbability));
+			}
+			
+			return sendMsgSemiPorousFilter.get(m.getID()).booleanValue();
+		}
+		
+		return false;
+	}
+	
+	private boolean shouldReceiveAccordingToDisseminationPolicy(Message m, DTNHost from) {
+		switch(pubSubDisseminationMode) {
+		case STRICT:
+			return false;
+		case FLEXIBLE:
+			return true;
+		case SEMI_POROUS:
+			if (!receiveMsgSemiPorousFilter.containsKey(m.getID())) {
+				receiveMsgSemiPorousFilter.put(m.getID(), Boolean.valueOf(
+											nextRandomDouble() <= receiveProbability));
+			}
+			
+			return receiveMsgSemiPorousFilter.get(m.getID()).booleanValue();
+		}
+		
+		return false;
+	}
+	
 }

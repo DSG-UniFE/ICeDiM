@@ -69,6 +69,9 @@ Scenario.nrofHostGroups = 6
 #               1 - semiPorous (semi-porous channels)
 #               2 - flexible (subscriptions do not affect the dissemination strategy) - default
 # subIDRndSeed: the seed for the random number generator that generates subscriptions for each node.
+# subIDRndDistribution: accepatble values range from 0 to 1:
+#               0 - Uniform Distribution - default
+#               1 - Exponentially Decaying Distribution (EDD)
 # minNrofSubscriptions: minimum number of subscriptions for which a node randomly signs up
 # maxNrofSubscriptions: maximum number of subscriptions for which a node randomly signs up
 # maxSubID: the highest ID allowed for a subscription
@@ -108,13 +111,14 @@ Group.nrofInterfaces = 1
 Group.interface1 = btInterface
 # Walking speed as default
 Group.messagePriorityStrategy = 1
-Group.messageForwardingOrderManager = 1
+Group.messageForwardingOrderManager = 0
 ## Subscription-related settings
 Group.subDisMode = [0; 1; 2]
 # If subIDs is specified, other settings are ignored
 # (min/maxNrofSubscriptions and maxSubID are only used for the random generation of subscriptions)
 #Group.subIDs = 1,2,3,4,5
 Group.subIDRndSeed = 10
+Group.subIDRndDistribution = 1
 Group.minNrofSubscriptions = 1
 Group.maxNrofSubscriptions = 5
 Group.maxSubID = 5

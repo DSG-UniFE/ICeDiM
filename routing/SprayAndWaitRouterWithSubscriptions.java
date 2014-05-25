@@ -183,7 +183,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 
 	/**
 	 * Called just before a transfer is finalized (by 
-	 * {@link ActiveRouter#update()}).
+	 * {@link BroadcastEnabledRouter#update()}).
 	 * Reduces the number of copies we have left for a message. 
 	 * In binary Spray and Wait, sending host is left with floor(n/2) copies,
 	 * but in standard mode, nrofCopies left is reduced by one. 
@@ -202,7 +202,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			if (msg == null) {
 				/* message was dropped from the buffer after the transfer
 				 * started -> no need to reduce amount of copies left. */
-				return;
+				continue;
 			}
 			
 			Integer nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
@@ -230,8 +230,14 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			sendMsgSemiPorousFilter.clear();
 		}
 		
-		/* try messages that could be delivered to final recipient */
-		while (canBeginNewTransfer() && (exchangeDeliverableMessages() != null)) { }
+		/* Then, try messages that could be delivered to their final recipient */
+		while (canBeginNewTransfer() && (exchangeDeliverableMessages() != null));
+		
+		/* If the chosen dissemination mode is strict, then messages can not be
+		 * disseminated to nodes which are not a destination. */
+		if (pubSubDisseminationMode == SubscriptionBasedDisseminationMode.STRICT) {
+			return;
+		}
 		
 		/* If the node is still able to transfer messages, it considers the
 		 * list of SnWMessages that have copies left to distribute and tries
@@ -302,10 +308,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	
 	@Override
 	protected boolean shouldBeDeliveredMessageFromHost(Message m, DTNHost from) {
-		boolean receiveFilter = receiveMsgSemiPorousFilter.containsKey(m.getID()) ?
-					receiveMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
-		
-		return !hasReceivedMessage(m.getID()) && (receiveFilter || isMessageDestination(m));
+		return !hasReceivedMessage(m.getID()) &&
+				(shouldReceiveAccordingToDisseminationPolicy(m, from) || isMessageDestination(m));
 	}
 
 	/**
@@ -324,11 +328,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	 */
 	@Override
 	protected boolean shouldDeliverMessageToHost(Message m, DTNHost to) {
-		boolean sendFilter = sendMsgSemiPorousFilter.containsKey(m.getID()) ?
-					sendMsgSemiPorousFilter.get(m.getID()).booleanValue() : true;
-		
-		return (sendFilter || isMessageDestination(m, to)) &&
-				super.shouldDeliverMessageToHost(m, to);
+		return (shouldSendAccordingToDisseminationPolicy(m, to) ||
+				isMessageDestination(m, to)) && super.shouldDeliverMessageToHost(m, to);
 	}
 	
 	private List<Message> getMessagesAccordingToDisseminationPolicy(NetworkInterface idleInterface) {
@@ -342,14 +343,6 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			if (isBeingSent) {
 				// Skip message
 				continue;
-			}
-			
-			/* If the message is not in the send filter yet, generate a new
-			 * random value to associate with the present message and then
-			 * add the result in the send filter. */
-			if (!sendMsgSemiPorousFilter.containsKey(msg.getID())) {
-				sendMsgSemiPorousFilter.put(msg.getID(), Boolean.valueOf(
-											nextRandomDouble() <= sendProbability));
 			}
 			
 			/* If no interface is sending the message and the dissemination
@@ -394,6 +387,42 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		}
 		
 		return msg;
+	}
+	
+	private boolean shouldSendAccordingToDisseminationPolicy(Message m, DTNHost to) {
+		switch(pubSubDisseminationMode) {
+		case STRICT:
+			return false;
+		case FLEXIBLE:
+			return true;
+		case SEMI_POROUS:
+			if (!sendMsgSemiPorousFilter.containsKey(m.getID())) {
+				sendMsgSemiPorousFilter.put(m.getID(), Boolean.valueOf(
+											nextRandomDouble() <= sendProbability));
+			}
+			
+			return sendMsgSemiPorousFilter.get(m.getID()).booleanValue();
+		}
+		
+		return false;
+	}
+	
+	private boolean shouldReceiveAccordingToDisseminationPolicy(Message m, DTNHost from) {
+		switch(pubSubDisseminationMode) {
+		case STRICT:
+			return false;
+		case FLEXIBLE:
+			return true;
+		case SEMI_POROUS:
+			if (!receiveMsgSemiPorousFilter.containsKey(m.getID())) {
+				receiveMsgSemiPorousFilter.put(m.getID(), Boolean.valueOf(
+											nextRandomDouble() <= receiveProbability));
+			}
+			
+			return receiveMsgSemiPorousFilter.get(m.getID()).booleanValue();
+		}
+		
+		return false;
 	}
 	
 }

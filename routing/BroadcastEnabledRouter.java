@@ -300,6 +300,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 								throw new SimError("Out-of-synch is the only condition available " +
 													"here, but " + retVal + " was detected instead");
 							}
+							// Leave connection cleanup to the senders
 						}
 					}
 					/* remove connections that have gone down */
@@ -326,11 +327,9 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			}
 		}
 		
-		if (freeBuffer) {
+		if (freeBuffer && (getFreeBufferSize() < 0)) {
 			// if the message being sent was holding excessive buffer, free it
-			if (getFreeBufferSize() < 0) {
-				makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
-			}
+			makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
 		}
 	
 		// time to do a TTL check to drop old messages, if nothing is being sent out

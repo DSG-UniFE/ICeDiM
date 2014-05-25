@@ -195,7 +195,7 @@ public abstract class ActiveRouter extends MessageRouter {
 			(m.getTo() == con.getOtherNode(getHost()))) {
 			/* final recipient has already received the msg -> delete it */
 			deleteMessage(m.getID(), MessageDropMode.REMOVED,
-							"message already delivered");
+							"message had already been delivered");
 		}
 		
 		return retVal;

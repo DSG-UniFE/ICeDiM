@@ -45,6 +45,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 
 	private int nrofTransmissions;
 	private int nrofTotalDueDeliveries;
+	private int nrofNodesPerNrofSubscriptions[];
 	
 	private int nrofHelloMessagesStarted;
 	private int nrofHelloMessagesDelivered;
@@ -87,6 +88,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	protected void init() {
 		super.init();
 		int subscriptionsArraySize = SubscriptionListManager.MAX_SUB_ID_OF_SIMULATION + 1;
+		int maxSubscriptionsPerNode = SubscriptionListManager.MAX_NUMBER_OF_SUBSCRIPTIONS + 1;
 		
 		creationTimes = new HashMap<String, Double>();
 		
@@ -111,6 +113,11 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		
 		nrofTransmissions = 0;
 		nrofTotalDueDeliveries = 0;
+		
+		nrofNodesPerNrofSubscriptions = new int[maxSubscriptionsPerNode];
+		for (int i = 0; i < maxSubscriptionsPerNode; i++) {
+			nrofNodesPerNrofSubscriptions[i] = 0;
+		}
 
 		nodesPerSubscription = new HashMap<Integer, Integer>();
 		transmissionsPerSubscription = new HashMap<Integer, Integer>();
@@ -194,11 +201,14 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 				nodesPerSubscription.put(subID, Integer.valueOf(
 						nodesPerSubscription.get(subID).intValue() + 1));
 			}
+			nrofNodesPerNrofSubscriptions[sl.getSubscriptionList().size()]++;
 		}
 		else {
+			// No subscriptions
 			int subID = SubscriptionListManager.DEFAULT_SUB_ID;
 			nodesPerSubscription.put(subID, Integer.valueOf(
 					nodesPerSubscription.get(subID).intValue() + 1));
+			nrofNodesPerNrofSubscriptions[0]++;
 		}
 	}
 
@@ -420,7 +430,15 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		List<Double> totalRTTs = new ArrayList<Double>();
 		for(List<Double> msgRTTPerSub : msgRTTPerSubscription.values()) {
 			totalRTTs.addAll(msgRTTPerSub);
-		}		
+		}
+		
+		statsText = "Number of nodes per number of subscriptions (in order, " +
+					"nodes with 1, 2, 3, ... N subscriptions):\n";
+		for (int subNum : nrofNodesPerNrofSubscriptions) {
+			statsText += Integer.toString(subNum) + ", ";
+		}
+		statsText = statsText.substring(0, statsText.length() - 2);
+		write(statsText);
 		
 		statsText = "General results:" +
 					"\ntotal transmissions: " + nrofTransmissions +

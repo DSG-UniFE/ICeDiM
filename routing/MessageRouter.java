@@ -880,6 +880,7 @@ public abstract class MessageRouter {
 		incoming.addNodeOnPath(getHost());
 		
 		// Pass the message to the application (if any) and get outgoing message
+		// TODO: Fix the logic of application-related issues to 
 		Message outgoing = incoming;
 		for (Application app : getApplications(incoming.getAppID())) {
 			// Note that the order of applications is significant
@@ -900,6 +901,11 @@ public abstract class MessageRouter {
 		if (isFirstDelivery && (outgoing != null)) {
 			/* No app wants to drop it and it is the first time
 			 * the message was received -> put it into the buffer */
+			if (!makeRoomForMessage(aMessage.getSize(), aMessage.getPriority())) {
+				// Drop message due to insufficient space in the buffer
+				notifyListenersAboutMessageDelete(aMessage, MessageDropMode.DROPPED,
+						"Impossible to free enough space in the buffer");
+			}
 			addToMessages(aMessage);
 			receivedMessages.put(msgID, aMessage);
 			if (isFinalTarget) {
@@ -959,6 +965,7 @@ public abstract class MessageRouter {
 			notifyListenersAboutMessageDelete(m, MessageDropMode.DROPPED,
 												"Buffer size exceeded");
 		}
+		
 		return true;
 	}
 

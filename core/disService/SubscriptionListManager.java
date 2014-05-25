@@ -12,6 +12,7 @@ import java.util.List;
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
 import core.DTNSim;
+import core.ExponentialDecayDistribution;
 import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
@@ -23,6 +24,8 @@ import core.SimError;
  */
 public class SubscriptionListManager {
 	
+	private enum RandomNumberOfSubscriptionsDistribution {UNIFORM, EXPONENTIALLY_DECAYING}
+	
 	private ArrayList<Integer> subscriptionList;
 
 	private int maxSubID;
@@ -32,9 +35,13 @@ public class SubscriptionListManager {
 	
 	/** The highest SubscriptionID used in the simulation */
 	public static int MAX_SUB_ID_OF_SIMULATION = Integer.MIN_VALUE;
+	public static int MAX_NUMBER_OF_SUBSCRIPTIONS = 0;
 	
 	private static MersenneTwisterRNG RANDOM_ID_GENERATOR = null;
-	private static long RANDOM_ID_GENERATOR_SEED = 3;
+	private static long RANDOM_ID_GENERATOR_SEED = 666;
+	private static RandomNumberOfSubscriptionsDistribution RandomDistribution =
+			RandomNumberOfSubscriptionsDistribution.UNIFORM;
+	private final static double DefaultDecayRate = 4;
 	
 	/** Value to specify errors or invalid subscription IDs */
 	public static final int INVALID_SUB_ID = -1;
@@ -43,6 +50,8 @@ public class SubscriptionListManager {
 
 	/** The value of the seed for the random numbers generator. */
 	public static final String SUB_ID_RND_SEED_S = "subIDRndSeed";
+	/** The distribution from which to pick the number of subscriptions of a node. */
+	public static final String SUB_ID_RND_DISTRIBUTION_S = "subIDRndDistribution";
 	/** Max number of subscriptions -setting id ({@value}). int.
 	 * If not specified, the value is computed from the number of subIDs specified. */
 	public static final String MIN_NROF_SUBSCRIPTIONS = "minNrofSubscriptions";
@@ -70,6 +79,10 @@ public class SubscriptionListManager {
 	
 	static private int getRandomID(int maxSubID) {
 		return RANDOM_ID_GENERATOR.nextInt(maxSubID);
+	}
+	
+	static private double getRandomDouble() {
+		return RANDOM_ID_GENERATOR.nextDouble();
 	}
 	
 	static public void reset() {
@@ -119,15 +132,20 @@ public class SubscriptionListManager {
 
 		if (this.subscriptionList.size() == 0) {
 			// Parsing was unsuccessful or the first element in the list was "-1" or lower
+			RandomDistribution = s.contains(SUB_ID_RND_DISTRIBUTION_S) ?
+					RandomNumberOfSubscriptionsDistribution.values()[s.getInt(SUB_ID_RND_DISTRIBUTION_S)] :
+					RandomNumberOfSubscriptionsDistribution.UNIFORM;
 			this.minNumberOfSubscriptions = s.contains(MIN_NROF_SUBSCRIPTIONS) ?
 					s.getInt(MIN_NROF_SUBSCRIPTIONS) : DEFAULT_MIN_NROF_SUBSCRIPTIONS;
 			this.maxNumberOfSubscriptions = s.contains(MAX_NROF_SUBSCRIPTIONS) ?
 					s.getInt(MAX_NROF_SUBSCRIPTIONS) : DEFAULT_MAX_NROF_SUBSCRIPTIONS;
 			this.minNumberOfSubscriptions = Math.min(this.minNumberOfSubscriptions,
 														this.maxNumberOfSubscriptions);
-
 			this.maxSubID = s.contains(MAX_SUB_ID) ? s.getInt(MAX_SUB_ID) : DEFAULT_MAX_SUB_ID;
+			
 			this.maxSubID = Math.max(this.maxSubID, this.maxNumberOfSubscriptions);
+			MAX_NUMBER_OF_SUBSCRIPTIONS = Math.max(MAX_NUMBER_OF_SUBSCRIPTIONS,
+													this.maxNumberOfSubscriptions);
 			
 			this.areSubscriptionsRandom = true;
 			if (RANDOM_ID_GENERATOR == null) {
@@ -192,9 +210,19 @@ public class SubscriptionListManager {
 		if (maxNumberOfSubscriptions <= 0) {
 			return;
 		}
+
+		int generatedSubscriptionNumber = INVALID_SUB_ID;
+		int rangeLength = maxNumberOfSubscriptions - minNumberOfSubscriptions + 1;
+		switch (RandomDistribution) {
+		case UNIFORM:
+			generatedSubscriptionNumber = getRandomID(rangeLength);
+			break;
+		case EXPONENTIALLY_DECAYING:
+			generatedSubscriptionNumber = (int) Math.floor(rangeLength * ExponentialDecayDistribution.
+					extractValueFromDistribution(getRandomDouble(), DefaultDecayRate));
+		}
+		generatedSubscriptionNumber += minNumberOfSubscriptions;
 		
-		int generatedSubscriptionNumber = Math.max(minNumberOfSubscriptions,
-													getRandomID(maxNumberOfSubscriptions + 1));
 		for (int i = 0; i < generatedSubscriptionNumber; ++i) {
 			if (addRandomSubscriptionToList() == INVALID_SUB_ID) {
 				break;
