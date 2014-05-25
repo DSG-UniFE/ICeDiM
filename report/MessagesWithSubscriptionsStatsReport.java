@@ -432,13 +432,13 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			totalRTTs.addAll(msgRTTPerSub);
 		}
 		
-		statsText = "Number of nodes per number of subscriptions (in order, " +
-					"nodes with 1, 2, 3, ... N subscriptions):\n";
+		statsText = "\nNumber of nodes per number of subscriptions (in order, " +
+					"nodes with 0, 1, 2, ... N subscriptions):\n";
 		for (int subNum : nrofNodesPerNrofSubscriptions) {
 			statsText += Integer.toString(subNum) + ", ";
 		}
 		statsText = statsText.substring(0, statsText.length() - 2);
-		write(statsText);
+		write(statsText + "\n");
 		
 		statsText = "General results:" +
 					"\ntotal transmissions: " + nrofTransmissions +
