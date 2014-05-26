@@ -13,7 +13,7 @@ import strategies.MessagePrioritizationStrategy;
  * thereby returning the messages in the same order in which they
  * are passed to the orderMessageListForForwarding() method.
  * 
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class FIFOManager extends MessageForwardingOrderManager {

@@ -11,7 +11,7 @@ import core.Message;
 
 /**
  * Class that represent the HELLO Messages exchanged by DisService-based routers
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class DisServiceHelloMessage extends Message {

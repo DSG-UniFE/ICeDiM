@@ -1,5 +1,13 @@
 package core;
 
+/**
+ * A random number generator that returns values that belongs to
+ * an Exponentially Decaying Distribution.
+ * 
+ * @author Alessandro Morelli
+ *
+ */
+
 public class ExponentialDecayDistribution {
 	
 	public static double extractValueFromDistribution(double seed, double decayingRate) {

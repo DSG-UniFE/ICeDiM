@@ -10,7 +10,7 @@ import core.Message;
  * This class maps the act of receiving a message
  * by a network interface
  * 
- * @author Alex
+ * @author Alessandro Morelli
  */
 public class MessageReception {
 

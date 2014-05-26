@@ -17,7 +17,7 @@ import core.disService.NeighborInfo;
  * Class that keeps track of all the information
  * shared by DisService nodes
  * 
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 

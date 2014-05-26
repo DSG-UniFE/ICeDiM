@@ -19,7 +19,7 @@ import core.SimError;
 
 /**
  * Class that implements the concept of a list of subscriptions
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class SubscriptionListManager {

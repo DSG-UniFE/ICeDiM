@@ -11,7 +11,7 @@ import core.Settings;
 import core.SimError;
 
 /**
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class MessagePriorityGenerator {

@@ -9,7 +9,7 @@ import core.Message;
 import core.SimError;
 
 /**
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public abstract class MessagePrioritizationStrategy {

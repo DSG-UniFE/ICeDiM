@@ -10,7 +10,7 @@ import java.util.List;
 import core.Message;
 
 /**
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class LeastForwardedFirstForwardingOrder extends MessagePrioritizationStrategy {

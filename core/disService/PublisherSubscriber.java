@@ -5,7 +5,7 @@ package core.disService;
 
 /**
  * Methods common to any router based on the Publisher/Subscriber Model
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public interface PublisherSubscriber {

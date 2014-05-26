@@ -13,7 +13,7 @@ import core.Message;
 import core.SeedGeneratorHelper;
 
 /**
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class RandomForwardingOrder extends MessagePrioritizationStrategy {

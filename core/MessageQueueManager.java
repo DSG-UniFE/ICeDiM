@@ -20,7 +20,7 @@ import strategies.MessagePrioritizationStrategy;
  * messages in accordance with the policy specified
  * in the configuration file.
  * 
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class MessageQueueManager {

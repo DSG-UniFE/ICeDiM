@@ -14,7 +14,7 @@ import core.SimError;
 /**
  * Abstract class for all MessageForwardingManager types.
  * 
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public abstract class MessageForwardingOrderManager {

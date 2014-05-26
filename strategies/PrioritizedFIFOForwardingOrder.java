@@ -13,7 +13,7 @@ import core.SimError;
 import core.Tuple;
 
 /**
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class PrioritizedFIFOForwardingOrder extends MessagePrioritizationStrategy {

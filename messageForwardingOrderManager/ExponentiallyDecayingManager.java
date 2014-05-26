@@ -21,7 +21,7 @@ import strategies.MessagePrioritizationStrategy;
  * of messages with the highest priority, while it tries to
  * prevent starvation of lower priority messages.
  * 
- * @author Alex
+ * @author Alessandro Morelli
  *
  */
 public class ExponentiallyDecayingManager extends MessageForwardingOrderManager {

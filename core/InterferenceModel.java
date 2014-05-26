@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * Provides the interface for interference managers
- * @author Alex 
+ * @author Alessandro Morelli 
  */
 public interface InterferenceModel {
 	

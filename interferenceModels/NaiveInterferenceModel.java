@@ -18,7 +18,8 @@ import core.SimError;
  * This interference model always receives correctly any frame
  * with which the receiving interface could synchronize (that
  * is, any frame received when the interface was idle).
- * @author Alex
+ * 
+ * @author Alessandro Morelli
  */
 public final class NaiveInterferenceModel implements InterferenceModel {
 
