@@ -102,7 +102,7 @@ Group.nrofHosts = 40
 Group.movementModel = ShortestPathMapBasedMovement
 Group.speed = 0.5, 1.5
 Group.waitTime = 0, 120
-Group.router = [EpidemicBroadcastRouterWithSubscriptions; SprayAndWaitRouterWithSubscriptions]
+Group.router = SprayAndWaitRouterWithSubscriptions
 Group.bufferSize = 5M
 # Message TTL of 300 minutes (5 hours)
 Group.msgTTL = 300
