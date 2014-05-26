@@ -83,7 +83,7 @@ public class DTNSim {
 			print("Will run following indexes: " + nrofRuns);
 			long startTime = System.currentTimeMillis();
 			for (int i : nrofRuns) {
-				print("Run " + (i+1) + "/" + nrofRuns.get(nrofRuns.size() - 1));
+				print("Run " + (i+1) + "/" + (nrofRuns.get(nrofRuns.size() - 1) + 1));
 				Settings.setRunIndex(i);
 				resetForNextRun();
 				new DTNSimTextUI().start();
