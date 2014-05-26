@@ -41,7 +41,7 @@ public class SubscriptionListManager {
 	private static long RANDOM_ID_GENERATOR_SEED = 666;
 	private static RandomNumberOfSubscriptionsDistribution RandomDistribution =
 			RandomNumberOfSubscriptionsDistribution.UNIFORM;
-	private final static double DefaultDecayRate = 4;
+	private final static double DefaultDecayRate = 3.5;
 	
 	/** Value to specify errors or invalid subscription IDs */
 	public static final int INVALID_SUB_ID = -1;

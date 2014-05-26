@@ -69,9 +69,10 @@ Scenario.nrofHostGroups = 6
 #               1 - semiPorous (semi-porous channels)
 #               2 - flexible (subscriptions do not affect the dissemination strategy) - default
 # subIDRndSeed: the seed for the random number generator that generates subscriptions for each node.
-# subIDRndDistribution: accepatble values range from 0 to 1:
-#               0 - Uniform Distribution - default
-#               1 - Exponentially Decaying Distribution (EDD)
+# subIDRndDistribution: Defines the distribution of the number of subscriptions to which each
+#                       node belongs. acceptable values range from 0 to 1:
+#                       0 - Uniform Distribution - default
+#                       1 - Exponentially Decaying Distribution (EDD)
 # minNrofSubscriptions: minimum number of subscriptions for which a node randomly signs up
 # maxNrofSubscriptions: maximum number of subscriptions for which a node randomly signs up
 # maxSubID: the highest ID allowed for a subscription

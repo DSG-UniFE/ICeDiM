@@ -8,6 +8,7 @@ import gui.DTNSimGUI;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import ui.DTNSimTextUI;
 
@@ -18,6 +19,8 @@ public class DTNSim {
 	/** If this option ({@value}) is given to program, batch mode and
 	 * Text UI are used*/
 	public static final String BATCH_MODE_FLAG = "-b";
+	/** Delimiter for batch mode index single element values (comma) */
+	public static final String ELEMENT_DELIMETER = ", ";
 	/** Delimiter for batch mode index range values (colon) */
 	public static final String RANGE_DELIMETER = ":";
 	
@@ -41,7 +44,7 @@ public class DTNSim {
 	 */
 	public static void main(String[] args) {
 		boolean batchMode = false;
-		int nrofRuns[] = {0,1};
+		List<Integer> nrofRuns = null;
 		String confFiles[];
 		int firstConfIndex = 0;
 		int guiIndex = 0;
@@ -77,9 +80,10 @@ public class DTNSim {
 		initSettings(confFiles, firstConfIndex);
 		
 		if (batchMode) {
+			print("Will run following indexes: " + nrofRuns);
 			long startTime = System.currentTimeMillis();
-			for (int i = nrofRuns[0]; i < nrofRuns[1]; i++) {
-				print("Run " + (i+1) + "/" + nrofRuns[1]);
+			for (int i : nrofRuns) {
+				print("Run " + (i+1) + "/" + nrofRuns.get(nrofRuns.size() - 1));
 				Settings.setRunIndex(i);
 				resetForNextRun();
 				new DTNSimTextUI().start();
@@ -181,39 +185,77 @@ public class DTNSim {
 	 * @param arg The argument to parse
 	 * @return The first and (last_run_index - 1) in an array
 	 */
-	private static int[] parseNrofRuns(String arg) {
-		int val[] = {0,1};	
-		try {
-			if (arg.contains(RANGE_DELIMETER)) {
-				val[0] = Integer.parseInt(arg.substring(0, 
-						arg.indexOf(RANGE_DELIMETER))) - 1;
-				val[1] = Integer.parseInt(arg.substring(arg.
-						indexOf(RANGE_DELIMETER) + 1, arg.length()));
+	private static List<Integer> parseNrofRuns(String arg) {
+		int val[] = {0,1};
+		StringTokenizer tokenizer = new StringTokenizer(arg.trim(), ELEMENT_DELIMETER, false);
+		ArrayList<Integer> valList = new ArrayList<Integer>();
+		if (tokenizer.countTokens() == 1) {
+			String element = tokenizer.nextToken();
+			try {
+				if (element.contains(RANGE_DELIMETER)) {
+					val[0] = Integer.parseInt(element.substring(0,
+												element.indexOf(RANGE_DELIMETER))) - 1;
+					val[1] = Integer.parseInt(element.substring(
+												element.indexOf(RANGE_DELIMETER) + 1,
+												element.length()));
+				}
+				else {
+					val[0] = 0;
+					val[1] = Integer.parseInt(element);
+				}
+			} catch (NumberFormatException e) {
+				System.err.println("Invalid argument '" + element + "' for number of runs");
+				System.err.println("The argument must be either a single value or a " + 
+									"comma-separated list of values. Range of values " +
+									"(e.g., '2:5') are also admitted. Note that this " +
+									"option has changed since version 1.3.");
+				System.exit(-1);
 			}
-			else {
-				val[0] = 0;
-				val[1] = Integer.parseInt(arg);
-			}			
-		} catch (NumberFormatException e) {
-			System.err.println("Invalid argument '" + arg + "' for" +
-					" number of runs");
-			System.err.println("The argument must be either a single value, " + 
-					"or a range of values (e.g., '2:5'). Note that this " + 
-					"option has changed in version 1.3.");
-			System.exit(-1);
+			
+			for (int i = val[0]; i < val[1]; i++) {
+				valList.add(i);
+			}
+		}
+		else {
+			while (tokenizer.hasMoreTokens()) {
+				String element = tokenizer.nextToken();
+				try {
+					if (element.contains(RANGE_DELIMETER)) {
+						val[0] = Integer.parseInt(element.substring(0,
+													element.indexOf(RANGE_DELIMETER))) - 1;
+						val[1] = Integer.parseInt(element.substring(
+													element.indexOf(RANGE_DELIMETER) + 1,
+													element.length()));
+						for (int i = val[0]; i < val[1]; i++) {
+							valList.add(i);
+						}
+					}
+					else {
+						valList.add(Integer.parseInt(element) - 1);
+					}
+				} catch (NumberFormatException e) {
+					System.err.println("Invalid argument '" + element + "' for number of runs");
+					System.err.println("The argument must be either a single value or a " + 
+										"comma-separated list of values. Range of values " +
+										"(e.g., '2:5') are also admitted. Note that this " +
+										"option has changed since version 1.3.");
+					System.exit(-1);
+				}
+			}
 		}
 		
 		if (val[0] < 0) {
 			System.err.println("Starting run value can't be smaller than 1");
 			System.exit(-1);
 		}
-		if (val[0] >= val[1]) {
-			System.err.println("Starting run value can't be bigger than the " + 
-					"last run value");
-			System.exit(-1);			
+		for (int i = 0; i < valList.size() - 1; i++) {
+			if (valList.get(i) >= valList.get(i + 1)) {
+				System.err.println("Values in the run indexes list has to be in increasing order");
+				System.exit(-1);
+			}
 		}
 				
-		return val;
+		return valList;
 	}
 	
 	/**
