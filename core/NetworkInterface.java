@@ -88,7 +88,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		this.connections = new ArrayList<Connection>();
 		this.address = getNextNetAddress();
 		this.interferenceModel = null;
-
+		
 		this.transmitRange = s.getDouble(TRANSMIT_RANGE_S);
 		this.transmitSpeed = s.getInt(TRANSMIT_SPEED_S);
 		ensurePositiveValue(transmitRange, TRANSMIT_RANGE_S);
@@ -117,8 +117,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		this.connections = new ArrayList<Connection>();
 		this.address = getNextNetAddress();
 		this.host = ni.host;
-		this.interferenceModel = ni.interferenceModel.replicate();
-		this.interferenceModel.setNetworkInterface(this);
+		
+		setInterferenceModel(ni.interferenceModel.replicate());
 		
 		this.cListeners = ni.cListeners;
 		this.transmitRange = ni.transmitRange;
@@ -171,6 +171,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public void setInterferenceModel(InterferenceModel iModel) {
 		interferenceModel = iModel;
+		iModel.setNetworkInterface(this);
 	}
 
 	/**

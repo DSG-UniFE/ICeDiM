@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = %%Group.router%%_DissMode0_WithBuses_BufferSize%%Group4.bufferSize%%
+Scenario.name = %%Group.router%%_DissMode%%Group.subDisMode%%_WithBuses_BufferSize%%Group4.bufferSize%%
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 46800s == 13h
@@ -72,7 +72,7 @@ Scenario.nrofHostGroups = 6
 # subIDRndDistribution: Defines the distribution of the number of subscriptions to which each
 #                       node belongs. acceptable values range from 0 to 1:
 #                       0 - Uniform Distribution - default
-#                       1 - Exponentially Decaying Distribution (EDD)
+#                       1 - Negative Exponential Distribution (NED)
 # minNrofSubscriptions: minimum number of subscriptions for which a node randomly signs up
 # maxNrofSubscriptions: maximum number of subscriptions for which a node randomly signs up
 # maxSubID: the highest ID allowed for a subscription
@@ -114,7 +114,7 @@ Group.interface1 = btInterface
 Group.messagePriorityStrategy = 1
 Group.messageForwardingOrderManager = 0
 ## Subscription-related settings
-Group.subDisMode = 0
+Group.subDisMode = [0; 1; 2]
 # If subIDs is specified, other settings are ignored
 # (min/maxNrofSubscriptions and maxSubID are only used for the random generation of subscriptions)
 #Group.subIDs = 1,2,3,4,5
@@ -123,8 +123,8 @@ Group.subIDRndDistribution = 1
 Group.minNrofSubscriptions = 1
 Group.maxNrofSubscriptions = 5
 Group.maxSubID = 5
-Group.msgDissProbability = 0.3
-Group.msgAcceptProbability = 0.5
+Group.msgDissProbability = 0.1
+Group.msgAcceptProbability = 0.3
 
 ## Settings specific for Spray n Wait routers
 # Equation with alpha = 3 and M = 146

@@ -359,7 +359,6 @@ public class SimScenario implements Serializable {
 				mmInterface.setClisteners(connectionListeners);
 				InterferenceModel iModel = (InterferenceModel) t.createIntializedObject(
 									INTERFERENCEMODEL_PACKAGE + t.getSetting(INTERFERENCEMODEL_S));
-				iModel.setNetworkInterface(mmInterface);
 				mmInterface.setInterferenceModel(iModel);
 				mmNetInterfaces.add(mmInterface);
 			}

@@ -72,7 +72,7 @@ Scenario.nrofHostGroups = 6
 # subIDRndDistribution: Defines the distribution of the number of subscriptions to which each
 #                       node belongs. acceptable values range from 0 to 1:
 #                       0 - Uniform Distribution - default
-#                       1 - Exponentially Decaying Distribution (EDD)
+#                       1 - Negative Exponential Distribution (NED)
 # minNrofSubscriptions: minimum number of subscriptions for which a node randomly signs up
 # maxNrofSubscriptions: maximum number of subscriptions for which a node randomly signs up
 # maxSubID: the highest ID allowed for a subscription
