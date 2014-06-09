@@ -54,7 +54,7 @@ public class DTNHost implements Comparable<DTNHost> {
 		this.comBus = comBus;
 		this.location = new Coord(0,0);
 		this.address = getNextAddress();
-		this.name = groupId+address;
+		this.name = groupId + address;
 		this.net = new ArrayList<NetworkInterface>();
 
 		for (NetworkInterface i : interf) {

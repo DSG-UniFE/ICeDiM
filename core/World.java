@@ -75,6 +75,16 @@ public class World {
 	/** single ConnectivityCell's size is biggest radio range times this */
 	private int conCellSizeMult;
 
+	
+	static {
+		DTNSim.registerForReset(World.class.getCanonicalName());
+		reset();
+	}
+	
+	static public void reset() {
+		UPDATE_ORDER_RANDOMIZER = null;
+	}
+
 	/**
 	 * Constructor.
 	 */
