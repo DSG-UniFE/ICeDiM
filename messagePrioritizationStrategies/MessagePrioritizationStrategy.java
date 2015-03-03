@@ -1,7 +1,7 @@
 /**
  * 
  */
-package strategies;
+package messagePrioritizationStrategies;
 
 import java.util.List;
 

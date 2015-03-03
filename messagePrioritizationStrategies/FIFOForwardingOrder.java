@@ -1,7 +1,7 @@
 /**
  * 
  */
-package strategies;
+package messagePrioritizationStrategies;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,7 +34,7 @@ public class FIFOForwardingOrder extends MessagePrioritizationStrategy {
 	}
 	
 	/* (non-Javadoc)
-	 * @see strategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
+	 * @see messagePrioritizationStrategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
 	 */
 	static FIFOForwardingOrder getForwardingOrderInstance() {
 		if (singletonInstance == null) {

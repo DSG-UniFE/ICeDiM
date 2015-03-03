@@ -3,6 +3,8 @@ package messageForwardingOrderManager;
 import java.util.ArrayList;
 import java.util.List;
 
+import messagePrioritizationStrategies.MessagePrioritizationStrategy;
+
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
 import core.DTNSim;
@@ -11,7 +13,6 @@ import core.MessageQueueManager;
 import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
-import strategies.MessagePrioritizationStrategy;
 
 /**
  * {@link ExponentiallyDecayingManager} offers first messages,

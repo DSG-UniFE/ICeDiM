@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import messageForwardingOrderManager.MessageForwardingOrderManager;
-
-import strategies.MessagePrioritizationStrategy;
+import messagePrioritizationStrategies.MessagePrioritizationStrategy;
 
 /**
  * This class models the queue of messages in memory.

@@ -5,7 +5,7 @@ package messageForwardingOrderManager;
 
 import java.util.List;
 
-import strategies.MessagePrioritizationStrategy;
+import messagePrioritizationStrategies.MessagePrioritizationStrategy;
 import core.Message;
 import core.MessageQueueManager;
 import core.Settings;

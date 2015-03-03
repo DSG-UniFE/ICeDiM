@@ -3,10 +3,10 @@ package messageForwardingOrderManager;
 import java.util.ArrayList;
 import java.util.List;
 
+import messagePrioritizationStrategies.MessagePrioritizationStrategy;
 import core.Message;
 import core.MessageQueueManager;
 import core.Settings;
-import strategies.MessagePrioritizationStrategy;
 
 /**
  * {@link FIFOManager} does not modify the message lists orders,
