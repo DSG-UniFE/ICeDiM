@@ -14,9 +14,9 @@ import core.DTNHost;
 import core.Message;
 import core.MessageListener;
 import core.SimError;
-import core.disService.DisServiceHelloMessage;
-import core.disService.PublisherSubscriber;
-import core.disService.SubscriptionListManager;
+import core.iceDim.IceDimHelloMessage;
+import core.iceDim.PublisherSubscriber;
+import core.iceDim.SubscriptionListManager;
 
 /**
  * Report for generating different kind of total statistics about message
@@ -242,7 +242,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			return;
 		}
 		
-		if (m instanceof DisServiceHelloMessage) {
+		if (m instanceof IceDimHelloMessage) {
 			nrofHelloMessagesStarted++;
 		}
 		else {
@@ -277,7 +277,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			return;
 		}
 	
-		if (m instanceof DisServiceHelloMessage) {
+		if (m instanceof IceDimHelloMessage) {
 			nrofHelloMessagesDelivered++;
 		}
 		else if (firstDelivery) {
@@ -333,7 +333,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			return;
 		}
 		
-		if (m instanceof DisServiceHelloMessage) {
+		if (m instanceof IceDimHelloMessage) {
 			nrofHelloMessagesAborted++;
 		}
 		else {
@@ -347,7 +347,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 
 	@Override
 	public void messageTransmissionInterfered(Message m, DTNHost from, DTNHost to) {
-		if (m instanceof DisServiceHelloMessage) {
+		if (m instanceof IceDimHelloMessage) {
 			nrofHelloMessagesInterfered++;
 		}
 		else {

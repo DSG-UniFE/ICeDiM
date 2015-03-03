@@ -17,8 +17,8 @@ import core.Message;
 import core.NetworkInterface;
 import core.Settings;
 import core.SimError;
-import core.disService.PublisherSubscriber;
-import core.disService.SubscriptionListManager;
+import core.iceDim.PublisherSubscriber;
+import core.iceDim.SubscriptionListManager;
 
 /**
  * Implementation of Spray and Wait Router as depicted in 

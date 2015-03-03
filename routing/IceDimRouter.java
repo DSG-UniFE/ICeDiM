@@ -12,31 +12,31 @@ import core.NetworkInterface;
 import core.Settings;
 import core.SimClock;
 import core.SimError;
-import core.disService.DisServiceHelloMessage;
-import core.disService.NeighborInfo;
-import core.disService.PublisherSubscriber;
-import core.disService.SubscriptionListManager;
-import core.disService.WorldState;
+import core.iceDim.IceDimHelloMessage;
+import core.iceDim.NeighborInfo;
+import core.iceDim.PublisherSubscriber;
+import core.iceDim.SubscriptionListManager;
+import core.iceDim.KnowledgeOfSurroundings;;
 
-public class DisServiceRouter extends BroadcastEnabledRouter implements PublisherSubscriber {
+public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSubscriber {
 	/** Seconds between the broadcast of two subsequent HELLO Messages. */
 	public static final String PING_INTERVAL_PERIOD = "pingInterval";
 	
 	/** The default interval (in seconds) between two HELLO Messages */
 	private static final double DEFAULT_PING_INTERVAL = 5.0;
 	
-	private DisServiceHelloMessage helloMessage;
+	private IceDimHelloMessage helloMessage;
 	private final double pingInterval;
 	protected double lastPingSentTime[];
 	
 	protected ArrayList<String> receivedMsgIDs;
-	protected WorldState worldState;
+	protected KnowledgeOfSurroundings koS;
 	
 	protected HelloMessageGen hmGenerator;
 	protected SubscriptionListManager nodeSubscriptions;
 	public final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
 
-	public DisServiceRouter(Settings s) {
+	public IceDimRouter(Settings s) {
 		super(s);
 
 		this.helloMessage = null;
@@ -49,7 +49,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 		this.lastPingSentTime = null;	// It will be allocated in the init() method
 		
 		this.receivedMsgIDs = new ArrayList<String>();		
-		this.worldState = new WorldState(this.getHost(), s);
+		this.koS = new KnowledgeOfSurroundings(this.getHost(), s);
 		
 		try {
 			this.nodeSubscriptions = new SubscriptionListManager(s);
@@ -68,7 +68,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 		this.hmGenerator = new HelloMessageGen(this.receivedMsgIDs, this.nodeSubscriptions);
 	}
 
-	public DisServiceRouter(DisServiceRouter r) {
+	public IceDimRouter(IceDimRouter r) {
 		super(r);
 
 		this.helloMessage = null;
@@ -78,7 +78,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 		this.receivedMsgIDs = new ArrayList<String>();
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
 		
-		this.worldState = new WorldState(r.getHost(), r.worldState);
+		this.koS = new KnowledgeOfSurroundings(r.getHost(), r.koS);
 		this.hmGenerator = new HelloMessageGen(this.receivedMsgIDs, this.nodeSubscriptions);
 		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
 	}
@@ -121,7 +121,7 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 			 * Transfer most requested message or the one less forwarded
 			 */
 			List<Message> sortedMessageList = sortAllReceivedMessagesForForwarding();
-			List<NeighborInfo> nearbyNodes = worldState.getActiveNeighborInfosByNetworkInterface(ni);
+			List<NeighborInfo> nearbyNodes = koS.getActiveNeighborInfosByNetworkInterface(ni);
 			
 			if ((nearbyNodes.size() == 0) || (sortedMessageList.size() == 0)) {
 				// Nothing to do
@@ -235,10 +235,10 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	public Message messageTransferred(String id, Connection con) {
 		Message m = super.messageTransferred(id, con);
 		
-		if (m instanceof DisServiceHelloMessage) {
+		if (m instanceof IceDimHelloMessage) {
 			// Process DisService HELLO message
-			DisServiceHelloMessage receivedHelloMessage = (DisServiceHelloMessage) m;
-			worldState.processHelloMessage(receivedHelloMessage);
+			IceDimHelloMessage receivedHelloMessage = (IceDimHelloMessage) m;
+			koS.processHelloMessage(receivedHelloMessage);
 			deleteMessageWithoutRaisingEvents(id);
 		}
 		else if (m != null) {
@@ -299,8 +299,8 @@ public class DisServiceRouter extends BroadcastEnabledRouter implements Publishe
 	}
 	
 	@Override
-	public DisServiceRouter replicate() {
-		return new DisServiceRouter(this);
+	public IceDimRouter replicate() {
+		return new IceDimRouter(this);
 	}
 
 	public double getPingInterval() {
@@ -342,8 +342,8 @@ class HelloMessageGen {
 		this.node = node;
 	}
 	
-	public DisServiceHelloMessage buildHelloMsg() {
-		return new DisServiceHelloMessage (node, getHelloMsgID(), getHelloMsgSize(), receivedMsgIDs,
+	public IceDimHelloMessage buildHelloMsg() {
+		return new IceDimHelloMessage (node, getHelloMsgID(), getHelloMsgSize(), receivedMsgIDs,
 											nodeSubscriptions.getSubscriptionList());
 	}
 	

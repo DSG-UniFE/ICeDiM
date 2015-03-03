@@ -1,7 +1,7 @@
 /**
  * 
  */
-package core.disService;
+package core.iceDim;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,7 +11,7 @@ import java.util.List;
 import core.DTNHost;
 import core.NetworkInterface;
 import core.Settings;
-import core.disService.NeighborInfo;
+import core.iceDim.NeighborInfo;
 
 /**
  * Class that keeps track of all the information
@@ -21,7 +21,7 @@ import core.disService.NeighborInfo;
  *
  */
 
-public class WorldState {
+public class KnowledgeOfSurroundings {
 	/** Inactivity interval identifier in the options */
 	protected static final String INACTIVITY_INTERVAL_OPTION = "inactivityInterval";
 	
@@ -37,7 +37,7 @@ public class WorldState {
 	// PredictionManager predictionManager;
 	// NodeDiversityManager nodeDiversityCalculator;
 	
-	public WorldState(DTNHost node, Settings s) {
+	public KnowledgeOfSurroundings(DTNHost node, Settings s) {
 		this.node = node;
 		if (s.contains(INACTIVITY_INTERVAL_OPTION)) {
 			this.inactivityInterval = s.getDouble(INACTIVITY_INTERVAL_OPTION);
@@ -50,7 +50,7 @@ public class WorldState {
 		neighborsInfo = new HashMap<>();
 	}	
 	
-	public WorldState(DTNHost node, WorldState ws) {
+	public KnowledgeOfSurroundings(DTNHost node, KnowledgeOfSurroundings ws) {
 		this.node = node;
 		this.inactivityInterval = ws.inactivityInterval;
 		this.genHelloMessagesCount = 0;
@@ -111,7 +111,7 @@ public class WorldState {
 		++genHelloMessagesCount;
 	}
 	
-	public void processHelloMessage(DisServiceHelloMessage helloMessage) {
+	public void processHelloMessage(IceDimHelloMessage helloMessage) {
 		++totalHelloMessagesReceived;
 		NeighborInfo neighborInfo = getNeighborInfo(helloMessage.getFrom());
 		neighborInfo.processHelloMessage(helloMessage);

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package core.disService;
+package core.iceDim;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import core.Message;
  * @author Alessandro Morelli
  *
  */
-public class DisServiceHelloMessage extends Message {
+public class IceDimHelloMessage extends Message {
 
 	/**
 	 * @param from The node generating the message
@@ -25,7 +25,7 @@ public class DisServiceHelloMessage extends Message {
 	private ArrayList<String> msgIDs;
 	private ArrayList<Integer> nodeSubscriptionsList;
 	
-	public DisServiceHelloMessage(DTNHost from, String id, int size, List<String> receivedMsgIDs,
+	public IceDimHelloMessage(DTNHost from, String id, int size, List<String> receivedMsgIDs,
 									List<Integer> nodeSubscriptions) {
 		super(from, null, id, size);
 		
@@ -55,15 +55,15 @@ public class DisServiceHelloMessage extends Message {
 	 * @param m The PrioritizedMessage from where the data is copied
 	 */
 	@SuppressWarnings("unchecked")
-	protected void copyFrom(DisServiceHelloMessage disServiceHelloMessage) {
+	protected void copyFrom(IceDimHelloMessage disServiceHelloMessage) {
 		super.copyFrom(disServiceHelloMessage);
 		this.msgIDs = (ArrayList<String>) disServiceHelloMessage.msgIDs.clone();
 		this.nodeSubscriptionsList = (ArrayList<Integer>) disServiceHelloMessage.nodeSubscriptionsList.clone();
 	}
 	
 	@Override
-	public DisServiceHelloMessage replicate() {
-		DisServiceHelloMessage disServiceHelloMessage = new DisServiceHelloMessage(getFrom(), getID(), getSize(),
+	public IceDimHelloMessage replicate() {
+		IceDimHelloMessage disServiceHelloMessage = new IceDimHelloMessage(getFrom(), getID(), getSize(),
 																					msgIDs, nodeSubscriptionsList);
 		disServiceHelloMessage.copyFrom(this);
 		return disServiceHelloMessage;

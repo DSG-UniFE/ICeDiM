@@ -204,7 +204,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 							"\ntransmissions: " + nrofTransmissions + 
 							"\nstarted: " + nrofStarted + 
 							"\nrelayed: " + nrofRelayed + 
-							"\nduplicated: " + nrofRelayed +
+							"\nduplicated: " + nrofDuplicated +
 							"\naborted: " + nrofAborted +
 							"\ninterfered: " + nrofInterfered +
 							"\nremoved: " + nrofRemoved +

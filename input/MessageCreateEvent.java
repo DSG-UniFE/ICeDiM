@@ -7,8 +7,8 @@ package input;
 import core.DTNHost;
 import core.Message;
 import core.World;
-import core.disService.PublisherSubscriber;
-import core.disService.SubscriptionListManager;
+import core.iceDim.PublisherSubscriber;
+import core.iceDim.SubscriptionListManager;
 
 /**
  * External event for creating a message.

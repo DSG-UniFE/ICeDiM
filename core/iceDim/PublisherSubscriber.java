@@ -1,7 +1,7 @@
 /**
  * 
  */
-package core.disService;
+package core.iceDim;
 
 /**
  * Methods common to any router based on the Publisher/Subscriber Model

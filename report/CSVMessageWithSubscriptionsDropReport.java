@@ -12,7 +12,7 @@ import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
-import core.disService.PublisherSubscriber;
+import core.iceDim.PublisherSubscriber;
 
 /**
  * Reports dropped messages. A new report entry is saved in a table

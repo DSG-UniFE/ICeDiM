@@ -114,7 +114,7 @@ Group.interface1 = btInterface
 Group.messagePriorityStrategy = 1
 Group.messageForwardingOrderManager = 0
 ## Subscription-related settings
-Group.subDisMode = [1]
+Group.subDisMode = [0; 1; 2]
 # If subIDs is specified, other settings are ignored
 # (min/maxNrofSubscriptions and maxSubID are only used for the random generation of subscriptions)
 #Group.subIDs = 1,2,3,4,5

@@ -8,7 +8,7 @@ import routing.MessageRouter.MessageDropMode;
 import core.DTNHost;
 import core.Message;
 import core.MessageListener;
-import core.disService.PublisherSubscriber;
+import core.iceDim.PublisherSubscriber;
 
 /**
  * Reports transferred messages. A new report line is created with

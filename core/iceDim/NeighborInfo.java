@@ -1,4 +1,4 @@
-package core.disService;
+package core.iceDim;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,7 +44,7 @@ public class NeighborInfo {
 		this.intercontactTimes = new ArrayList<Double>();
 	}
 	
-	public void processHelloMessage(DisServiceHelloMessage helloMessage) {
+	public void processHelloMessage(IceDimHelloMessage helloMessage) {
 		incrementPingCount();
 		if (firstActivity < 0.0) {
 			firstActivity = SimClock.getTime();
