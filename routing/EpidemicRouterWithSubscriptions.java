@@ -57,7 +57,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 								" value " + "in the settings file is out of range");
 		}
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) {
+		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
@@ -153,8 +153,8 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 				case STRICT:
 					message = "strict dissemination mode";
 					break;
-				case SEMI_POROUS:
-					message = "message discaded due to a semi-porous strategy";
+				case SEMI_PERMEABLE:
+					message = "message discaded due to a semi-permeable strategy";
 					break;
 				}
 				notifyListenersAboutMessageDelete(incoming, MessageDropMode.DISCARDED, message);

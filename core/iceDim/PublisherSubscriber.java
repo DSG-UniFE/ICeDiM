@@ -13,7 +13,7 @@ public interface PublisherSubscriber {
 	/** All the possible ways a Publisher/Subscriber enabled router can
 	 * change its Dissemination strategy due to the subscriptionIDs of
 	 * messages and the subscriptions of its neighboring nodes */
-	public enum SubscriptionBasedDisseminationMode {STRICT, SEMI_POROUS, FLEXIBLE};
+	public enum SubscriptionBasedDisseminationMode {STRICT, SEMI_PERMEABLE, FLEXIBLE};
 	/** The default value for the Publisher/Subscriber dissemination mode */
 	public static final SubscriptionBasedDisseminationMode DEFAULT_DISSEMINATION_MODE = 
 															SubscriptionBasedDisseminationMode.FLEXIBLE;

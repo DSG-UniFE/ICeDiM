@@ -33,8 +33,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 
 	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
 	private final SubscriptionListManager nodeSubscriptions;
-	private HashMap<String, Boolean> sendMsgSemiPorousFilter;
-	private HashMap<String, Boolean> receiveMsgSemiPorousFilter;
+	private HashMap<String, Boolean> sendMsgSemiPermeableFilter;
+	private HashMap<String, Boolean> receiveMsgSemiPermeableFilter;
 	
 	private final double sendProbability;
 	private final double receiveProbability;
@@ -62,7 +62,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		}
 		
 		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) {
+		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
@@ -72,8 +72,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			this.receiveProbability = (this.pubSubDisseminationMode ==
 										SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
 		}
-		this.sendMsgSemiPorousFilter = new HashMap<String, Boolean>();
-		this.receiveMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		this.sendMsgSemiPermeableFilter = new HashMap<String, Boolean>();
+		this.receiveMsgSemiPermeableFilter = new HashMap<String, Boolean>();
 	}
 	
 	/**
@@ -85,8 +85,8 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		
 		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
-		this.sendMsgSemiPorousFilter = new HashMap<String, Boolean>();
-		this.receiveMsgSemiPorousFilter = new HashMap<String, Boolean>();
+		this.sendMsgSemiPermeableFilter = new HashMap<String, Boolean>();
+		this.receiveMsgSemiPermeableFilter = new HashMap<String, Boolean>();
 		
 		this.sendProbability = r.sendProbability;
 		this.receiveProbability = r.receiveProbability;
@@ -113,16 +113,16 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			switch (pubSubDisseminationMode) {
 			case FLEXIBLE:
 				return super.messageTransferred(msgID, con);
-			case SEMI_POROUS:
-				if (!receiveMsgSemiPorousFilter.containsKey(msgID)) {
-					receiveMsgSemiPorousFilter.put(msgID, Boolean.valueOf(
+			case SEMI_PERMEABLE:
+				if (!receiveMsgSemiPermeableFilter.containsKey(msgID)) {
+					receiveMsgSemiPermeableFilter.put(msgID, Boolean.valueOf(
 							nextRandomDouble() <= receiveProbability));
 				}
 				
-				if (receiveMsgSemiPorousFilter.get(msgID).booleanValue()) {
+				if (receiveMsgSemiPermeableFilter.get(msgID).booleanValue()) {
 					return super.messageTransferred(msgID, con);
 				}
-				message = "semi-porous dissemination mode";
+				message = "semi-permeable dissemination mode";
 				break;
 			case STRICT:
 				message = "strict dissemination mode";
@@ -169,10 +169,10 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		super.update();
 		 
 		/* First, check if there are any new neighbors. */
-		if ((pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_POROUS) &&
+		if ((pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) &&
 			updateNeighborsList()) {
 			// There are new neighbors: change send filter
-			sendMsgSemiPorousFilter.clear();
+			sendMsgSemiPermeableFilter.clear();
 		}
 		
 		 /* Then, try to send the messages that can be delivered to their
@@ -294,13 +294,13 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			return false;
 		case FLEXIBLE:
 			return true;
-		case SEMI_POROUS:
-			if (!sendMsgSemiPorousFilter.containsKey(m.getID())) {
-				sendMsgSemiPorousFilter.put(m.getID(), Boolean.valueOf(
+		case SEMI_PERMEABLE:
+			if (!sendMsgSemiPermeableFilter.containsKey(m.getID())) {
+				sendMsgSemiPermeableFilter.put(m.getID(), Boolean.valueOf(
 											nextRandomDouble() <= sendProbability));
 			}
 			
-			return sendMsgSemiPorousFilter.get(m.getID()).booleanValue();
+			return sendMsgSemiPermeableFilter.get(m.getID()).booleanValue();
 		}
 		
 		return false;
@@ -312,13 +312,13 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			return false;
 		case FLEXIBLE:
 			return true;
-		case SEMI_POROUS:
-			if (!receiveMsgSemiPorousFilter.containsKey(m.getID())) {
-				receiveMsgSemiPorousFilter.put(m.getID(), Boolean.valueOf(
+		case SEMI_PERMEABLE:
+			if (!receiveMsgSemiPermeableFilter.containsKey(m.getID())) {
+				receiveMsgSemiPermeableFilter.put(m.getID(), Boolean.valueOf(
 											nextRandomDouble() <= receiveProbability));
 			}
 			
-			return receiveMsgSemiPorousFilter.get(m.getID()).booleanValue();
+			return receiveMsgSemiPermeableFilter.get(m.getID()).booleanValue();
 		}
 		
 		return false;

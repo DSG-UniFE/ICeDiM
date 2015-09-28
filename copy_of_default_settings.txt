@@ -56,17 +56,17 @@ Scenario.nrofHostGroups = 6
 # activeTimes: Time intervals when the nodes in the group are active (start1, end1, start2, end2, ...)
 # deleteDelivered: if true and the final recipient of a message rejects it because the node had
 #                  already received the message, that message gets deleted from the buffer; default=false
-# messagePriorityStrategy: accepatble values range from 0 to 3:
+# messagePriorityStrategy: acceptable values range from 0 to 3:
 #               0 - random queue - default
 #               1 - FIFO queue
 #               2 - Prioritized FIFO queue (higher priority messages first)
 #               3 - Prioritized LFF FIFO queue (Least Forwarded, higher prioriy, older messages First)
-# messageForwardingOrderManager: accepatble values range from 0 to 1:
+# messageForwardingOrderManager: acceptable values range from 0 to 1:
 #               0 - FIFO Forwarding Manager - default
 #               1 - Exponentially Decaying Probability (EDP) Forwarding Manager
 # subDisMode: defines how subscriptions affect the dissemination strategy:
-#               0 - strict (non-porous channels)
-#               1 - semiPorous (semi-porous channels)
+#               0 - strict (non-permeable channels)
+#               1 - semiPermeable (semi-permeable channels)
 #               2 - flexible (subscriptions do not affect the dissemination strategy) - default
 # subIDRndSeed: the seed for the random number generator that generates subscriptions for each node.
 # minNrofSubscriptions: minimum number of subscriptions for which a node randomly signs up
@@ -77,7 +77,7 @@ Scenario.nrofHostGroups = 6
 #         at the global level); a value of "-1" resets the global defaults specified for subIDs to read
 #         the value of maxSize.
 # msgDissProbability: message dissemination probability - the probability of forwarding a message even if no
-#                    neighbours belong to the same subscription of the message.
+#                    neighbors belong to the same subscription of the message.
 # msgAcceptProbability: message acceptance probability - the probability of storing a received message even if
 #                      if the recipient node does not belong to the message subscription
 #
