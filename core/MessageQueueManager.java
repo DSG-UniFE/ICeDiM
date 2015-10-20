@@ -35,9 +35,9 @@ public class MessageQueueManager {
 	/** The messages this router is carrying */
 	private HashMap<String, Message> messages;
 
-	/** The manager that implements the message forwarding policy */
+	/** Manager that implements the message forwarding policy */
 	private MessageForwardingOrderManager messageForwardingManager;
-	/** Strategy which implements the specified prioritization strategy */
+	/** Strategy that implements the specified prioritization strategy */
 	public MessagePrioritizationStrategy messagePrioritizationStrategy;
 
 	public MessageQueueManager(Settings s) {
@@ -110,17 +110,12 @@ public class MessageQueueManager {
 	}
 	
 	public List<Message> sortBufferedMessagesForForwarding() {
-		List<Message> inputList = getMessageList();
-		// First, sort the list according to the configured priority strategy...
-		messagePrioritizationStrategy.sortList(inputList);
-		
-		// ...and second, return the list reordered according to the forwarding strategy.
-		return messageForwardingManager.orderMessageListForForwarding(inputList);
+		return sortMessageListForForwarding(getMessageList());
 	}
 	
 	public List<Message> sortMessageListForForwarding(List<Message> inputList) {
 		// First, sort the list according to the configured priority strategy...
-		messagePrioritizationStrategy.sortList(inputList);
+		sortByPrioritizationMode(inputList);
 		
 		// ...and second, return the list reordered according to the forwarding strategy.
 		return messageForwardingManager.orderMessageListForForwarding(inputList);

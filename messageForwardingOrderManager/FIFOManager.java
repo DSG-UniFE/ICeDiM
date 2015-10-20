@@ -33,8 +33,7 @@ public class FIFOManager extends MessageForwardingOrderManager {
 			return new ArrayList<Message>(0);
 		}
 		
-		List<Message> orderedList = new ArrayList<Message>(inputList);
-		return orderedList;
+		return new ArrayList<Message>(inputList);
 	}
 
 	@Override
