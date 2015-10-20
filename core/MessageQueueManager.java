@@ -117,8 +117,13 @@ public class MessageQueueManager {
 		// First, sort the list according to the configured priority strategy...
 		sortByPrioritizationMode(inputList);
 		
-		// ...and second, return the list reordered according to the forwarding strategy.
-		return messageForwardingManager.orderMessageListForForwarding(inputList);
+		/* ...and second, return the list reordered according to the forwarding
+		 * strategy. The idea here is that the MessageForwardingManager has the
+		 * last word over the order of the message list that will be returned.
+		 * If the manager does not change the message order, this method will
+		 * return the messages in the order set by the above call to
+		 * sortByPrioritizationMode(inputList). */
+		return sortByForwardingStrategy(inputList);
 	}
 	
 	public int getBufferSize() {
@@ -149,6 +154,10 @@ public class MessageQueueManager {
 	
 	private List<Message> getMessageList() {
 		return new ArrayList<Message>(messages.values());
+	}
+
+	private List<Message> sortByForwardingStrategy(List<Message> inputList) {
+		return messageForwardingManager.orderMessageListForForwarding(inputList);
 	}
 	
 	private void setForwardedTimesToMinAmongMessages(Message m) {
