@@ -10,10 +10,11 @@ import core.DTNHost;
 import core.Message;
 
 /**
- * Class that represent the HELLO Messages exchanged by DisService-based routers
+ * Class that represent the HELLO Messages exchanged by ICeDiM-based routers
  * @author Alessandro Morelli
  *
  */
+ 
 public class IceDimHelloMessage extends Message {
 
 	/**
@@ -55,18 +56,18 @@ public class IceDimHelloMessage extends Message {
 	 * @param m The PrioritizedMessage from where the data is copied
 	 */
 	@SuppressWarnings("unchecked")
-	protected void copyFrom(IceDimHelloMessage disServiceHelloMessage) {
-		super.copyFrom(disServiceHelloMessage);
-		this.msgIDs = (ArrayList<String>) disServiceHelloMessage.msgIDs.clone();
-		this.nodeSubscriptionsList = (ArrayList<Integer>) disServiceHelloMessage.nodeSubscriptionsList.clone();
+	protected void copyFrom(IceDimHelloMessage iceDimHelloMessage) {
+		super.copyFrom(iceDimHelloMessage);
+		this.msgIDs = (ArrayList<String>) iceDimHelloMessage.msgIDs.clone();
+		this.nodeSubscriptionsList = (ArrayList<Integer>) iceDimHelloMessage.nodeSubscriptionsList.clone();
 	}
 	
 	@Override
 	public IceDimHelloMessage replicate() {
-		IceDimHelloMessage disServiceHelloMessage = new IceDimHelloMessage(getFrom(), getID(), getSize(),
-																					msgIDs, nodeSubscriptionsList);
-		disServiceHelloMessage.copyFrom(this);
-		return disServiceHelloMessage;
+		IceDimHelloMessage iceDimHelloMessage = new IceDimHelloMessage(getFrom(), getID(), getSize(),
+                                                                        msgIDs, nodeSubscriptionsList);
+		iceDimHelloMessage.copyFrom(this);
+		return iceDimHelloMessage;
 	}
 
 }

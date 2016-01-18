@@ -464,29 +464,4 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		
 		return retVal;
 	}
-
-	/**
-	 * Tries to deliver any buffered message to any hosts currently
-	 * connected to this host. If a transfer starts, the search ends.
-	 * @return the {@link NetworkInterface} that started the transfer,
-	 * if one was started, or {@code null} otherwise.
-	 */
-	protected NetworkInterface tryAllMessagesToAllConnections() {
-		List<NetworkInterface> networkInterfaces = getIdleNetworkInterfaces();
-		Collections.shuffle(networkInterfaces, RANDOM_GENERATOR);
-		
-		List<Message> messageList = sortListOfMessagesForForwarding(getMessageList());
-		for (NetworkInterface ni : networkInterfaces) {
-			for (Message m : messageList) {
-				if (shouldDeliverMessageToNeighbors(m, ni) &&
-					(tryBroadcastOneMessage(m, ni) == BROADCAST_OK)) {
-					// Transfer using broadcast started
-					return ni;
-				}
-			}
-		}
-		
-		// No transfer could start
-		return null;
-	}
 }

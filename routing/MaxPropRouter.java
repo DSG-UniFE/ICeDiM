@@ -254,7 +254,7 @@ public class MaxPropRouter extends ActiveRouter {
 	 * exludeMsgBeingSent is true)
 	 */
     @Override
-    protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {
+    protected Message getLeastImportantMessageInCache(boolean excludeMsgBeingSent) {
 		List<Message> messages = getMessageList();
 		List<Message> validMessages = new ArrayList<Message>();
 

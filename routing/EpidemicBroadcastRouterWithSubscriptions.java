@@ -31,7 +31,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 	/** identifier for the binary-mode setting ({@value})*/
 	public static final String MESSAGE_ACCEPT_PROBABILITY_S = "msgAcceptProbability";
 
-	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
+	private final ADCMode pubSubDisseminationMode;
 	private final SubscriptionListManager nodeSubscriptions;
 	private HashMap<String, Boolean> sendMsgSemiPermeableFilter;
 	private HashMap<String, Boolean> receiveMsgSemiPermeableFilter;
@@ -53,24 +53,24 @@ public class EpidemicBroadcastRouterWithSubscriptions
 			throw new SimError("Error parsing configuration file");
 		}
 		
-		int subpubDisMode = s.contains(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) ?
-				s.getInt(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) :
-				SubscriptionBasedDisseminationMode.FLEXIBLE.ordinal();
-		if ((subpubDisMode < 0) || (subpubDisMode > SubscriptionBasedDisseminationMode.values().length)) {
-			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S +
+		int subpubDisMode = s.contains(PublisherSubscriber.ADC_MODE_S) ?
+				s.getInt(PublisherSubscriber.ADC_MODE_S) :
+				ADCMode.UNCONSTRAINED.ordinal();
+		if ((subpubDisMode < 0) || (subpubDisMode > ADCMode.values().length)) {
+			throw new SimError(PublisherSubscriber.ADC_MODE_S +
 								" value " + "in the settings file is out of range");
 		}
 		
-		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) {
+		this.pubSubDisseminationMode = ADCMode.values()[subpubDisMode];
+		if (this.pubSubDisseminationMode == ADCMode.SEMI_PERMEABLE) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
 		else {
 			this.sendProbability = (this.pubSubDisseminationMode ==
-									SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
+									ADCMode.UNCONSTRAINED) ? 1.0 : 0.0;
 			this.receiveProbability = (this.pubSubDisseminationMode ==
-										SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
+										ADCMode.UNCONSTRAINED) ? 1.0 : 0.0;
 		}
 		this.sendMsgSemiPermeableFilter = new HashMap<String, Boolean>();
 		this.receiveMsgSemiPermeableFilter = new HashMap<String, Boolean>();
@@ -111,7 +111,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		if (!isMessageDestination(con.getMessage())) {
 			String message = null;
 			switch (pubSubDisseminationMode) {
-			case FLEXIBLE:
+			case UNCONSTRAINED:
 				return super.messageTransferred(msgID, con);
 			case SEMI_PERMEABLE:
 				if (!receiveMsgSemiPermeableFilter.containsKey(msgID)) {
@@ -169,7 +169,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		super.update();
 		 
 		/* First, check if there are any new neighbors. */
-		if ((pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) &&
+		if ((pubSubDisseminationMode == ADCMode.SEMI_PERMEABLE) &&
 			updateNeighborsList()) {
 			// There are new neighbors: change send filter
 			sendMsgSemiPermeableFilter.clear();
@@ -181,7 +181,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		
 		/* If the chosen dissemination mode is strict, then messages can not be
 		 * disseminated to nodes which are not a destination. */
-		if (pubSubDisseminationMode == SubscriptionBasedDisseminationMode.STRICT) {
+		if (pubSubDisseminationMode == ADCMode.STRICT) {
 			return;
 		}
 		
@@ -292,7 +292,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		switch(pubSubDisseminationMode) {
 		case STRICT:
 			return false;
-		case FLEXIBLE:
+		case UNCONSTRAINED:
 			return true;
 		case SEMI_PERMEABLE:
 			if (!sendMsgSemiPermeableFilter.containsKey(m.getID())) {
@@ -310,7 +310,7 @@ public class EpidemicBroadcastRouterWithSubscriptions
 		switch(pubSubDisseminationMode) {
 		case STRICT:
 			return false;
-		case FLEXIBLE:
+		case UNCONSTRAINED:
 			return true;
 		case SEMI_PERMEABLE:
 			if (!receiveMsgSemiPermeableFilter.containsKey(m.getID())) {

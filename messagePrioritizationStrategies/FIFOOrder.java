@@ -13,9 +13,9 @@ import core.Message;
  * @author Alessandro Morelli
  *
  */
-public class FIFOForwardingOrder extends MessagePrioritizationStrategy {
+public class FIFOOrder extends MessageCachingPrioritizationStrategy {
 
-	static FIFOForwardingOrder singletonInstance = null;
+	static FIFOOrder singletonInstance = null;
 	static Comparator<Message> comparator = new Comparator<Message>() {
 		/** Compares two tuples by their messages' receiving time */
 		@Override
@@ -29,16 +29,16 @@ public class FIFOForwardingOrder extends MessagePrioritizationStrategy {
 		}
 	};
 	
-	private FIFOForwardingOrder() {
-		super(MessagePrioritizationStrategy.QueuePrioritizationMode.FIFO);
+	private FIFOOrder() {
+		super(MessageCachingPrioritizationStrategy.CachingPrioritizationMode.FIFO);
 	}
 	
 	/* (non-Javadoc)
 	 * @see messagePrioritizationStrategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
 	 */
-	static FIFOForwardingOrder getForwardingOrderInstance() {
+	static FIFOOrder getOrderingInstance() {
 		if (singletonInstance == null) {
-			singletonInstance = new FIFOForwardingOrder();
+			singletonInstance = new FIFOOrder();
 		}
 		
 		return singletonInstance;
@@ -46,7 +46,7 @@ public class FIFOForwardingOrder extends MessagePrioritizationStrategy {
 	
 	@Override
 	public void sortList(List<Message> inputList) {
-		Collections.sort(inputList, FIFOForwardingOrder.comparator);
+		Collections.sort(inputList, FIFOOrder.comparator);
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public class FIFOForwardingOrder extends MessagePrioritizationStrategy {
 
 	@Override
 	public int comparatorMethod(Message m1, Message m2) {
-		return FIFOForwardingOrder.comparator.compare(m1, m2);
+		return FIFOOrder.comparator.compare(m1, m2);
 	}
 
 }

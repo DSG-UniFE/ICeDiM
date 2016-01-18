@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = %%Group.router%%_DissMode%%Group.subDisMode%%
+Scenario.name = %%Group.router%%_DissMode%%Group.adcMode%%
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 46800s == 13h
@@ -56,18 +56,18 @@ Scenario.nrofHostGroups = 6
 # activeTimes: Time intervals when the nodes in the group are active (start1, end1, start2, end2, ...)
 # deleteDelivered: if true and the final recipient of a message rejects it because the node had
 #                  already received the message, that message gets deleted from the buffer; default=false
-# messagePriorityStrategy: acceptable values range from 0 to 3:
+# cachingPrioritizationStrategy: acceptable values range from 0 to 3:
 #               0 - random queue - default
 #               1 - FIFO queue
 #               2 - Prioritized FIFO queue (higher priority messages first)
 #               3 - Prioritized LFF FIFO queue (Least Forwarded, higher prioriy, older messages First)
-# messageForwardingOrderManager: acceptable values range from 0 to 1:
+# messageForwardingOrderStrategy: acceptable values range from 0 to 1:
 #               0 - FIFO Forwarding Manager - default
 #               1 - Exponentially Decaying Probability (EDP) Forwarding Manager
-# subDisMode: defines how subscriptions affect the dissemination strategy:
+# adcMode: defines how subscriptions affect the dissemination strategy:
 #               0 - strict (non-permeable channels)
 #               1 - semiPermeable (semi-permeable channels)
-#               2 - flexible (subscriptions do not affect the dissemination strategy) - default
+#               2 - unconstrained (subscriptions do not affect the dissemination strategy) - default
 # subIDRndSeed: the seed for the random number generator that generates subscriptions for each node.
 # subIDRndDistribution: Defines the distribution of the number of subscriptions to which each
 #                       node belongs. acceptable values range from 0 to 1:
@@ -111,10 +111,10 @@ Group.routerRndSeed = 99
 Group.nrofInterfaces = 1
 Group.interface1 = btInterface
 # Walking speed as default
-Group.messagePriorityStrategy = 1
-Group.messageForwardingOrderManager = 0
+Group.cachingPrioritizationStrategy = 1
+Group.messageForwardingOrderStrategy = 0
 ## Subscription-related settings
-Group.subDisMode = [0; 1; 2]
+Group.adcMode = [0; 1; 2]
 # If subIDs is specified, other settings are ignored
 # (min/maxNrofSubscriptions and maxSubID are only used for the random generation of subscriptions)
 #Group.subIDs = 1,2,3,4,5

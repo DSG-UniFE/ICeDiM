@@ -3,29 +3,30 @@ package messageForwardingOrderManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import messagePrioritizationStrategies.MessagePrioritizationStrategy;
+import messagePrioritizationStrategies.MessageCachingPrioritizationStrategy;
 
 import org.uncommons.maths.random.MersenneTwisterRNG;
 
 import core.DTNSim;
 import core.Message;
-import core.MessageQueueManager;
+import core.MessageCacheManager;
 import core.SeedGeneratorHelper;
 import core.Settings;
 import core.SimError;
 
 /**
- * {@link ExponentiallyDecayingManager} offers first messages,
- * as ordered by the MessageOrdering strategy, with a higher
- * probability.
- * Therefore, the ProbabilisticManager fosters dissemination
- * of messages with the highest priority, while it tries to
- * prevent starvation of lower priority messages.
+ * {@link ExponentiallyDecayingForwardingOrder} reorder the list passed in
+ * as a parameter in a probabilistic manner.
+ * This message forwarding manager assigns higher probabilities of being
+ * located in the first places of the resulting list to items that are
+ * in the first positions of the list passed in as a parameter.
+ * So, this manager takes into account the current order of items, while
+ * it also tries to prevent starvation of messages located near the end.
  * 
  * @author Alessandro Morelli
  *
  */
-public class ExponentiallyDecayingManager extends MessageForwardingOrderManager {
+public class ExponentiallyDecayingForwardingOrder extends MessageForwardingOrderManager {
 
 	/** Random number generator */
 	static MersenneTwisterRNG RANDOM_GENERATOR = null;
@@ -34,7 +35,7 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 	
 	
 	static {
-		DTNSim.registerForReset(ExponentiallyDecayingManager.class.getCanonicalName());
+		DTNSim.registerForReset(ExponentiallyDecayingForwardingOrder.class.getCanonicalName());
 		reset();
 	}
 	
@@ -46,9 +47,10 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 		RANDOM_GENERATOR = null;
 	}
 	
-	public ExponentiallyDecayingManager(Settings s, MessageQueueManager queueManager,
-										MessagePrioritizationStrategy orderingStrategy) {
-		super(MessageForwardingManagerImplementation.EDP_MANAGER, queueManager, orderingStrategy);
+	public ExponentiallyDecayingForwardingOrder(Settings s, MessageCacheManager cacheManager,
+							MessageCachingPrioritizationStrategy cachingPrioritizationStrategy) {
+		super(MessageForwardingOrderStrategy.EXP_DEC_ORDER, cacheManager,
+				cachingPrioritizationStrategy);
 		
 		if (RANDOM_GENERATOR == null) {
 			// Singleton
@@ -57,7 +59,7 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 		}
 	}
 
-	public ExponentiallyDecayingManager(ExponentiallyDecayingManager
+	public ExponentiallyDecayingForwardingOrder(ExponentiallyDecayingForwardingOrder
 										exponentiallyDecayingManager) {
 		super(exponentiallyDecayingManager);
 	}
@@ -79,10 +81,10 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 	/**
 	 * Computes a new probability vector according to the order and
 	 * the number of Messages in the list passed as parameter.
-	 * @param messageList the list of Messages used by the
-	 * method to build a new probability vector.
+	 * @param messageListSize the size of the list of Messages used
+	 * by the method to build a new probability vector.
 	 * @return a {@code List<Double>} which represents the
-	 * computed probability vector of the Message list in input.
+	 * computed probability vector of the list in input.
 	 */
 	private List<Double> computeProbabilityVector(int messageListSize) {
 		ArrayList<Double> probVector = new ArrayList<Double>(messageListSize);
@@ -185,7 +187,7 @@ public class ExponentiallyDecayingManager extends MessageForwardingOrderManager 
 
 	@Override
 	public MessageForwardingOrderManager replicate() {
-		return new ExponentiallyDecayingManager(this);
+		return new ExponentiallyDecayingForwardingOrder(this);
 	}
 
 }

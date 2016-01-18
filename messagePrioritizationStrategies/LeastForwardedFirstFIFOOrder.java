@@ -13,9 +13,9 @@ import core.Message;
  * @author Alessandro Morelli
  *
  */
-public class LeastForwardedFirstForwardingOrder extends MessagePrioritizationStrategy {
+public class LeastForwardedFirstFIFOOrder extends MessageCachingPrioritizationStrategy {
 	
-	static LeastForwardedFirstForwardingOrder singletonInstance = null;
+	static LeastForwardedFirstFIFOOrder singletonInstance = null;
 	static Comparator<Message> comparator = new Comparator<Message>() {
 		/** Compares two tuples by their messages' receiving time, priority,
 		 *  and the number of times they were forwarded */
@@ -62,31 +62,31 @@ public class LeastForwardedFirstForwardingOrder extends MessagePrioritizationStr
 		}
 	};
 
-	static LeastForwardedFirstForwardingOrder getForwardingOrderInstance() {
+	static LeastForwardedFirstFIFOOrder getOrderingInstance() {
 		if (singletonInstance == null) {
-			singletonInstance = new LeastForwardedFirstForwardingOrder();
+			singletonInstance = new LeastForwardedFirstFIFOOrder();
 		}
 		
 		return singletonInstance;
 	}
 	
-	private LeastForwardedFirstForwardingOrder() {
-		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Prioritized_LFF_FIFO);
+	private LeastForwardedFirstFIFOOrder() {
+		super(MessageCachingPrioritizationStrategy.CachingPrioritizationMode.Prioritized_LFF_FIFO);
 	}
 	
 	@Override
 	public void sortList(List<Message> inputList) {
-		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.comparator);
+		Collections.sort(inputList, LeastForwardedFirstFIFOOrder.comparator);
 	}
 
 	@Override
 	public void sortListInReverseOrder(List<Message> inputList) {
-		Collections.sort(inputList, LeastForwardedFirstForwardingOrder.reverseOrderComparator);
+		Collections.sort(inputList, LeastForwardedFirstFIFOOrder.reverseOrderComparator);
 	}
 	
 	@Override
 	public int comparatorMethod(Message m1, Message m2) {
-		return LeastForwardedFirstForwardingOrder.comparator.compare(m1, m2);
+		return LeastForwardedFirstFIFOOrder.comparator.compare(m1, m2);
 	}
 	
 }

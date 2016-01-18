@@ -33,7 +33,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 	private final double receiveProbability;
 
 	private SubscriptionListManager nodeSubscriptions;
-	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
+	private final ADCMode adcMode;
 	
 	/**
 	 * Constructor. Creates a new message router based on the settings in
@@ -49,23 +49,22 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 			throw new SimError("Error parsing configuration file");
 		}
 		
-		int subpubDisMode = s.contains(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) ?
-				s.getInt(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) :
-				SubscriptionBasedDisseminationMode.FLEXIBLE.ordinal();
-		if ((subpubDisMode < 0) || (subpubDisMode > SubscriptionBasedDisseminationMode.values().length)) {
-			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S +
-								" value " + "in the settings file is out of range");
+		int subpubDisMode = s.contains(PublisherSubscriber.ADC_MODE_S) ?
+				s.getInt(PublisherSubscriber.ADC_MODE_S) : ADCMode.UNCONSTRAINED.ordinal();
+		if ((subpubDisMode < 0) || (subpubDisMode > ADCMode.values().length)) {
+			throw new SimError(PublisherSubscriber.ADC_MODE_S + " value " +
+								"in the settings file is out of range");
 		}
-		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) {
-			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
-			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
+		this.adcMode = ADCMode.values()[subpubDisMode];
+		if (this.adcMode == ADCMode.SEMI_PERMEABLE) {
+			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ?
+					s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
+			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ?
+					s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
 		else {
-			this.sendProbability = (this.pubSubDisseminationMode ==
-									SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
-			this.receiveProbability = (this.pubSubDisseminationMode ==
-										SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
+			this.sendProbability = (this.adcMode == ADCMode.UNCONSTRAINED) ? 1.0 : 0.0;
+			this.receiveProbability = (this.adcMode == ADCMode.UNCONSTRAINED) ? 1.0 : 0.0;
 		}
 	}
 	
@@ -78,7 +77,7 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 		
 		this.sendProbability = r.sendProbability;
 		this.receiveProbability = r.receiveProbability;
-		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
+		this.adcMode = r.adcMode;
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
 	}
 
@@ -90,9 +89,6 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 	@Override
 	public void update() {
 		super.update();
-		if (isTransferring() || !canBeginNewTransfer()) {
-			return; // transferring, don't try other connections yet
-		}
 		
 		/* First, try to send the messages that can be delivered to their
 		 * final recipient; this is consistent with any dissemination policy.
@@ -147,8 +143,8 @@ public class EpidemicRouterWithSubscriptions extends ActiveRouter
 				// remove message from receiving interface and refuse message
 				Message incoming = con.getReceiverInterface().retrieveTransferredMessage(id, con);
 				String message = null; 
-				switch (pubSubDisseminationMode) {
-				case FLEXIBLE:
+				switch (adcMode) {
+				case UNCONSTRAINED:
 					throw new SimError("message refuse despite FLEXIBLE strategy was set");
 				case STRICT:
 					message = "strict dissemination mode";

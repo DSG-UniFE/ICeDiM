@@ -34,7 +34,7 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 	
 	protected HelloMessageGen hmGenerator;
 	protected SubscriptionListManager nodeSubscriptions;
-	public final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
+	public final ADCMode pubSubDisseminationMode;
 
 	public IceDimRouter(Settings s) {
 		super(s);
@@ -56,14 +56,13 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 		} catch (ParseException e) {
 			throw new SimError("Error parsing configuration file");
 		}
-		int subpubDisMode = s.contains(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) ?
-							s.getInt(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) :
-							SubscriptionBasedDisseminationMode.FLEXIBLE.ordinal();
-		if ((subpubDisMode < 0) || (subpubDisMode > SubscriptionBasedDisseminationMode.values().length)) {
-			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S + " value " +
+		int subpubDisMode = s.contains(PublisherSubscriber.ADC_MODE_S) ?
+							s.getInt(PublisherSubscriber.ADC_MODE_S) : ADCMode.UNCONSTRAINED.ordinal();
+		if ((subpubDisMode < 0) || (subpubDisMode > ADCMode.values().length)) {
+			throw new SimError(PublisherSubscriber.ADC_MODE_S + " value " +
 								"in the settings file is out of range");
 		}
-		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
+		this.pubSubDisseminationMode = ADCMode.values()[subpubDisMode];
 		
 		this.hmGenerator = new HelloMessageGen(this.receivedMsgIDs, this.nodeSubscriptions);
 	}
@@ -187,7 +186,7 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 	/**
 	 * Tries to send all messages that this router is carrying to all
 	 * connections this node has. Messages are ordered using the 
-	 * {@link MessageRouter#sortByPrioritizationMode(List)}. See 
+	 * {@link MessageRouter#sortByCachingPrioritizationStrategy(List)}. See 
 	 * {@link #tryBroadcastOneMessage(List, List)} for sending details.
 	 * @return The connections that started a transfer or null if no connection
 	 * accepted a message.

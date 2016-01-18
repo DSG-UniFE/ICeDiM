@@ -16,9 +16,9 @@ import core.Tuple;
  * @author Alessandro Morelli
  *
  */
-public class PrioritizedFIFOForwardingOrder extends MessagePrioritizationStrategy {
+public class PrioritizedFIFOOrder extends MessageCachingPrioritizationStrategy {
 
-	static PrioritizedFIFOForwardingOrder singletonInstance = null;
+	static PrioritizedFIFOOrder singletonInstance = null;
 	static Comparator<Message> comparator = new Comparator<Message>() {
 		/** Compares two tuples by their messages' receiving time, priority,
 		 *  and the number of times they were forwarded */
@@ -67,16 +67,16 @@ public class PrioritizedFIFOForwardingOrder extends MessagePrioritizationStrateg
 		}
 	};
 	
-	private PrioritizedFIFOForwardingOrder() {
-		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Prioritized_FIFO);
+	private PrioritizedFIFOOrder() {
+		super(MessageCachingPrioritizationStrategy.CachingPrioritizationMode.Prioritized_FIFO);
 	}
 	
 	/* (non-Javadoc)
 	 * @see messagePrioritizationStrategies.MessageForwardingOrderStrategy#MessageProcessingOrder(java.util.List)
 	 */
-	static PrioritizedFIFOForwardingOrder getForwardingOrderInstance() {
+	static PrioritizedFIFOOrder getOrderingInstance() {
 		if (singletonInstance == null) {
-			singletonInstance = new PrioritizedFIFOForwardingOrder();
+			singletonInstance = new PrioritizedFIFOOrder();
 		}
 		
 		return singletonInstance;
@@ -84,17 +84,17 @@ public class PrioritizedFIFOForwardingOrder extends MessagePrioritizationStrateg
 
 	@Override
 	public void sortList(List<Message> inputList) {
-		Collections.sort(inputList, PrioritizedFIFOForwardingOrder.comparator);
+		Collections.sort(inputList, PrioritizedFIFOOrder.comparator);
 	}
 
 	@Override
 	public void sortListInReverseOrder(List<Message> inputList) {
-		Collections.sort(inputList, PrioritizedFIFOForwardingOrder.reverseOrderComparator);
+		Collections.sort(inputList, PrioritizedFIFOOrder.reverseOrderComparator);
 	}
 	
 	@Override
 	public int comparatorMethod(Message m1, Message m2) {
-		return PrioritizedFIFOForwardingOrder.comparator.compare(m1, m2);
+		return PrioritizedFIFOOrder.comparator.compare(m1, m2);
 	}
 	
 }

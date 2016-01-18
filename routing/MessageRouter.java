@@ -20,7 +20,7 @@ import core.DTNSim;
 import core.InterferenceModel;
 import core.Message;
 import core.MessageListener;
-import core.MessageQueueManager;
+import core.MessageCacheManager;
 import core.NetworkInterface;
 import core.SeedGeneratorHelper;
 import core.Settings;
@@ -73,8 +73,8 @@ public abstract class MessageRouter {
 	protected final int msgTTL;
 	/** List of current neighbors */
 	private HashSet<DTNHost> neighborsList;
-	/** Message queueing manager */
-	private MessageQueueManager messageQueueManager;
+	/** Message cache manager */
+	private MessageCacheManager messageCacheManager;
 	/** List of listeners for logging purposes */
 	protected List<MessageListener> mListeners;
 	/** The messages this router has received as the final recipient */
@@ -117,7 +117,7 @@ public abstract class MessageRouter {
 	 */
 	public MessageRouter(Settings s) {
 		this.msgTTL = s.contains(MSG_TTL_S) ? s.getInt(MSG_TTL_S) : Message.INFINITE_TTL;
-		this.messageQueueManager = new MessageQueueManager(s);
+		this.messageCacheManager = new MessageCacheManager(s);
 		this.applications = new HashMap<String, Collection<Application>>();
 		
 		if (RANDOM_GENERATOR == null) {
@@ -134,7 +134,7 @@ public abstract class MessageRouter {
 	 */
 	protected MessageRouter(MessageRouter r) {
 		this.msgTTL = r.msgTTL;
-		this.messageQueueManager = new MessageQueueManager(r.messageQueueManager);
+		this.messageCacheManager = new MessageCacheManager(r.messageCacheManager);
 		
 		this.applications = new HashMap<String, Collection<Application>>();		
 		for (Collection<Application> apps : r.applications.values()) {
@@ -229,6 +229,8 @@ public abstract class MessageRouter {
 				newNeighbors |= !neighborsList.contains(neighbor);
 			}
 		}
+		// TODO: Update neighborsList according to received HELLO messages
+		//neighborsList = presentList;
 		
 		return newNeighbors;
 	}
@@ -431,7 +433,7 @@ public abstract class MessageRouter {
 	 * @return How many messages this router has
 	 */
 	final public int getNrofMessages() {
-		return messageQueueManager.getNumberOfMessages();
+		return messageCacheManager.getNumberOfMessages();
 	}
 
 	/**
@@ -465,11 +467,11 @@ public abstract class MessageRouter {
 	 * message, if false, nothing is informed.
 	 */
 	final protected void addToMessages(Message m) {
-		if (messageQueueManager.hasMessage(m)) {
+		if (messageCacheManager.hasMessage(m)) {
 			return;
 		}
 		
-		messageQueueManager.addMessageToQueue(m);
+		messageCacheManager.addMessageToQueue(m);
 	}
 
 	/**
@@ -478,19 +480,18 @@ public abstract class MessageRouter {
 	 * @return The message
 	 */
 	final protected Message getMessage(String msgID) {
-		return messageQueueManager.getMessage(msgID);
+		return messageCacheManager.getMessage(msgID);
 	}
 
 	/**
-	 * Returns a reference to the messages of this router in collection.
-	 * <b>Note:</b> If there's a chance that some message(s) from the collection
-	 * could be deleted (or added) while iterating through the collection, a
-	 * copy of the collection should be made to avoid concurrent modification
-	 * exceptions. 
-	 * @return a reference to the messages of this router in collection
+	 * Returns a shallow copy of the list of messages in cache.
+	 * Being a shallow copy, items in this list point to the
+	 * actual messages in cache. However, deletion of elements
+	 * from the list does not delete messages from cache.
+	 * @return a shallow copy of the list of messages in cache.
 	 */
 	final public List<Message> getMessageList() {
-		return new ArrayList<Message>(messageQueueManager.getMessageCollection());
+		return new ArrayList<Message>(messageCacheManager.getMessageCollection());
 	}
 
 	/**
@@ -499,7 +500,7 @@ public abstract class MessageRouter {
 	 * @return True if the router has message with this id, false if not
 	 */
 	final protected boolean hasMessage(String msgID) {
-		return messageQueueManager.hasMessage(msgID);
+		return messageCacheManager.hasMessage(msgID);
 	}
 
 	/**
@@ -579,7 +580,7 @@ public abstract class MessageRouter {
 	 * @return The removed message or null if message for the ID wasn't found
 	 */
 	private Message removeFromMessages(String msgID) {
-		return messageQueueManager.removeMessage(msgID);
+		return messageCacheManager.removeMessage(msgID);
 	}
 
 	/**
@@ -647,7 +648,7 @@ public abstract class MessageRouter {
 	 * @return The size or Integer.MAX_VALUE if the size isn't defined.
 	 */
 	final public int getBufferSize() {
-		return messageQueueManager.getBufferSize();
+		return messageCacheManager.getBufferSize();
 	}
 
 	/**
@@ -658,7 +659,7 @@ public abstract class MessageRouter {
 	 * size isn't defined)
 	 */
 	final public int getFreeBufferSize() {
-		return messageQueueManager.getFreeBufferSize();
+		return messageCacheManager.getFreeBufferSize();
 	}
 
 	/**
@@ -670,7 +671,7 @@ public abstract class MessageRouter {
 	 *          message should come first, or 0 if the ordering isn't defined
 	 */
 	protected int compareMessagesByQueueMode(Message m1, Message m2) {
-		return messageQueueManager.compareByPrioritizationMode(m1, m2);
+		return messageCacheManager.compareByPrioritizationMode(m1, m2);
 	}
 
 	/**
@@ -680,7 +681,7 @@ public abstract class MessageRouter {
 	 * according to the current message prioritization strategy.
 	 */
 	protected List<Message> sortAllReceivedMessagesForForwarding() {
-		return messageQueueManager.sortBufferedMessagesForForwarding();
+		return messageCacheManager.sortBufferedMessagesForForwarding();
 	}
 
 	/**
@@ -689,7 +690,7 @@ public abstract class MessageRouter {
 	 * @return The sorted list
 	 */
 	protected List<Message> sortListOfMessagesForForwarding(List<Message> inputList) {
-		return messageQueueManager.sortMessageListForForwarding(inputList);
+		return messageCacheManager.sortMessageListForForwarding(inputList);
 	}
 
 	/**
@@ -700,7 +701,7 @@ public abstract class MessageRouter {
 	 * @return The list sorted in reverse order
 	 */
 	protected List<Message> getListOfMessagesInReversePriorityOrder(List<Message> inputList) {
-		messageQueueManager.sortByReversedPrioritizationMode(inputList);
+		messageCacheManager.sortByReversedPrioritizationMode(inputList);
 		return inputList;
 	}
 
@@ -714,7 +715,7 @@ public abstract class MessageRouter {
 	 * (no messages in buffer or all messages in buffer are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
-	protected Message getLeastImportantMessageInQueue(boolean excludeMsgBeingSent) {		
+	protected Message getLeastImportantMessageInCache(boolean excludeMsgBeingSent) {		
 		List<Message> sortedList = getListOfMessagesInReversePriorityOrder(getMessageList());
 		
 		// Traverse the list in order and return the first available message
@@ -939,7 +940,7 @@ public abstract class MessageRouter {
 		// delete messages from the buffer until there's enough space
 		while (freeBuffer < size) {
 			// can't remove messages being sent --> use true as parameter
-			Message m = getLeastImportantMessageInQueue(true);
+			Message m = getLeastImportantMessageInCache(true);
 			if ((m == null) || (m.getPriority() > priority)) {
 				// can't remove any more messages
 				break;

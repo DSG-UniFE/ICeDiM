@@ -16,15 +16,15 @@ import core.SeedGeneratorHelper;
  * @author Alessandro Morelli
  *
  */
-public class RandomForwardingOrder extends MessagePrioritizationStrategy {
+public class RandomOrder extends MessageCachingPrioritizationStrategy {
 
-	static private RandomForwardingOrder singletonInstance = null;
+	static private RandomOrder singletonInstance = null;
 	static private MersenneTwisterRNG RandomGenerator = null;
 	static private final int RandomGeneratorSeed = 1043;
 
 	
 	static {
-		DTNSim.registerForReset(RandomForwardingOrder.class.getCanonicalName());
+		DTNSim.registerForReset(RandomOrder.class.getCanonicalName());
 		reset();
 	}
 	
@@ -36,9 +36,9 @@ public class RandomForwardingOrder extends MessagePrioritizationStrategy {
 		RandomGenerator = null;
 	}
 	
-	static RandomForwardingOrder getForwardingOrderInstance() {
+	static RandomOrder getOrderingInstance() {
 		if (singletonInstance == null) {
-			singletonInstance = new RandomForwardingOrder();
+			singletonInstance = new RandomOrder();
 			RandomGenerator = new MersenneTwisterRNG(
 					SeedGeneratorHelper.get16BytesSeedFromValue(RandomGeneratorSeed));
 		}
@@ -46,8 +46,8 @@ public class RandomForwardingOrder extends MessagePrioritizationStrategy {
 		return singletonInstance;
 	}
 	
-	private RandomForwardingOrder() {
-		super(MessagePrioritizationStrategy.QueuePrioritizationMode.Random);
+	private RandomOrder() {
+		super(MessageCachingPrioritizationStrategy.CachingPrioritizationMode.Random);
 	}
 	
 	@Override

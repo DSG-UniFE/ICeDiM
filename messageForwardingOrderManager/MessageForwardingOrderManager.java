@@ -5,9 +5,9 @@ package messageForwardingOrderManager;
 
 import java.util.List;
 
-import messagePrioritizationStrategies.MessagePrioritizationStrategy;
+import messagePrioritizationStrategies.MessageCachingPrioritizationStrategy;
 import core.Message;
-import core.MessageQueueManager;
+import core.MessageCacheManager;
 import core.Settings;
 import core.SimError;
 
@@ -19,46 +19,47 @@ import core.SimError;
  */
 public abstract class MessageForwardingOrderManager {
 	
-	public enum MessageForwardingManagerImplementation {FIFO_MANAGER, EDP_MANAGER};
+	public enum MessageForwardingOrderStrategy {ORDER_UNCHANGED, EXP_DEC_ORDER};
 	
-	private MessageForwardingManagerImplementation managerType;
-	protected MessageQueueManager messageQueueManager;
-	protected MessagePrioritizationStrategy messageOrderingStrategy;
+	private MessageForwardingOrderStrategy forwardingOrderStrategy;
+	protected MessageCacheManager messageCacheManager;
+	protected MessageCachingPrioritizationStrategy messageCachingPrioritizationStrategy;
 
 
 	/**
 	 * Creates the correct {@link MessageForwardingOrderManager} instance
 	 * according to the parameters passed
-	 * @param messageForwardingManagerImplementation the manager type to instantiate
-	 * @param queueManager the queueing manager that buffers messages
-	 * @param orderingStrategy the strategy to order queued messages
+	 * @param messageforwardingOrderStrategy the ordering algorithm to use
+	 * @param cacheManager the caching manager that stores messages
+	 * @param cachingPrioritizationStrategy the strategy to prioritize cached messages
 	 * @return the correct instance of a {@link MessageForwardingOrderManager}
 	 */
 	public static MessageForwardingOrderManager messageForwardingManagerFactory(Settings s,
-		MessageForwardingManagerImplementation messageForwardingManagerImplementation,
-		MessageQueueManager queueManager, MessagePrioritizationStrategy orderingStrategy) {
-		switch (messageForwardingManagerImplementation) {
-		case FIFO_MANAGER:
-			return new FIFOManager(s, queueManager, orderingStrategy);
-		case EDP_MANAGER:
-			return new ExponentiallyDecayingManager(s, queueManager, orderingStrategy);
+		MessageForwardingOrderStrategy messageforwardingOrderStrategy,
+		MessageCacheManager cacheManager,
+		MessageCachingPrioritizationStrategy cachingPrioritizationStrategy) {
+		switch (messageforwardingOrderStrategy) {
+		case ORDER_UNCHANGED:
+			return new UnchangedForwardingOrder(s, cacheManager, cachingPrioritizationStrategy);
+		case EXP_DEC_ORDER:
+			return new ExponentiallyDecayingForwardingOrder(s, cacheManager, cachingPrioritizationStrategy);
 		default:
 			throw new SimError("Wrong messageForwardingManager type");
 		}
 	}
 	
-	public MessageForwardingOrderManager(MessageForwardingManagerImplementation managerType,
-											MessageQueueManager queueManager,
-											MessagePrioritizationStrategy orderingStrategy) {
-		this.managerType = managerType;
-		this.messageQueueManager = queueManager;
-		this.messageOrderingStrategy = orderingStrategy;
+	public MessageForwardingOrderManager(MessageForwardingOrderStrategy managerType,
+			MessageCacheManager cacheManager,
+			MessageCachingPrioritizationStrategy cachingPrioritizationStrategy) {
+		this.forwardingOrderStrategy = managerType;
+		this.messageCacheManager = cacheManager;
+		this.messageCachingPrioritizationStrategy = cachingPrioritizationStrategy;
 	}
 	
 	public MessageForwardingOrderManager(MessageForwardingOrderManager r) {
-		this.managerType = r.managerType;
-		this.messageQueueManager = r.messageQueueManager;
-		this.messageOrderingStrategy = r.messageOrderingStrategy;
+		this.forwardingOrderStrategy = r.forwardingOrderStrategy;
+		this.messageCacheManager = r.messageCacheManager;
+		this.messageCachingPrioritizationStrategy = r.messageCachingPrioritizationStrategy;
 	}
 	
 	/**
@@ -68,19 +69,19 @@ public abstract class MessageForwardingOrderManager {
 	public abstract MessageForwardingOrderManager replicate();
 
 	/**
-	 * Returns an instance of {@link MessageForwardingManagerImplementation}
+	 * Returns an instance of {@link MessageForwardingOrderStrategy}
 	 * representing the type of {@link MessageForwardingOrderManager}.
-	 * @return the instance of {@link MessageForwardingManagerImplementation}
+	 * @return the instance of {@link MessageForwardingOrderStrategy}
 	 * representing the type of the current {@link MessageForwardingOrderManager}
 	 */
-	MessageForwardingManagerImplementation getManagerType() {
-		return managerType;
+	MessageForwardingOrderStrategy getManagerType() {
+		return forwardingOrderStrategy;
 	}
 
 	/**
 	 * Returns a new list of Messages containing all the
 	 * Messages belonging to the list passed as parameter
-	 * and ordered accoding to the specified implementation.
+	 * and ordered according to the specified implementation.
 	 * @param inputList the {@code List<Message>} to order. 
 	 * @return the ordered List of Messages.
 	 */

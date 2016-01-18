@@ -21,8 +21,9 @@ import core.iceDim.PublisherSubscriber;
 import core.iceDim.SubscriptionListManager;
 
 /**
- * Implementation of Spray and Wait Router as depicted in 
- * <I>Spray and Wait: An Efficient Routing Scheme for Intermittently
+ * Implementation of a pub/sub broadcast version of the Spray and Wait
+ * Routing algorithm, first introduced in
+ * * <I>Spray and Wait: An Efficient Routing Scheme for Intermittently
  * Connected Mobile Networks</I> by Thrasyvoulos Spyropoulus et al.
  *
  */
@@ -45,7 +46,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	protected boolean isBinary;
 	
 	private SubscriptionListManager nodeSubscriptions;
-	private final SubscriptionBasedDisseminationMode pubSubDisseminationMode;
+	private final ADCMode adcMode;
 	private HashMap<String, Boolean> sendMsgSemiPermeableFilter;
 	private HashMap<String, Boolean> receiveMsgSemiPermeableFilter;
 
@@ -65,24 +66,21 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		this.initialNrofCopies = snwSettings.getInt(NROF_COPIES_S);
 		this.isBinary = snwSettings.getBoolean(BINARY_MODE_S);
 		
-		int subpubDisMode = s.contains(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) ?
-							s.getInt(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S) :
-							SubscriptionBasedDisseminationMode.FLEXIBLE.ordinal();
-		if ((subpubDisMode < 0) || (subpubDisMode > SubscriptionBasedDisseminationMode.values().length)) {
-			throw new SimError(PublisherSubscriber.SUBSCRIPTION_BASED_DISSEMINATION_MODE_S + " value " +
+		int subpubDisMode = s.contains(PublisherSubscriber.ADC_MODE_S) ?
+							s.getInt(PublisherSubscriber.ADC_MODE_S) : ADCMode.UNCONSTRAINED.ordinal();
+		if ((subpubDisMode < 0) || (subpubDisMode > ADCMode.values().length)) {
+			throw new SimError(PublisherSubscriber.ADC_MODE_S + " value " +
 								"in the settings file is out of range");
 		}
-		this.pubSubDisseminationMode = SubscriptionBasedDisseminationMode.values()[subpubDisMode];
+		this.adcMode = ADCMode.values()[subpubDisMode];
 		
-		if (this.pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) {
+		if (this.adcMode == ADCMode.SEMI_PERMEABLE) {
 			this.sendProbability = s.contains(MESSAGE_DISSEMINATION_PROBABILITY_S) ? s.getDouble(MESSAGE_DISSEMINATION_PROBABILITY_S) : 0.5;
 			this.receiveProbability = s.contains(MESSAGE_ACCEPT_PROBABILITY_S) ? s.getDouble(MESSAGE_ACCEPT_PROBABILITY_S) : 0.5;
 		}
 		else {
-			this.sendProbability = (this.pubSubDisseminationMode ==
-									SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
-			this.receiveProbability = (this.pubSubDisseminationMode ==
-										SubscriptionBasedDisseminationMode.FLEXIBLE) ? 1.0 : 0.0;
+			this.sendProbability = (this.adcMode == ADCMode.UNCONSTRAINED) ? 1.0 : 0.0;
+			this.receiveProbability = (this.adcMode == ADCMode.UNCONSTRAINED) ? 1.0 : 0.0;
 		}
 		this.sendMsgSemiPermeableFilter = new HashMap<String, Boolean>();
 		this.receiveMsgSemiPermeableFilter = new HashMap<String, Boolean>();
@@ -98,7 +96,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		this.initialNrofCopies = r.initialNrofCopies;
 		this.isBinary = r.isBinary;
 		
-		this.pubSubDisseminationMode = r.pubSubDisseminationMode;
+		this.adcMode = r.adcMode;
 		this.nodeSubscriptions = r.nodeSubscriptions.replicate();
 		this.sendMsgSemiPermeableFilter = new HashMap<String, Boolean>();
 		this.receiveMsgSemiPermeableFilter = new HashMap<String, Boolean>();
@@ -134,8 +132,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		Integer nrofCopies = (Integer) con.getMessage().getProperty(MSG_COUNT_PROPERTY);
 		if (!isMessageDestination(con.getMessage())) {
 			String message = null;
-			switch (pubSubDisseminationMode) {
-			case FLEXIBLE:
+			switch (adcMode) {
+			case UNCONSTRAINED:
 				return acceptMessage(msgID, con);
 			case SEMI_PERMEABLE:
 				if (nrofCopies > 1) {
@@ -224,8 +222,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		super.update();
 		 
 		/* First, check if there are any new neighbors. */
-		if ((pubSubDisseminationMode == SubscriptionBasedDisseminationMode.SEMI_PERMEABLE) &&
-			updateNeighborsList()) {
+		if ((adcMode == ADCMode.SEMI_PERMEABLE) && updateNeighborsList()) {
 			// There are new neighbors: change send filter
 			sendMsgSemiPermeableFilter.clear();
 		}
@@ -235,7 +232,7 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 		
 		/* If the chosen dissemination mode is strict, then messages can not be
 		 * disseminated to nodes which are not a destination. */
-		if (pubSubDisseminationMode == SubscriptionBasedDisseminationMode.STRICT) {
+		if (adcMode == ADCMode.STRICT) {
 			return;
 		}
 		
@@ -390,10 +387,10 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	}
 	
 	private boolean shouldSendAccordingToDisseminationPolicy(Message m, DTNHost to) {
-		switch(pubSubDisseminationMode) {
+		switch(adcMode) {
 		case STRICT:
 			return false;
-		case FLEXIBLE:
+		case UNCONSTRAINED:
 			return true;
 		case SEMI_PERMEABLE:
 			if (!sendMsgSemiPermeableFilter.containsKey(m.getID())) {
@@ -408,10 +405,10 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 	}
 	
 	private boolean shouldReceiveAccordingToDisseminationPolicy(Message m, DTNHost from) {
-		switch(pubSubDisseminationMode) {
+		switch(adcMode) {
 		case STRICT:
 			return false;
-		case FLEXIBLE:
+		case UNCONSTRAINED:
 			return true;
 		case SEMI_PERMEABLE:
 			if (!receiveMsgSemiPermeableFilter.containsKey(m.getID())) {
