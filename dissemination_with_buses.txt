@@ -4,7 +4,7 @@
 #
 
 ## Scenario settings
-Scenario.name = %%Group.router%%_DissMode%%Group.adcMode%%_WithBuses_BufferSize%%Group4.cacheSize%%
+Scenario.name = %%Group.router%%_DissMode%%Group.adcMode%%_WithBuses_CacheSize%%Group4.cacheSize%%
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 46800s == 13h
