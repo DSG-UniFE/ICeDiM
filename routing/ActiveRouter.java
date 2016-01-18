@@ -27,10 +27,9 @@ import core.Tuple;
 public abstract class ActiveRouter extends MessageRouter {
 	/** Delete delivered messages -setting id ({@value}). Boolean valued.
 	 * If set to true and the final recipient of a message rejects it because
-	 * it already has it, the message is deleted from buffer. Default=false. */
+	 * it already has it, the message is deleted from cache. Default=false. */
 	public static final String DELETE_DELIVERED_S = "deleteDelivered";
-	/** should messages that final recipient marks as delivered be deleted
-	 * from message buffer */
+	/** It controls whether delivered messages should be deleted from cache */
 	protected boolean deleteDelivered;
 	
 	/** prefix of all response message IDs */
@@ -211,7 +210,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * TRY_LATER_BUSY if router is transferring, DENIED_OLD if the router
 	 * is already carrying the message or it has been delivered to
 	 * this router (as final recipient), or DENIED_NO_SPACE if the message
-	 * does not fit into buffer
+	 * does not fit in cache.
 	 */
 	protected int checkReceiving(Message m, Connection con) {	
 		if (hasMessage(m.getID()) || isDeliveredMessage(m)){
@@ -225,7 +224,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		/* remove oldest messages but not the ones being sent */
 		if (!makeRoomForMessage(m.getSize(), m.getPriority())) {
-			return DENIED_NO_SPACE; // couldn't fit into buffer -> reject
+			return DENIED_NO_SPACE; // couldn't fit in cache -> reject
 		}
 		
 		return RCV_OK;
@@ -457,8 +456,8 @@ public abstract class ActiveRouter extends MessageRouter {
 			} 
 			
 			if (removeCurrent) {
-				// if the message being sent was holding excess buffer, free it
-				if (getFreeBufferSize() < 0) {
+				// if the message being sent was holding excess memory from cache, free it
+				if (getFreeCacheSize() < 0) {
 					makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
 				}
 				sendingConnections.remove(i);
@@ -472,7 +471,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		/* time to do a TTL check and drop old messages? Only if not sending */
 		if ((SimClock.getTime() - lastTtlCheck >= TTL_CHECK_INTERVAL) &&
 			(sendingConnections.size() == 0)) {
-			removeExpiredMessagesFromBuffer();
+			removeExpiredMessagesFromCache();
 			lastTtlCheck = SimClock.getTime();
 		}
 	}

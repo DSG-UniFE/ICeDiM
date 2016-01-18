@@ -32,10 +32,10 @@ import core.SimError;
  */
 public abstract class MessageRouter {
 	/** Enum that discerns the reasons underlying a {@link Message} drop. <br/>
-	 * REMOVED stands for messages explicitly removed from the buffer by the
+	 * REMOVED stands for messages explicitly removed from the cache by the
 	 * Router; <br/> DROPPED stands for messages removed for reasons of memory
 	 * limits; <br/> DISCARDED stands for messages correctly received, but never
-	 * stored in the Router's buffer; <br/> TTL_EXPIRATION stands for messages
+	 * stored in the Router's cache; <br/> TTL_EXPIRATION stands for messages
 	 * deleted because their TTL expired while on the node. */
 	public static enum MessageDropMode {REMOVED, DROPPED, DISCARDED, TTL_EXPIRATION};
 	
@@ -49,7 +49,7 @@ public abstract class MessageRouter {
 	public static final int TRY_LATER_BUSY = 1;
 	/** Receive return value for an old (already received) message */
 	public static final int DENIED_OLD = 2;
-	/** Receive return value for not enough space in the buffer for the msg */
+	/** Receive return value for not enough space in cache for the msg */
 	public static final int DENIED_NO_SPACE = 3;
 	/** Receive return value for messages whose TTL has expired */
 	public static final int DENIED_TTL = 4;
@@ -110,9 +110,8 @@ public abstract class MessageRouter {
 	}
 	
 	/**
-	 * Constructor. Creates a new message router based on the settings in
-	 * the given Settings object. Size of the message buffer is read from
-	 * {@link #B_SIZE_S} setting. Default value is Integer.MAX_VALUE.
+	 * Constructor. Creates a new message router based
+	 * on the settings in the given Settings object.
 	 * @param s The settings object
 	 */
 	public MessageRouter(Settings s) {
@@ -161,7 +160,7 @@ public abstract class MessageRouter {
 	
 	/**
 	 * Creates a replicate of this router. The replicate has the same
-	 * settings as this router but empty buffers and routing tables.
+	 * settings as this router but empty cache and routing tables.
 	 * @return The replicate
 	 */
 	public abstract MessageRouter replicate();
@@ -437,12 +436,12 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Creates a new {@link Message} to store in the buffer.
+	 * Creates a new {@link Message} to store in cache.
 	 * By default, newly created messages have higher
-	 * priority than any other message in the buffer.
+	 * priority than any other message in cache.
 	 * @param m The {@link Message} just created.
 	 * @return True if the creation succeeded, false if not
-	 * (e.g., the message was too big for the buffer).
+	 * (e.g., the message was too big for the cache).
 	 */
 	public boolean createNewMessage(Message m) {
 		if (makeRoomForNewMessage(m.getSize(), Message.MAX_PRIORITY_LEVEL)) {
@@ -460,7 +459,7 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Adds a message to the message buffer and informs message listeners
+	 * Adds a message to the cache and informs message listeners
 	 * about new message (if requested).
 	 * @param m The message to add
 	 * @param newMessage If true, message listeners are informed about a new
@@ -495,9 +494,10 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Checks if this router has a message with certain id buffered.
+	 * Checks if this router has any cached message with a specific id.
 	 * @param id Identifier of the message
-	 * @return True if the router has message with this id, false if not
+	 * @return True if the router has message with
+	 * the specified id, false if not
 	 */
 	final protected boolean hasMessage(String msgID) {
 		return messageCacheManager.hasMessage(msgID);
@@ -545,10 +545,9 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Deletes a message from the buffer and informs message listeners
-	 * about the event
+	 * Deletes a message from cache and informs message listeners about the event
 	 * @param id Identifier of the message to delete
-	 * @param drop If the message is dropped (e.g. because of full buffer) this 
+	 * @param drop If the message is dropped (e.g. because of full cache) this 
 	 * should be set to true. False value indicates e.g. remove of message
 	 * because it was delivered to final destination.  
 	 */
@@ -562,7 +561,7 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Deletes a message from the buffer without informing
+	 * Deletes a message from cache without informing
 	 * message listeners about the event
 	 * @param msgID Identifier of the message to delete
 	 * because it was delivered to final destination.  
@@ -575,7 +574,7 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Removes and returns a message from the message buffer.
+	 * Removes and returns a message from the cache.
 	 * @param id Identifier of the message to remove
 	 * @return The removed message or null if message for the ID wasn't found
 	 */
@@ -586,7 +585,7 @@ public abstract class MessageRouter {
 	/**
 	 * Drops messages whose TTL is less than zero.
 	 */
-	protected void removeExpiredMessagesFromBuffer() {
+	protected void removeExpiredMessagesFromCache() {
 		for (Message m : getMessageList()) {
 			if (m.getTtl() <= 0) {				
 				deleteMessage(m.getID(), MessageDropMode.TTL_EXPIRATION, "TTL expired");
@@ -644,22 +643,22 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Returns the size of the message buffer.
+	 * Returns the total size of the caching memory.
 	 * @return The size or Integer.MAX_VALUE if the size isn't defined.
 	 */
-	final public int getBufferSize() {
-		return messageCacheManager.getBufferSize();
+	final public int getCacheSize() {
+		return messageCacheManager.getCacheSize();
 	}
 
 	/**
-	 * Returns the amount of free space in the buffer. May return a negative
-	 * value if there are more messages in the buffer than should fit there
-	 * (because of creating new messages).
-	 * @return The amount of free space (Integer.MAX_VALUE if the buffer
-	 * size isn't defined)
+	 * Returns the amount of free space in cache. May return a negative
+	 * value if there are more cached messages than they could fit
+	 * because new messages are being created.
+	 * @return The amount of free space (Integer.MAX_VALUE if
+	 * cache size isn't defined)
 	 */
-	final public int getFreeBufferSize() {
-		return messageCacheManager.getFreeBufferSize();
+	final public int getFreeCacheSize() {
+		return messageCacheManager.getFreeCacheSize();
 	}
 
 	/**
@@ -681,7 +680,7 @@ public abstract class MessageRouter {
 	 * according to the current message prioritization strategy.
 	 */
 	protected List<Message> sortAllReceivedMessagesForForwarding() {
-		return messageCacheManager.sortBufferedMessagesForForwarding();
+		return messageCacheManager.sortCachedMessagesForForwarding();
 	}
 
 	/**
@@ -706,13 +705,13 @@ public abstract class MessageRouter {
 	}
 
 	/**
-	 * Returns the oldest (by receive time) message in the message buffer 
+	 * Returns the oldest (by receive time) message in cache 
 	 * (that is not being sent if excludeMsgBeingSent is true).
 	 * @param excludeMsgBeingSent If true, excludes message(s) that are
 	 * being sent from the oldest message check (i.e. if oldest message is
 	 * being sent, the second oldest message is returned)
 	 * @return The oldest message or null if no message could be returned
-	 * (no messages in buffer or all messages in buffer are being sent and
+	 * (no cached messages or all cached messages are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
 	protected Message getLeastImportantMessageInCache(boolean excludeMsgBeingSent) {		
@@ -828,7 +827,7 @@ public abstract class MessageRouter {
 	
 	/**
 	 * Try to start receiving a message from another host.
-	 * @param m {@link Message} to put in the receiving buffer.
+	 * @param m {@link Message} to put in cache.
 	 * @param con The {@link Connection} transferring the message.
 	 * @return Value zero if the node accepted the message (RCV_OK),
 	 * value less than zero if node rejected the message (e.g.
@@ -862,8 +861,8 @@ public abstract class MessageRouter {
 
 	/**
 	 * This method should be called (on the receiving host) after a message
-	 * was successfully transferred. The transferred message is put to the
-	 * message buffer unless this host is the final recipient of the message.
+	 * was successfully transferred. The transferred message is put in
+	 * cache unless this host is the final recipient of the message.
 	 * @param id Id of the transferred message
 	 * @param from Host the message was from (previous hop)
 	 * @return The message that this host received
@@ -896,16 +895,15 @@ public abstract class MessageRouter {
 		isFinalTarget = isMessageDestination(aMessage);
 		isFirstDelivery = !hasReceivedMessage(aMessage.getID());
 	
-		/* Messages are stored in the buffer regardless they
-		 * are addressed to this node or not, unless any
-		 * application wants to drop it. */
+		/* Messages are stored in cache regardless they are addressed
+		 * to this node or not, unless any application wants to drop it. */
 		if (isFirstDelivery && (outgoing != null)) {
 			/* No app wants to drop it and it is the first time
-			 * the message was received -> put it into the buffer */
+			 * the message was received -> cache it */
 			if (!makeRoomForMessage(aMessage.getSize(), aMessage.getPriority())) {
-				// Drop message due to insufficient space in the buffer
+				// Drop message due to insufficient space in cache
 				notifyListenersAboutMessageDelete(aMessage, MessageDropMode.DROPPED,
-						"Impossible to free enough space in the buffer");
+						"Impossible to free enough space from cache");
 			}
 			addToMessages(aMessage);
 			receivedMessages.put(msgID, aMessage);
@@ -920,7 +918,7 @@ public abstract class MessageRouter {
 	}
 
 	/** 
-	 * Removes messages from the buffer (oldest and lowest priority first)
+	 * Removes messages from cache (oldest and lowest priority first)
 	 * until there's enough space for the new message.
 	 * If admissible message removals are not enough to free required space,
 	 * all performed deletes are rolled back.
@@ -930,15 +928,15 @@ public abstract class MessageRouter {
 	 * @return True if enough space could be freed, false if not
 	 */
 	protected boolean makeRoomForMessage(int size, int priority) {
-		if (size > getBufferSize()) {
-			// message too big for the buffer
+		if (size > getCacheSize()) {
+			// message too big for the cache
 			return false;
 		}
 		
-		int freeBuffer = getFreeBufferSize();
+		int freeCache = getFreeCacheSize();
 		ArrayList<Message> deletedMessages = new ArrayList<Message>();
-		// delete messages from the buffer until there's enough space
-		while (freeBuffer < size) {
+		// delete messages from cache until there's enough space
+		while (freeCache < size) {
 			// can't remove messages being sent --> use true as parameter
 			Message m = getLeastImportantMessageInCache(true);
 			if ((m == null) || (m.getPriority() > priority)) {
@@ -948,11 +946,11 @@ public abstract class MessageRouter {
 			
 			deleteMessageWithoutRaisingEvents(m.getID());
 			deletedMessages.add(m);
-			freeBuffer += m.getSize();
+			freeCache += m.getSize();
 		}
 		
 		/* notify message drops only if necessary amount of space was freed */
-		if (freeBuffer < size) {
+		if (freeCache < size) {
 			// rollback deletes and return false
 			for (Message m : deletedMessages) {
 				addToMessages(m);
@@ -962,9 +960,9 @@ public abstract class MessageRouter {
 	
 		// commit deletes by notifying event listeners about the deletes
 		for (Message m : deletedMessages) {
-			// delete message from the buffer as "removed" (false)
+			// delete message from cache as "removed" (false)
 			notifyListenersAboutMessageDelete(m, MessageDropMode.DROPPED,
-												"Buffer size exceeded");
+												"Cache size exceeded");
 		}
 		
 		return true;
@@ -973,7 +971,7 @@ public abstract class MessageRouter {
 	/**
 	 * Tries to make room for a new message. Current implementation simply
 	 * calls {@link #makeRoomForMessage(int, int)} and ignores the return value.
-	 * Therefore, if the message can't fit into buffer, the buffer is only 
+	 * Therefore, if the message can't fit in cache, the cache is only 
 	 * cleared from messages that are not being sent.
 	 * @param size Size of the new message
 	 * @param priority Priority level of the new message

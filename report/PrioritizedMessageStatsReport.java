@@ -25,7 +25,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 	private Map<String, Double> creationTimes;
 	private ArrayList<Double> latencies[];
 	private ArrayList<Integer> hopCounts[];
-	private ArrayList<Double> msgBufferTime[];
+	private ArrayList<Double> msgCacheTime[];
 	private ArrayList<Double> rtt[]; // round trip times
 
 	private int nrofCreated[];
@@ -67,9 +67,9 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 		for (int i = 0; i < priorityArraySize; i++) {
 			hopCounts[i] = new ArrayList<Integer>();
 		}		
-		msgBufferTime = new ArrayList[priorityArraySize];
+		msgCacheTime = new ArrayList[priorityArraySize];
 		for (int i = 0; i < priorityArraySize; i++) {
-			msgBufferTime[i] = new ArrayList<Double>();
+			msgCacheTime[i] = new ArrayList<Double>();
 		}
 		rtt = new ArrayList[priorityArraySize];
 		for (int i = 0; i < priorityArraySize; i++) {
@@ -237,7 +237,7 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 			break;
 		}
 	
-		msgBufferTime[m.getPriority()].add(getSimTime() - m.getReceiveTime());
+		msgCacheTime[m.getPriority()].add(getSimTime() - m.getReceiveTime());
 	}
 
 	@Override
@@ -291,8 +291,8 @@ public class PrioritizedMessageStatsReport extends Report implements MessageList
 						"\nlatency_med: " + getMedian(latencies[i]) +
 						"\nhopcount_avg: " + getIntAverage(hopCounts[i]) +
 						"\nhopcount_med: " + getIntMedian(hopCounts[i]) +
-						"\nbuffertime_avg: " + getAverage(msgBufferTime[i]) +
-						"\nbuffertime_med: " + getMedian(msgBufferTime[i]) +
+						"\ncachetime_avg: " + getAverage(msgCacheTime[i]) +
+						"\ncachetime_med: " + getMedian(msgCacheTime[i]) +
 						"\nrtt_avg: " + getAverage(rtt[i]) +
 						"\nrtt_med: " + getMedian(rtt[i]) + "\n\n";
 			write(statsText);

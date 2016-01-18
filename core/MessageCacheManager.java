@@ -12,37 +12,36 @@ import messageForwardingOrderManager.MessageForwardingOrderManager;
 import messagePrioritizationStrategies.MessageCachingPrioritizationStrategy;
 
 /**
- * This class models the queue of messages in memory.
- * It implements the logic that manages the insertion
- * and the deletion of messages from the buffer.
- * Also, it provides an interface to extract buffered
- * messages in accordance with the policy specified
- * in the configuration file.
+ * This class models the cache manager for the node.
+ * It implements the logic that manages the insertion and the deletion
+ * of messages from cache. Also, it provides an interface to extract
+ * cached messages in accordance with the policy specified in the
+ * configuration file.
  * 
  * @author Alessandro Morelli
  *
  */
 public class MessageCacheManager {
-	/** Message buffer size -setting id ({@value}). Integer value in bytes.*/
-	public static final String B_SIZE_S = "bufferSize";
-	/** string that identifies the queueing mode in the settings file */
+	/** Cache size -setting id ({@value}). Integer value in bytes.*/
+	public static final String CACHE_SIZE_S = "cacheSize";
+	/** string that identifies the cache prioritization strategy in the settings file */
 	public static final String CACHING_PRIORITIZATION_STRATEGY_S = "cachingPrioritizationStrategy";
-	/** string that identifies the forwarding manager in the settings file */
+	/** string that identifies the forwarding order strategy in the settings file */
 	public static final String MESSAGE_FORWARDING_ORDER_STRATEGY_S = "messageForwardingOrderStrategy";
 
-	/** size of the buffer */
-	private final int bufferSize;
+	/** size of the cache */
+	private final int cacheSize;
 	/** The messages this router is carrying */
 	private HashMap<String, Message> messages;
 
 	/** Manager that implements the message forwarding policy */
 	private MessageForwardingOrderManager messageForwardingOrderManager;
-	/** Strategy that implements the specified prioritization strategy */
+	/** Strategy that implements the specified caching prioritization strategy */
 	public MessageCachingPrioritizationStrategy messageCachingPrioritizationStrategy;
 
 	public MessageCacheManager(Settings s) {
-		// Default buffer size is large (~2GB)
-		this.bufferSize = s.contains(B_SIZE_S) ? s.getInt(B_SIZE_S) : Integer.MAX_VALUE;
+		// Default cache size is large (~2GB)
+		this.cacheSize = s.contains(CACHE_SIZE_S) ? s.getInt(CACHE_SIZE_S) : Integer.MAX_VALUE;
 		this.messages = new HashMap<String, Message>();
 		
 		int sendQueueMode = 0;
@@ -71,7 +70,7 @@ public class MessageCacheManager {
 
 	/** Copy constructor */
 	public MessageCacheManager(MessageCacheManager mqm) {
-		this.bufferSize = mqm.bufferSize;
+		this.cacheSize = mqm.cacheSize;
 		this.messages = new HashMap<String, Message>();
 		
 		// Create a new messageForwardingOrderStrategy of the same type of the copied MessageCacheManager
@@ -109,7 +108,7 @@ public class MessageCacheManager {
 		return messages.remove(messageID);
 	}
 	
-	public List<Message> sortBufferedMessagesForForwarding() {
+	public List<Message> sortCachedMessagesForForwarding() {
 		return sortMessageListForForwarding(getMessageList());
 	}
 	
@@ -126,17 +125,17 @@ public class MessageCacheManager {
 		return sortByMessageForwardingStrategy(inputList);
 	}
 	
-	public int getBufferSize() {
-		return bufferSize;
+	public int getCacheSize() {
+		return cacheSize;
 	}
 
-	public int getFreeBufferSize() {
+	public int getFreeCacheSize() {
 		int occupancy = 0;		
 		for (Message m : getMessageCollection()) {
 			occupancy += m.getSize();
 		}
 		
-		return getBufferSize() - occupancy;
+		return getCacheSize() - occupancy;
 	}
 
 	public void sortByCachingPrioritizationStrategy(List<Message> inputList) {

@@ -19,7 +19,7 @@ import core.iceDim.PublisherSubscriber;
 import core.iceDim.SubscriptionListManager;
 
 /**
- * Epidemic message router with drop-oldest buffer and broadcast transmissions.
+ * Epidemic message router with subscriptions.
  */
 public class EpidemicRouterWithSubscriptions extends ActiveRouter
 											implements PublisherSubscriber {

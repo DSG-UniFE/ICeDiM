@@ -198,8 +198,8 @@ public class SprayAndWaitRouterWithSubscriptions extends BroadcastEnabledRouter
 			// get this router's copy of the message
 			Message msg = getMessage(m.getID());
 			if (msg == null) {
-				/* message was dropped from the buffer after the transfer
-				 * started -> no need to reduce amount of copies left. */
+				/* message was dropped from cache after the transfer has
+				 * begun -> no need to reduce amount of copies left. */
 				continue;
 			}
 			

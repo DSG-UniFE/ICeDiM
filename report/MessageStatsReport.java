@@ -26,7 +26,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 	private Map<String, Double> creationTimes;
 	private List<Double> latencies;
 	private List<Integer> hopCounts;
-	private List<Double> msgBufferTime;
+	private List<Double> msgCacheTime;
 	private List<Double> rtt; // round trip times
 
 	private int nrofCreated;
@@ -58,7 +58,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 		
 		this.creationTimes = new HashMap<String, Double>();
 		this.latencies = new ArrayList<Double>();
-		this.msgBufferTime = new ArrayList<Double>();
+		this.msgCacheTime = new ArrayList<Double>();
 		this.hopCounts = new ArrayList<Integer>();
 		this.rtt = new ArrayList<Double>();
 
@@ -178,7 +178,7 @@ public class MessageStatsReport extends Report implements MessageListener {
 			break;
 		}
 		
-		msgBufferTime.add(getSimTime() - m.getReceiveTime());
+		msgCacheTime.add(getSimTime() - m.getReceiveTime());
 	}
 
 	@Override
@@ -219,8 +219,8 @@ public class MessageStatsReport extends Report implements MessageListener {
 							"\nlatency_med: " + getMedian(latencies) + 
 							"\nhopcount_avg: " + getIntAverage(hopCounts) +
 							"\nhopcount_med: " + getIntMedian(hopCounts) + 
-							"\nbuffertime_avg: " + getAverage(msgBufferTime) +
-							"\nbuffertime_med: " + getMedian(msgBufferTime) +
+							"\ncachetime_avg: " + getAverage(msgCacheTime) +
+							"\ncachetime_med: " + getMedian(msgCacheTime) +
 							"\nrtt_avg: " + getAverage(rtt) +
 							"\nrtt_med: " + getMedian(rtt);
 		write(statsText);

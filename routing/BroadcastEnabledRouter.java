@@ -20,11 +20,10 @@ public class BroadcastEnabledRouter extends MessageRouter {
 	
 	/** Delete delivered messages -setting id ({@value}). Boolean valued.
 	 * If set to true and final recipient of a message rejects it because it
-	 * already has it, the message is deleted from buffer. Default=false. */
+	 * already has it, the message is deleted from cache. Default=false. */
 	public static final String DELETE_DELIVERED_S = "deleteDelivered";
-	
-	/** should messages that final recipient marks as delivered be deleted
-	 * from message buffer */
+
+	/** It controls whether delivered messages should be deleted from cache */
 	protected boolean deleteDelivered;
 	
 	/** prefix of all response message IDs */
@@ -267,12 +266,12 @@ public class BroadcastEnabledRouter extends MessageRouter {
 		/*
 		 * The method cycles through all the connections for each interface, and removes the
 		 * ones that terminated the transfer from the sendingConnections list.
-		 * If no connection is still sending, and the buffer is holding an excessive amount
+		 * If no connection is still sending, and the cache manager is holding an excessive amount
 		 * of bytes, the method proceeds deleting some cached messages to free up some space.
 		 * If all connections completed a message transfer, then the number of times that
 		 * message has been forwarded is incremented.
 		 */
-		boolean freeBuffer = true;
+		boolean freeCache = true;
 		for (NetworkInterface ni : getHost().getInterfaces()) {
 			if (ni.isSendingData()) {
 				HashSet<Message> transferredMessages = new HashSet<Message>();
@@ -310,7 +309,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 					}
 					else {
 						/* one transfer is not done, yet. Do not remove any messages */
-						freeBuffer = false;
+						freeCache = false;
 					}
 				}
 				
@@ -327,8 +326,8 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			}
 		}
 		
-		if (freeBuffer && (getFreeBufferSize() < 0)) {
-			// if the message being sent was holding excessive buffer, free it
+		if (freeCache && (getFreeCacheSize() < 0)) {
+			// if the message being sent was holding excessive memory from cache, free it
 			makeRoomForMessage(0, Message.MAX_PRIORITY_LEVEL);
 		}
 	
@@ -339,7 +338,7 @@ public class BroadcastEnabledRouter extends MessageRouter {
 			}
 		}
 		if ((SimClock.getTime() - lastTtlCheck) >= TTL_CHECK_INTERVAL) {
-			removeExpiredMessagesFromBuffer();
+			removeExpiredMessagesFromCache();
 			lastTtlCheck = SimClock.getTime();
 		}
 	}

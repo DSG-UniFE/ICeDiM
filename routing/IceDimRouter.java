@@ -224,8 +224,7 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 	
 	/**
 	 * This method should be called (on the receiving host) after a message
-	 * was successfully transferred. The transferred message is put to the
-	 * message buffer unless this host is the final recipient of the message.
+	 * was successfully transferred. The transferred message is cached.
 	 * @param id Id of the transferred message
 	 * @param from Host the message was from (previous hop)
 	 * @return The message that this host received
@@ -269,7 +268,7 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 	 * TRY_LATER_BUSY if router is transferring, DENIED_OLD if the router
 	 * is already carrying the message or it has been delivered to
 	 * this router (as final recipient), or DENIED_NO_SPACE if the message
-	 * does not fit into buffer
+	 * does not fit in cache
 	 */
 	@Override
 	protected int checkReceiving(Message m, Connection con) {
@@ -285,7 +284,7 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 	 * Drops messages whose TTL is less than zero.
 	 */
 	@Override
-	protected void removeExpiredMessagesFromBuffer() {
+	protected void removeExpiredMessagesFromCache() {
 		for (Message m : getMessageList()) {
 			if (m.getTtl() <= 0) {
 				if (!receivedMsgIDs.remove(m.getID())) {
@@ -294,7 +293,7 @@ public class IceDimRouter extends BroadcastEnabledRouter implements PublisherSub
 				}
 			}
 		}
-		super.removeExpiredMessagesFromBuffer();
+		super.removeExpiredMessagesFromCache();
 	}
 	
 	@Override

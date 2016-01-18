@@ -23,7 +23,7 @@ public abstract class AbstractRouterTest extends TestCase {
 	protected TestUtils utils;
 	protected static TestSettings ts = new TestSettings();
 	
-	protected static final int BUFFER_SIZE = 100;
+	protected static final int CACHE_SIZE = 100;
 	protected static final int TRANSMIT_SPEED = 10;
 	protected SimClock clock;
 

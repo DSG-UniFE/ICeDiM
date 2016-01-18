@@ -173,7 +173,7 @@ public class MaxPropRouter extends ActiveRouter {
 	}
 	
 	/**
-	 * Deletes the messages from the message buffer that are known to be ACKed
+	 * Deletes the messages from cache that are known to be ACKed
 	 */
 	private void deleteAckedMessages() {
 		for (String id : ackedMessageIds) {
@@ -207,7 +207,7 @@ public class MaxPropRouter extends ActiveRouter {
 		Message m = con.getMessage();
 		/* was the message delivered to the final recipient? */
 		if (m.getTo() == con.getOtherNode(getHost())) {
-			 // Add to ACKed messages and then delete from buffer 
+			 // Add to ACKed messages and then delete from cache 
 			ackedMessageIds.add(m.getID());
 			deleteMessage(m.getID(), MessageDropMode.REMOVED,
 							"message delivered to final recipient");
@@ -250,7 +250,7 @@ public class MaxPropRouter extends ActiveRouter {
 	 * being sent from the next-to-be-dropped check (i.e., if next message to
 	 * drop is being sent, the following message is returned)
 	 * @return The oldest message or null if no message could be returned
-	 * (no messages in buffer or all messages in buffer are being sent and
+	 * (no cached messages or all cached messages are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
     @Override
@@ -367,15 +367,15 @@ public class MaxPropRouter extends ActiveRouter {
 	}
 	
 	/**
-	 * Calculates and returns the current threshold value for the buffer's split
+	 * Calculates and returns the current threshold value for the cache's split
 	 * based on the average number of bytes transferred per transfer opportunity
-	 * and the hop counts of the messages in the buffer. Method is public only
+	 * and the hop counts of the messages in cache. Method is public only
 	 * to make testing easier.  
-	 * @return current threshold value (hop count) for the buffer's split
+	 * @return current threshold value (hop count) for the cache's split
 	 */
 	public int calcThreshold() {
 		/* b, x and p refer to respective variables in the paper's equations */
-		int b = this.getBufferSize();
+		int b = this.getCacheSize();
 		int x = this.avgTransferredBytes;
 		int p;
 
@@ -384,7 +384,7 @@ public class MaxPropRouter extends ActiveRouter {
 			return 0;
 		}
 		
-		/* calculates the portion (bytes) of the buffer selected for priority */
+		/* calculates the portion (bytes) of the cache selected for priority */
 		if (x < b/2) {
 			p = x;
 		}

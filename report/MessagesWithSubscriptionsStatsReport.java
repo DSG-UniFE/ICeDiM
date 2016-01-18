@@ -73,7 +73,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 	
 	private HashMap<Integer, ArrayList<Double>> latenciesPerSubscription;
 	private HashMap<Integer, ArrayList<Integer>> hopCountsPerSubscription;
-	private HashMap<Integer, ArrayList<Double>> msgBufferTimePerSubscription;
+	private HashMap<Integer, ArrayList<Double>> msgCacheTimePerSubscription;
 	private HashMap<Integer, ArrayList<Double>> msgRTTPerSubscription;
 	
 	
@@ -140,7 +140,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		
 		latenciesPerSubscription = new HashMap<Integer, ArrayList<Double>>();
 		hopCountsPerSubscription = new HashMap<Integer, ArrayList<Integer>>();
-		msgBufferTimePerSubscription = new HashMap<Integer, ArrayList<Double>>();
+		msgCacheTimePerSubscription = new HashMap<Integer, ArrayList<Double>>();
 		msgRTTPerSubscription = new HashMap<Integer, ArrayList<Double>>();
 
 		for (int i = 1; i < subscriptionsArraySize; ++i) {
@@ -162,7 +162,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			
 			latenciesPerSubscription.put(i, new ArrayList<Double>());
 			hopCountsPerSubscription.put(i, new ArrayList<Integer>());
-			msgBufferTimePerSubscription.put(i, new ArrayList<Double>());
+			msgCacheTimePerSubscription.put(i, new ArrayList<Double>());
 			msgRTTPerSubscription.put(i, new ArrayList<Double>());
 		}
 		
@@ -185,7 +185,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 			
 			latenciesPerSubscription.put(0, new ArrayList<Double>());
 			hopCountsPerSubscription.put(0, new ArrayList<Integer>());
-			msgBufferTimePerSubscription.put(0, new ArrayList<Double>());
+			msgCacheTimePerSubscription.put(0, new ArrayList<Double>());
 			msgRTTPerSubscription.put(0, new ArrayList<Double>());
 		}
 	}
@@ -388,7 +388,7 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 					messageExpiredPerSubscription.get(subID).intValue() + 1));
 			break;
 		}
-		msgBufferTimePerSubscription.get(subID).add(getSimTime() - m.getReceiveTime());
+		msgCacheTimePerSubscription.get(subID).add(getSimTime() - m.getReceiveTime());
 	}
 
 	@Override
@@ -423,9 +423,9 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 		for(List<Integer> hopsPerSub : hopCountsPerSubscription.values()) {
 			hopCounts.addAll(hopsPerSub);
 		}
-		List<Double> msgBufferTime = new ArrayList<Double>();
-		for(List<Double> msgBufTimePerSub : msgBufferTimePerSubscription.values()) {
-			msgBufferTime.addAll(msgBufTimePerSub);
+		List<Double> msgCacheTime = new ArrayList<Double>();
+		for(List<Double> msgBufTimePerSub : msgCacheTimePerSubscription.values()) {
+			msgCacheTime.addAll(msgBufTimePerSub);
 		}
 		List<Double> totalRTTs = new ArrayList<Double>();
 		for(List<Double> msgRTTPerSub : msgRTTPerSubscription.values()) {
@@ -460,8 +460,8 @@ public class MessagesWithSubscriptionsStatsReport extends Report implements Mess
 					"\nlatency_med: " + getMedian(latencies) +
 					"\nhopcount_avg: " + getIntAverage(hopCounts) +
 					"\nhopcount_med: " + getIntMedian(hopCounts) +
-					"\nbuffertime_avg: " + getAverage(msgBufferTime) +
-					"\nbuffertime_med: " + getMedian(msgBufferTime) +
+					"\ncachetime_avg: " + getAverage(msgCacheTime) +
+					"\ncachetime_med: " + getMedian(msgCacheTime) +
 					"\nrtt_avg: " + getAverage(totalRTTs) +
 					"\nrtt_med: " + getMedian(totalRTTs) + "\n\n";
 		write(statsText);

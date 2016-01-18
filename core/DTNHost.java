@@ -208,15 +208,15 @@ public class DTNHost implements Comparable<DTNHost> {
 	}
 
 	/**
-	 * Returns the buffer occupancy percentage. Occupancy is 0 for empty
-	 * buffer but can be over 100 if a created message is bigger than buffer 
-	 * space that could be freed.
-	 * @return Buffer occupancy percentage
+	 * Returns the cache occupancy percentage. Occupancy is 0 for empty
+	 * cache, but it can be over 100 if a generated message is bigger
+	 * than the amount of memory that could be freed from cache.
+	 * @return Cache occupancy percentage
 	 */
-	final public double getBufferOccupancy() {
-		double bSize = router.getBufferSize();
-		double freeBuffer = router.getFreeBufferSize();
-		return 100*((bSize-freeBuffer)/bSize);
+	final public double getCacheOccupancy() {
+		double bSize = router.getCacheSize();
+		double freeCache = router.getFreeCacheSize();
+		return 100*((bSize-freeCache)/bSize);
 	}
 
 	/**
@@ -466,7 +466,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * Deletes a message from this host
 	 * @param id Identifier of the message
 	 * @param drop True if the message is deleted because of "dropping"
-	 * (e.g. buffer is full) or false if it was deleted for some other reason
+	 * (e.g. cache is full) or false if it was deleted for some other reason
 	 * (e.g. the message got delivered to final destination). This effects the
 	 * way the removing is reported to the message listeners.
 	 */

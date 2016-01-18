@@ -143,12 +143,12 @@ public class SprayAndWaitRouter extends ActiveRouter {
 		/* get this router's copy of the message */
 		Message msg = getMessage(msgId);
 
-		if (msg == null) { // message has been dropped from the buffer after..
-			return; // ..start of transfer -> no need to reduce amount of copies
+		if (msg == null) { // message has been dropped from cache after transfer
+			return; // ..has begun -> no need to reduce the number of copies
 		}
 		
-		/* reduce the amount of copies left */
-		nrofCopies = (Integer)msg.getProperty(MSG_COUNT_PROPERTY);
+		/* reduce the number of copies left */
+		nrofCopies = (Integer) msg.getProperty(MSG_COUNT_PROPERTY);
 		if (isBinary) { 
 			nrofCopies /= 2;
 		}
