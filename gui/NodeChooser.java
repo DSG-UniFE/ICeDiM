@@ -30,7 +30,7 @@ public class NodeChooser extends JPanel implements ActionListener {
 	public static final int MAX_NODE_COUNT = 500;
 	private static final String HOST_KEY = "host";
 	private List<DTNHost> nodes;
-	private JComboBox groupChooser;
+	private JComboBox<String> groupChooser;
 	private JPanel nodesPanel;
 	private JPanel chooserPanel;
 
@@ -69,7 +69,7 @@ public class NodeChooser extends JPanel implements ActionListener {
 				groupNames[i] = (last + "..." + next);
 				last = next + 1;
 			}
-			groupChooser = new JComboBox(groupNames);
+			groupChooser = new JComboBox<String>(groupNames);
 			groupChooser.addActionListener(this);
 			chooserPanel.add(groupChooser);
 		}
