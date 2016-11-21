@@ -11,10 +11,14 @@ import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.event.*;
+
+import org.w3c.dom.DOMImplementation;
+
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -31,6 +35,20 @@ import javax.swing.SpinnerNumberModel;
 import core.Coord;
 import core.SimClock;
 
+import java.awt.Color;
+import java.io.Writer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.io.OutputStreamWriter;
+import java.io.OutputStream;
+
+import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.batik.dom.GenericDOMImplementation;
+
+import org.w3c.dom.Document;
+
+
 /**
  * GUI's control panel
  *
@@ -43,21 +61,20 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	private static final String ICON_STEP = "StepForward16.gif"; 
 	private static final String ICON_FFW = "FastForward16.gif";
 	
-	private static final String TEXT_PAUSE = "pause simulation";
-	private static final String TEXT_PLAY = "play simulation";
-	private static final String TEXT_PLAY_UNTIL = "play simulation until sim time...";
-	private static final String TEXT_STEP = "step forward one interval";
-	private static final String TEXT_FFW = "enable/disable fast forward";
+	private static final String TEXT_PAUSE = "Pause simulation";
+	private static final String TEXT_PLAY = "Play simulation";
+	private static final String TEXT_PLAY_UNTIL = "Play simulation until sim time...";
+	private static final String TEXT_STEP = "Step forward one interval";
+	private static final String TEXT_FFW = "Enable/disable fast forward";
 	private static final String TEXT_UP_CHOOSER = "GUI update:";
-	private static final String TEXT_SCREEN_SHOT = "screen shot";
+	private static final String TEXT_SCREEN_SHOT = "Screenshot";
 	private static final String TEXT_SIMTIME = "Simulation time - "+ 
 		"click to force update, right click to change format";
-	private static final String TEXT_SEPS = "simulated seconds per second";
+	private static final String TEXT_SEPS = "Simulated seconds per second";
 
 	// "simulated events per second" averaging time (milliseconds)
 	private static final int EPS_AVG_TIME = 2000;
-	private static final String SCREENSHOT_FILE_TYPE = "png";
-	private static final String SCREENSHOT_FILE = "screenshot";
+	private static final String SCREENSHOT_FILE_NAME = "screenshot_";
 	
 	private JTextField simTimeField;
 	private JLabel sepsField;	// simulated events per second field
@@ -69,9 +86,12 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	private JButton ffwButton;
 	private boolean isFfw;
 	private int oldSpeedIndex; // what speed was selected before FFW
+
+	DateFormat dateFormat;
 	
 	private JButton screenShotButton;
-	private JComboBox guiUpdateChooser;
+	private JComboBox<String> guiUpdateChooser;
+	private JComboBox<String> guiScreenshotFormatChooser;
 	
 	/** 
 	 * GUI update speeds. Negative values -> how many 1/10 seconds to wait
@@ -79,6 +99,8 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	 */
 	public static final String[] UP_SPEEDS = {"-10", "-1", "0.1", "1", "10",
 												"100", "1000", "10000", "100000"};
+	/** Supported screenshot file formats */
+	private static final String[] SCREENSHOT_FILE_TYPES = {"png", "svg"};
 	
 	/** Smallest value for the zoom level */
 	public static final double ZOOM_MIN = 0.001;
@@ -87,11 +109,15 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	
 	/** index of initial update speed setting */
 	public static final int INITIAL_SPEED_SELECTION = 3;
+	/** index of initial screenshot file format */
+	public static final int INITIAL_SCREENSHOT_FORMAT_SELECTION = 0;
 	/** index of FFW speed setting */
 	public static final int FFW_SPEED_INDEX = 7;
 	
 	private double guiUpdateInterval;
 	private javax.swing.JSpinner zoomSelector;
+	private static String SCREENSHOT_FILE_TYPE = 
+			SCREENSHOT_FILE_TYPES[INITIAL_SCREENSHOT_FORMAT_SELECTION];
 
 	private PlayField pf;
 	private DTNSimGUI gui;
@@ -111,6 +137,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		this.paused = true;
 		this.isFfw = false;
 		this.playUntilTime = Double.MAX_VALUE;
+		dateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
 		initPanel();
 	}
 	
@@ -136,7 +163,8 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		this.sepsField.setToolTipText(TEXT_SEPS);
 		
 		this.screenShotButton = new JButton(TEXT_SCREEN_SHOT);
-		this.guiUpdateChooser = new JComboBox(UP_SPEEDS);
+		this.guiUpdateChooser = new JComboBox<String>(UP_SPEEDS);
+		this.guiScreenshotFormatChooser = new JComboBox<String>(SCREENSHOT_FILE_TYPES);
 		
 		this.zoomSelector = new JSpinner(new SpinnerNumberModel(1.0, ZOOM_MIN, 
 				ZOOM_MAX, 0.001));
@@ -161,8 +189,11 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		
 		this.add(this.zoomSelector);
 		this.add(this.screenShotButton);
+		this.add(this.guiScreenshotFormatChooser);
+		this.guiScreenshotFormatChooser.setSelectedIndex(INITIAL_SCREENSHOT_FORMAT_SELECTION);
 		
 		guiUpdateChooser.addActionListener(this);
+		guiScreenshotFormatChooser.addActionListener(this);
 		zoomSelector.addChangeListener(this);
 		this.screenShotButton.addActionListener(this);
 	}
@@ -318,12 +349,14 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		else if (e.getSource() == this.guiUpdateChooser) {
 			updateUpdateInterval();
 		}
+		else if (e.getSource() == this.guiScreenshotFormatChooser) {
+			updateScreenshotFileFormat();
+		}
 		else if (e.getSource() == this.screenShotButton) {
 			takeScreenShot();
 		}
 	}
-	
-	
+
 	public void stateChanged(ChangeEvent e) {
 		updateZoomScale(true);
 	}
@@ -347,8 +380,13 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	
 	
 	private void updateUpdateInterval() {
-		String selString = (String)this.guiUpdateChooser.getSelectedItem();
+		String selString = (String) this.guiUpdateChooser.getSelectedItem();
 		this.guiUpdateInterval = Double.parseDouble(selString); 		
+	}
+	
+	
+	private void updateScreenshotFileFormat() {
+		SCREENSHOT_FILE_TYPE = (String) this.guiScreenshotFormatChooser.getSelectedItem();
 	}
 	
 	/**
@@ -370,26 +408,58 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		}
 	}
 	
-	private void takeScreenShot() {	
-		try {
-			JFileChooser fc = new JFileChooser();
-			fc.setSelectedFile(new File(SCREENSHOT_FILE + 
-					"." + SCREENSHOT_FILE_TYPE));
-			int retVal = fc.showSaveDialog(this);
-			if (retVal == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				BufferedImage i = new BufferedImage(this.pf.getWidth(), 
-						this.pf.getHeight(), BufferedImage.TYPE_INT_RGB);
-				Graphics2D g2 = i.createGraphics();
-
-				this.pf.paint(g2);	// paint playfield to buffered image
-				ImageIO.write(i, SCREENSHOT_FILE_TYPE, file);
+	private void takeScreenShot() {
+		Date date = new Date();
+		JFileChooser fc = new JFileChooser();
+		fc.setSelectedFile(new File(SCREENSHOT_FILE_NAME + 
+				dateFormat.format(date) + "." + SCREENSHOT_FILE_TYPE));
+		int retVal = fc.showSaveDialog(this);
+		if (retVal == JFileChooser.APPROVE_OPTION) {
+			File file = fc.getSelectedFile();
+			
+			if (SCREENSHOT_FILE_TYPE.equals("png")) {
+				try {
+					BufferedImage i = new BufferedImage(this.pf.getWidth(),
+							this.pf.getHeight(), BufferedImage.TYPE_INT_RGB);
+					Graphics2D g2 = i.createGraphics();
+		
+					this.pf.paint(g2);	// paint playfield to buffered image
+					ImageIO.write(i, SCREENSHOT_FILE_TYPE, file);
+				}
+				catch (Exception e) {
+					JOptionPane.showMessageDialog(gui.getParentFrame(), 
+							"screenshot failed (problems with png output file?)",
+							"Exception", JOptionPane.ERROR_MESSAGE);
+				}
 			}
-		} 
-		catch (Exception e) {
-			JOptionPane.showMessageDialog(gui.getParentFrame(), 
-					"screenshot failed (problems with output file?)",
-					"Exception", JOptionPane.ERROR_MESSAGE);
+			else if (SCREENSHOT_FILE_TYPE.equals("svg")) {
+				// Get a DOMImplementation.
+				DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
+	
+				// Create an instance of org.w3c.dom.Document.
+				String svgNS = "http://www.w3.org/2000/svg";
+				Document document = domImpl.createDocument(svgNS, "svg", null);
+	
+				// Create an instance of the SVG Generator.
+				SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
+				try {
+					svgGenerator.setPaint(Color.white);
+					svgGenerator.fillRect(-1,-20, pf.getWidth() + 1, pf.getHeight() + 20);
+					pf.paint(svgGenerator);
+					
+					// Write svg file
+					OutputStream outputStream = new FileOutputStream(file);
+					Writer out = new OutputStreamWriter(outputStream, "UTF-8");
+					svgGenerator.stream(out, true /* use css */);
+					outputStream.flush();
+					outputStream.close();
+				}
+				catch (Exception e) {
+					JOptionPane.showMessageDialog(gui.getParentFrame(), 
+							"screenshot failed (problems with svg output file?)",
+							"Exception", JOptionPane.ERROR_MESSAGE);
+				}
+			}
 		}
 	}
 	

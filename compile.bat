@@ -6,3 +6,6 @@ javac -extdirs lib/:lib/uncommons-maths-1.2.3/ gui/*.java
 javac -extdirs lib/:lib/uncommons-maths-1.2.3/ input/*.java
 javac -extdirs lib/:lib/uncommons-maths-1.2.3/ applications/*.java
 javac -extdirs lib/:lib/uncommons-maths-1.2.3/ interfaces/*.java
+javac -extdirs lib/:lib/uncommons-maths-1.2.3/ interferenceModels/*.java
+javac -extdirs lib/:lib/uncommons-maths-1.2.3/ messagePrioritizationStrategies/*.java
+javac -extdirs lib/:lib/uncommons-maths-1.2.3/ messageForwardingOrderManager/*.java
