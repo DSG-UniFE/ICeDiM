@@ -73,6 +73,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	private static final String TOOLTIP_FFW_EN = "Enable fast forward";
 	private static final String TOOLTIP_FFW_DIS = "Disable fast forward";
 	private static final String TOOLTIP_PLAY_UNTIL = "Play simulation until sim time...";
+	private static final String TOOLTIP_GUI_UPDATE_INTERVAL = "Select the GUI update interval";
 	private static final String TOOLTIP_ZOOM_LEVEL = "Set zoom level";
 	private static final String TOOLTIP_SCREEN_SHOT = "Take a new screenshot";
 	private static final String TOOLTIP_SCREENSHOT_FORMAT = "Select the screenshot format";
@@ -169,6 +170,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		this.screenShotButton = new JButton(TEXT_SCREEN_SHOT);
 		this.screenShotButton.setToolTipText(TOOLTIP_SCREEN_SHOT);
 		this.guiUpdateChooser = new JComboBox<String>(UP_SPEEDS);
+		this.guiUpdateChooser.setToolTipText(TOOLTIP_GUI_UPDATE_INTERVAL);
 		this.guiScreenshotFormatChooser = new JComboBox<String>(SCREENSHOT_FILE_TYPES);
 		this.guiScreenshotFormatChooser.setToolTipText(TOOLTIP_SCREENSHOT_FORMAT);
 		
