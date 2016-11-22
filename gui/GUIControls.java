@@ -60,73 +60,77 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	private static final String ICON_ZOOM = "Zoom24.gif";
 	private static final String ICON_STEP = "StepForward16.gif"; 
 	private static final String ICON_FFW = "FastForward16.gif";
-	
-	private static final String TEXT_PAUSE = "Pause simulation";
-	private static final String TEXT_PLAY = "Play simulation";
-	private static final String TEXT_PLAY_UNTIL = "Play simulation until sim time...";
-	private static final String TEXT_STEP = "Step forward one interval";
-	private static final String TEXT_FFW = "Enable/disable fast forward";
+
 	private static final String TEXT_UP_CHOOSER = "GUI update:";
 	private static final String TEXT_SCREEN_SHOT = "Screenshot";
-	private static final String TEXT_SIMTIME = "Simulation time - "+ 
+
+	private static final String TOOLTIP_SIMTIME = "Simulation time - "+ 
 		"click to force update, right click to change format";
-	private static final String TEXT_SEPS = "Simulated seconds per second";
+	private static final String TOOLTIP_SEPS = "Simulated seconds per second";
+	private static final String TOOLTIP_PLAY = "Play simulation";
+	private static final String TOOLTIP_PAUSE = "Pause simulation";
+	private static final String TOOLTIP_STEP = "Step forward one interval";
+	private static final String TOOLTIP_FFW_EN = "Enable fast forward";
+	private static final String TOOLTIP_FFW_DIS = "Disable fast forward";
+	private static final String TOOLTIP_PLAY_UNTIL = "Play simulation until sim time...";
+	private static final String TOOLTIP_ZOOM_LEVEL = "Set zoom level";
+	private static final String TOOLTIP_SCREEN_SHOT = "Take a new screenshot";
+	private static final String TOOLTIP_SCREENSHOT_FORMAT = "Select the screenshot format";
 
-	// "simulated events per second" averaging time (milliseconds)
-	private static final int EPS_AVG_TIME = 2000;
-	private static final String SCREENSHOT_FILE_NAME = "screenshot_";
-	
-	private JTextField simTimeField;
-	private JLabel sepsField;	// simulated events per second field
-	private JButton playButton;
-	private JButton playUntilButton;
-	private boolean paused;
-	private JButton stepButton;
-	private boolean step;
-	private JButton ffwButton;
-	private boolean isFfw;
-	private int oldSpeedIndex; // what speed was selected before FFW
-
-	DateFormat dateFormat;
-	
-	private JButton screenShotButton;
-	private JComboBox<String> guiUpdateChooser;
-	private JComboBox<String> guiScreenshotFormatChooser;
-	
-	/** 
-	 * GUI update speeds. Negative values -> how many 1/10 seconds to wait
-	 * between updates. Positive values -> show every Nth update
-	 */
-	public static final String[] UP_SPEEDS = {"-10", "-1", "0.1", "1", "10",
-												"100", "1000", "10000", "100000"};
-	/** Supported screenshot file formats */
-	private static final String[] SCREENSHOT_FILE_TYPES = {"png", "svg"};
-	
-	/** Smallest value for the zoom level */
-	public static final double ZOOM_MIN = 0.001;
-	/** Highest value for the zoom level */
-	public static final double ZOOM_MAX = 10;
-	
 	/** index of initial update speed setting */
 	public static final int INITIAL_SPEED_SELECTION = 3;
 	/** index of initial screenshot file format */
 	public static final int INITIAL_SCREENSHOT_FORMAT_SELECTION = 0;
 	/** index of FFW speed setting */
 	public static final int FFW_SPEED_INDEX = 7;
-	
-	private double guiUpdateInterval;
-	private javax.swing.JSpinner zoomSelector;
+	/** 
+	 * GUI update speeds. Negative values -> how many 1/10 seconds to wait
+	 * between updates. Positive values -> show every Nth update
+	 */
+	public static final String[] UP_SPEEDS = {"-10", "-1", "0.1", "1", "10",
+												"100", "1000", "10000", "100000"};
+	/** Smallest value for the zoom level */
+	public static final double ZOOM_MIN = 0.001;
+	/** Highest value for the zoom level */
+	public static final double ZOOM_MAX = 10;
+	/** Supported screenshot file formats */
+	private static final String[] SCREENSHOT_FILE_TYPES = {"png", "svg"};
+	/** Selected screenshot format type */
 	private static String SCREENSHOT_FILE_TYPE = 
 			SCREENSHOT_FILE_TYPES[INITIAL_SCREENSHOT_FORMAT_SELECTION];
+	
+	// "simulated events per second" averaging time (milliseconds)
+	private static final int EPS_AVG_TIME = 2000;
+	private static final String SCREENSHOT_FILE_NAME = "screenshot_";
+	
 
 	private PlayField pf;
 	private DTNSimGUI gui;
 	
+	private JTextField simTimeField;
+	private JLabel sepsField;	// simulated events per second field
+	private JButton playButton;
+	private JButton stepButton;
+	private JButton ffwButton;
+	private JButton playUntilButton;
+	private JComboBox<String> guiUpdateChooser;
+	private JSpinner zoomSelector;
+	private JButton screenShotButton;
+	private JComboBox<String> guiScreenshotFormatChooser;
+
+	private boolean useHourDisplay = false;
+	private boolean isPaused;
+	private boolean step;
+	private boolean isFfw;
+	private int oldSpeedIndex; // what speed was selected before FFW
+	
+	private double guiUpdateInterval;
 	private long lastUpdate;
 	private double lastSimTime;
 	private double playUntilTime;
+
+	private DateFormat dateFormat;
 	
-	private boolean useHourDisplay = false;
 	
 	public GUIControls(DTNSimGUI gui, PlayField pf) {
 		/* TODO: read values for paused, isFfw etc from a file */
@@ -134,10 +138,10 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		this.gui = gui;
 		this.lastUpdate = System.currentTimeMillis();
 		this.lastSimTime = 0;
-		this.paused = true;
+		this.isPaused = true;
 		this.isFfw = false;
 		this.playUntilTime = Double.MAX_VALUE;
-		dateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
+		this.dateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
 		initPanel();
 	}
 	
@@ -149,7 +153,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		this.simTimeField = new JTextField("0.0");
 		this.simTimeField.setColumns(6);
 		this.simTimeField.setEditable(false);
-		this.simTimeField.setToolTipText(TEXT_SIMTIME);
+		this.simTimeField.setToolTipText(TOOLTIP_SIMTIME);
 		this.simTimeField.addMouseListener(new MouseAdapter(){
 			public void mouseClicked(MouseEvent e) {
 				if (e.getButton() == MouseEvent.BUTTON3) {
@@ -160,24 +164,26 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		});
 
 		this.sepsField = new JLabel("0.00");
-		this.sepsField.setToolTipText(TEXT_SEPS);
+		this.sepsField.setToolTipText(TOOLTIP_SEPS);
 		
 		this.screenShotButton = new JButton(TEXT_SCREEN_SHOT);
+		this.screenShotButton.setToolTipText(TOOLTIP_SCREEN_SHOT);
 		this.guiUpdateChooser = new JComboBox<String>(UP_SPEEDS);
 		this.guiScreenshotFormatChooser = new JComboBox<String>(SCREENSHOT_FILE_TYPES);
+		this.guiScreenshotFormatChooser.setToolTipText(TOOLTIP_SCREENSHOT_FORMAT);
 		
-		this.zoomSelector = new JSpinner(new SpinnerNumberModel(1.0, ZOOM_MIN, 
-				ZOOM_MAX, 0.001));
+		this.zoomSelector = new JSpinner(new SpinnerNumberModel(1.0, ZOOM_MIN, ZOOM_MAX, 0.001));
+		this.zoomSelector.setToolTipText(TOOLTIP_ZOOM_LEVEL);
 
 		this.add(simTimeField);
 		this.add(sepsField);
 
-		playButton = addButton(paused ? ICON_PLAY : ICON_PAUSE, 
-								paused ? TEXT_PLAY : TEXT_PAUSE);
-		stepButton = addButton(ICON_STEP, TEXT_STEP);
-		ffwButton = addButton(ICON_FFW, TEXT_FFW);
-		playUntilButton = addButton(ICON_PLAY, TEXT_PLAY_UNTIL);
-		playUntilButton.setText("...");
+		this.playButton = addButton(isPaused ? ICON_PLAY : ICON_PAUSE, 
+								isPaused ? TOOLTIP_PLAY : TOOLTIP_PAUSE);
+		this.stepButton = addButton(ICON_STEP, TOOLTIP_STEP);
+		this.ffwButton = addButton(ICON_FFW, TOOLTIP_FFW_EN);
+		this.playUntilButton = addButton(ICON_PLAY, TOOLTIP_PLAY_UNTIL);
+		this.playUntilButton.setText("...");
 
 		this.add(new JLabel(TEXT_UP_CHOOSER));
 		this.add(this.guiUpdateChooser);
@@ -192,18 +198,16 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		this.add(this.guiScreenshotFormatChooser);
 		this.guiScreenshotFormatChooser.setSelectedIndex(INITIAL_SCREENSHOT_FORMAT_SELECTION);
 		
-		guiUpdateChooser.addActionListener(this);
-		guiScreenshotFormatChooser.addActionListener(this);
-		zoomSelector.addChangeListener(this);
+		this.guiUpdateChooser.addActionListener(this);
+		this.guiScreenshotFormatChooser.addActionListener(this);
+		this.zoomSelector.addChangeListener(this);
 		this.screenShotButton.addActionListener(this);
 	}
-	
 	
 	private ImageIcon createImageIcon(String path) {
 		java.net.URL imgURL = getClass().getResource(PATH_GRAPHICS+path);
 		return new ImageIcon(imgURL);
 	}
-	
 	
 	private JButton addButton(String iconPath, String tooltip) {
 		JButton button = new JButton(createImageIcon(iconPath));
@@ -247,8 +251,8 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	public void setPaused(boolean paused) {
 		if (!paused) {
 			this.playButton.setIcon(createImageIcon(ICON_PAUSE));
-			this.playButton.setToolTipText(TEXT_PAUSE);
-			this.paused = false;
+			this.playButton.setToolTipText(TOOLTIP_PAUSE);
+			this.isPaused = false;
 			if (SimClock.getTime() >= this.playUntilTime) {
 				// playUntilTime passed -> disable it
 				this.playUntilTime = Double.MAX_VALUE;
@@ -256,8 +260,8 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		}
 		else {
 			this.playButton.setIcon(createImageIcon(ICON_PLAY));
-			this.playButton.setToolTipText(TEXT_PLAY);
-			this.paused = true;
+			this.playButton.setToolTipText(TOOLTIP_PLAY);
+			this.isPaused = true;
 			this.setSimTime(SimClock.getTime());
 			this.pf.updateField();
 		}
@@ -267,6 +271,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		if (isFfw) {
 			this.isFfw = false; // set to normal play
 			this.ffwButton.setIcon(createImageIcon(ICON_FFW));
+			this.ffwButton.setToolTipText(TOOLTIP_FFW_EN);
 			this.guiUpdateChooser.setSelectedIndex(oldSpeedIndex);
 			this.ffwButton.setSelected(false);
 		}
@@ -275,6 +280,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 			this.guiUpdateChooser.setSelectedIndex(FFW_SPEED_INDEX);
 			this.isFfw = true; // set to FFW
 			this.ffwButton.setIcon(createImageIcon(ICON_PLAY));
+			this.ffwButton.setToolTipText(TOOLTIP_FFW_DIS);
 		}
 	}
 	
@@ -290,7 +296,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		if (SimClock.getTime() >= this.playUntilTime) {
 			this.setPaused(true);
 		}
-		return this.paused;
+		return this.isPaused;
 	}
 	
 	/**
@@ -334,7 +340,7 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 	
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == this.playButton) {
-			setPaused(!this.paused); // switch pause/play
+			setPaused(!this.isPaused); // switch pause/play
 		}
 		else if (e.getSource() == this.stepButton) {
 			setPaused(true);
@@ -361,10 +367,9 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		updateZoomScale(true);
 	}
 
-	
 	private void setPlayUntil() {
 		setPaused(true);
-		String value = JOptionPane.showInputDialog(TEXT_PLAY_UNTIL);
+		String value = JOptionPane.showInputDialog(TOOLTIP_PLAY_UNTIL);
 		if (value == null) {
 			return;
 		}
@@ -378,12 +383,10 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 		}
 	}
 	
-	
 	private void updateUpdateInterval() {
 		String selString = (String) this.guiUpdateChooser.getSelectedItem();
 		this.guiUpdateInterval = Double.parseDouble(selString); 		
 	}
-	
 	
 	private void updateScreenshotFileFormat() {
 		SCREENSHOT_FILE_TYPE = (String) this.guiScreenshotFormatChooser.getSelectedItem();
