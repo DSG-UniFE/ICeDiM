@@ -444,8 +444,9 @@ public class GUIControls extends JPanel implements ActionListener, ChangeListene
 				SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
 				try {
 					svgGenerator.setPaint(Color.white);
-					svgGenerator.fillRect(-1,-20, pf.getWidth() + 1, pf.getHeight() + 20);
-					pf.paint(svgGenerator);
+					svgGenerator.fillRect(-1,-20, this.pf.getWidth() + 1,
+							this.pf.getHeight() + 20);
+					this.pf.paint(svgGenerator);
 					
 					// Write svg file
 					OutputStream outputStream = new FileOutputStream(file);
